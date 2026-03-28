@@ -30,3 +30,7 @@ npx serve .
 ```
 编辑 HTML → git add → git commit → git push → Netlify 自动部署
 ```
+
+## 给 AI 的上下文
+
+使用 Claude Code 开发时，请先阅读 [`CLAUDE.md`](./CLAUDE.md)，里面记录了前后端连接点、数据结构和开发约束。
