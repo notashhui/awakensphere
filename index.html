@@ -6,6 +6,7 @@
 <title>AwakenSphere — Where healing becomes awakening.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;500;600;700&family=Raleway:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 /* ══════════════════════════════════════
    DESIGN TOKENS — exact match awakens.life
@@ -2036,618 +2037,143 @@ function renderResults() {
 applyLang();
 
 
+
 /* ══════════════════════════════════════
-   ADMIN PANEL LOGIC
+   SUPABASE 数据加载（替代 localStorage）
    ══════════════════════════════════════ */
 
-// ── Default healer data ────────────────────────────────────────────────
-const DEFAULT_HEALERS = [
-  {
-    id: 'zoe',
-    emoji: '🌸', bg: 'hc1',
-    name_zh: '赵子珊 Zoe Zhao',  name_en: 'Zoe Zhao',
-    title_zh: 'Esalen® 按摩疗愈师', title_en: 'Esalen® Massage Practitioner',
-    sub_zh: '芳香脉轮治疗师', sub_en: 'Aroma Chakra Therapist',
-    bio_zh: '来自武汉，现居巴厘岛/新西兰，曾在加拿大获埃斯伦学位，2022年完成Esalen认证。',
-    bio_en: 'From Wuhan, now based in Bali/New Zealand. Esalen-certified practitioner.',
-    price: '¥200', location_zh: '武汉', location_en: 'Wuhan',
-    tags: ['Esalen 按摩','芳香疗法','脉轮'],
-    avail_zh: '线上可约', avail_en: 'Online available',
-    book_day: '22', book_month: 'June',
-    active: true
-  },
-  {
-    id: 'carrie',
-    emoji: '🌙', bg: 'hc2',
-    name_zh: '杨凯莉 Carrie Yang', name_en: 'Carrie Yang',
-    title_zh: '疗愈空间创建者', title_en: 'Healing Space Creator',
-    sub_zh: '课程开发者 & AwakenSphere 创始人', sub_en: 'Course Developer & AwakenSphere Founder',
-    bio_zh: '从事身份行业工作累积多年后，从上疗愈之路，创立了AwakenSphere。',
-    bio_en: 'After years in the identity industry, embarked on a healing journey and founded AwakenSphere.',
-    price: '$111', location_zh: '巴厘岛', location_en: 'Bali',
-    tags: ['身体疗愈','冥想','身心觉察'],
-    avail_zh: '线上可约', avail_en: 'Online available',
-    book_day: '22', book_month: 'April',
-    active: true
-  },
-  {
-    id: 'lin',
-    emoji: '🍃', bg: 'hc3',
-    name_zh: '林山 Lin Shan', name_en: 'Lin Shan',
-    title_zh: '动态艺术家', title_en: 'Movement Artist',
-    sub_zh: '正念引导者 & 工作坊导师', sub_en: 'Mindfulness Guide & Workshop Facilitator',
-    bio_zh: '以身体动作为媒介，结合觉察情绪与空间的方式，开发稳定艺术与疗愈的独特实践方式。',
-    bio_en: 'Uses movement as a medium, combining emotional awareness to develop a unique healing practice.',
-    price: 'SGD 150', location_zh: '新加坡', location_en: 'Singapore',
-    tags: ['动态冥想','正念','工作坊'],
-    avail_zh: '线上可约', avail_en: 'Online available',
-    book_day: '15', book_month: 'May',
-    active: true
-  },
-  {
-    id: 'mei',
-    emoji: '🎵', bg: 'hc4',
-    name_zh: '陈美玲 Mei Chen', name_en: 'Mei Chen',
-    title_zh: '声音疗愈师', title_en: 'Sound Healing Practitioner',
-    sub_zh: '水晶颂钵演奏者', sub_en: 'Crystal Bowl Practitioner',
-    bio_zh: '专注声音疗愈十年，结合颂钵、水晶、米音，提供个人及团体疗愈传导。',
-    bio_en: 'Decade of sound healing experience with singing bowls and crystals.',
-    price: '¥300', location_zh: '香港', location_en: 'Hong Kong',
-    tags: ['声音疗愈','水晶颂钵'],
-    avail_zh: '线上可约', avail_en: 'Online available',
-    book_day: '10', book_month: 'May',
-    active: true
-  },
-  {
-    id: 'aria',
-    emoji: '🌻', bg: 'hc5',
-    name_zh: '周雅慧 Aria Zhou', name_en: 'Aria Zhou',
-    title_zh: '内在小孩工作者', title_en: 'Inner Child Practitioner',
-    sub_zh: '表达性艺术治疗师', sub_en: 'Expressive Arts Therapist',
-    bio_zh: '通过绘画、写作、身体感知，帮助人们与内在小孩重建连接，释放深层创伤。',
-    bio_en: 'Helps reconnect with inner child through art, writing and body awareness.',
-    price: 'NT$3000', location_zh: '台北', location_en: 'Taipei',
-    tags: ['内在小孩','艺术治疗','情绪释放'],
-    avail_zh: '面谈为主', avail_en: 'In-person',
-    book_day: '20', book_month: 'May',
-    active: true
-  },
-  {
-    id: 'wei',
-    emoji: '🪷', bg: 'hc6',
-    name_zh: '刘薇 Wei Liu', name_en: 'Wei Liu',
-    title_zh: '创伤知情身体工作者', title_en: 'Trauma-Informed Bodyworker',
-    sub_zh: '合作伙伴体验导师', sub_en: 'Partner Experience Facilitator',
-    bio_zh: '整合Somatic Experiencing与传统中医理论，专注于慢性压力和创伤造成的身体积压。',
-    bio_en: 'Integrates Somatic Experiencing with TCM for chronic stress and trauma.',
-    price: '¥400', location_zh: '上海', location_en: 'Shanghai',
-    tags: ['创伤疗愈','SE','中医'],
-    avail_zh: '线上可约', avail_en: 'Online available',
-    book_day: '18', book_month: 'May',
-    active: true
-  },
-  {
-    id: 'ming',
-    emoji: '🌊', bg: 'hc7',
-    name_zh: '张明远 MingYuan', name_en: 'MingYuan Zhang',
-    title_zh: '正念冥想导师', title_en: 'Mindfulness Meditation Teacher',
-    sub_zh: '静修营举办者', sub_en: 'Retreat Facilitator',
-    bio_zh: '在巴厘岛主持正念上课程，教导静修营练习教程，现旅居巴厘岛，带领周末静修。',
-    bio_en: 'Leads mindfulness courses and weekend retreats in Bali.',
-    price: '$80', location_zh: '巴厘岛', location_en: 'Bali',
-    tags: ['正念','冥想','静修营','MBSR'],
-    avail_zh: '线上可约', avail_en: 'Online available',
-    book_day: '25', book_month: 'May',
-    active: true
-  }
-];
+const SUPABASE_URL  = 'https://qsmoyzilsolkcwovkpoe.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzbW95emlsc29sa2N3b3ZrcG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzI5NzQsImV4cCI6MjA5MDI0ODk3NH0.TzeMlevcOgmEs9vBFlJ0M0DuvvisjQL1Sux5OA-qp0E';
 
-const DEFAULT_HOMEPAGE = {
-  hero_title_zh: '疗愈，从内而生',
-  hero_sub_en: 'The true healer is within you.',
-  hero_desc_zh: '精选全球顶级疗愈内容，连接认证疗愈师，用中文探索身心灵最前沿的智慧与实践。',
-  stat_content: '200+',
-  stat_healers: '30+',
-  stat_domains: '12',
-  founder_quote_zh: '「真正的疗愈，不是修复破碎，而是重新记起自己本来的完整。」',
-  founder_name_zh: '— Carrie Yang，AwakenSphere 创始人'
-};
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-const ADMIN_PW_KEY  = 'as_admin_pw';
-const HEALERS_KEY   = 'as_healers_v2';
-const HOMEPAGE_KEY  = 'as_homepage_v2';
-const LOGGED_IN_KEY = 'as_admin_logged';
+// ── 从 Supabase 加载数据并更新前台 DOM ─────────────────
+async function loadSiteData() {
+  try {
+    // 并行加载所有数据
+    var [healersRes, homepageRes, contentRes, tickerRes] = await Promise.all([
+      sb.from('healers').select('*').eq('active', true).order('sort_order'),
+      sb.from('homepage').select('*').eq('id', 1).single(),
+      sb.from('content').select('*').eq('active', true).order('sort_order'),
+      sb.from('ticker').select('*').order('sort_order')
+    ]);
 
-function getAdminPw() {
-  return localStorage.getItem(ADMIN_PW_KEY) || 'awakens2025';
-}
-function getHealersData() {
-  try { return JSON.parse(localStorage.getItem(HEALERS_KEY)) || DEFAULT_HEALERS; }
-  catch(e) { return DEFAULT_HEALERS; }
-}
-function getHomepageData() {
-  try { return JSON.parse(localStorage.getItem(HOMEPAGE_KEY)) || DEFAULT_HOMEPAGE; }
-  catch(e) { return DEFAULT_HOMEPAGE; }
-}
+    // 更新首页数据
+    if (homepageRes.data) applyHomepageData(homepageRes.data);
 
-// ── Login ──────────────────────────────────────────────────────────────
-function doAdminLogin() {
-  var pw = document.getElementById('adminPwInput').value;
-  if (pw === getAdminPw()) {
-    localStorage.setItem(LOGGED_IN_KEY, '1');
-    document.getElementById('adminLogin').style.display = 'none';
-    document.getElementById('adminDashboard').classList.add('active');
-    initAdminDashboard();
-  } else {
-    document.getElementById('adminLoginError').style.display = 'block';
-    document.getElementById('adminPwInput').value = '';
-    document.getElementById('adminPwInput').focus();
-  }
-}
-function adminLogout() {
-  localStorage.removeItem(LOGGED_IN_KEY);
-  document.getElementById('adminDashboard').classList.remove('active');
-  document.getElementById('adminLogin').style.display = 'flex';
-  document.getElementById('adminPwInput').value = '';
-}
-
-// ── Navigation ─────────────────────────────────────────────────────────
-function adminNav(page, el) {
-  document.querySelectorAll('.admin-nav-item').forEach(function(n){ n.classList.remove('active'); });
-  el.classList.add('active');
-  document.querySelectorAll('.admin-page').forEach(function(p){ p.classList.remove('active'); });
-  var pg = document.getElementById('adminPage-' + page);
-  if (pg) pg.classList.add('active');
-}
-
-// ── Init Dashboard ─────────────────────────────────────────────────────
-function initAdminDashboard() {
-  renderHealerCards();
-  loadHomepageForm();
-}
-
-// ── Healers ────────────────────────────────────────────────────────────
-function renderHealerCards() {
-  var healers = getHealersData();
-  var container = document.getElementById('adminHealersList');
-  if (!container) return;
-  container.innerHTML = healers.map(function(h, idx) {
-    return '<div class="admin-card" id="hcard_' + h.id + '">' +
-      '<div class="admin-card-header">' +
-        '<div class="admin-card-title">' +
-          '<span class="admin-card-emoji">' + h.emoji + '</span>' +
-          '<span>' + h.name_zh + '</span>' +
-        '</div>' +
-        '<button class="admin-collapse-btn" onclick="toggleCard(\'' + h.id + '\')">收起 ▲</button>' +
-      '</div>' +
-      '<div class="admin-card-body" id="hbody_' + h.id + '">' +
-        '<div class="admin-field-row">' +
-          adminField('中文名字', 'hf_' + h.id + '_name_zh', h.name_zh) +
-          adminField('英文名字', 'hf_' + h.id + '_name_en', h.name_en) +
-        '</div>' +
-        '<div class="admin-field-row">' +
-          adminField('职称（中文）', 'hf_' + h.id + '_title_zh', h.title_zh) +
-          adminField('职称（英文）', 'hf_' + h.id + '_title_en', h.title_en) +
-        '</div>' +
-        '<div class="admin-field-row">' +
-          adminField('副标题（中文）', 'hf_' + h.id + '_sub_zh', h.sub_zh) +
-          adminField('副标题（英文）', 'hf_' + h.id + '_sub_en', h.sub_en) +
-        '</div>' +
-        '<div class="admin-field-row">' +
-          adminTextarea('简介（中文）', 'hf_' + h.id + '_bio_zh', h.bio_zh, true) +
-        '</div>' +
-        '<div class="admin-field-row">' +
-          adminTextarea('简介（英文）', 'hf_' + h.id + '_bio_en', h.bio_en, true) +
-        '</div>' +
-        '<div class="admin-field-row">' +
-          adminField('价格', 'hf_' + h.id + '_price', h.price) +
-          adminField('所在地（中文）', 'hf_' + h.id + '_loc_zh', h.location_zh) +
-          adminField('所在地（英文）', 'hf_' + h.id + '_loc_en', h.location_en) +
-        '</div>' +
-        '<div class="admin-field-row">' +
-          adminField('下次可约（日期）', 'hf_' + h.id + '_day', h.book_day) +
-          adminField('下次可约（月份）', 'hf_' + h.id + '_month', h.book_month) +
-        '</div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
-}
-
-function adminField(label, id, val) {
-  return '<div class="admin-field">' +
-    '<div class="admin-label">' + label + '</div>' +
-    '<input id="' + id + '" type="text" value="' + (val||'').replace(/"/g,'&quot;') + '">' +
-  '</div>';
-}
-function adminTextarea(label, id, val, full) {
-  return '<div class="admin-field' + (full?' admin-field-full':'') + '">' +
-    '<div class="admin-label">' + label + '</div>' +
-    '<textarea id="' + id + '">' + (val||'') + '</textarea>' +
-  '</div>';
-}
-
-function toggleCard(id) {
-  var body = document.getElementById('hbody_' + id);
-  var btn = body.previousElementSibling.querySelector('.admin-collapse-btn');
-  if (body.classList.contains('collapsed')) {
-    body.classList.remove('collapsed');
-    btn.textContent = '收起 ▲';
-  } else {
-    body.classList.add('collapsed');
-    btn.textContent = '展开 ▼';
-  }
-}
-
-function saveHealers() {
-  var healers = getHealersData();
-  healers.forEach(function(h) {
-    function g(field) {
-      var el = document.getElementById('hf_' + h.id + '_' + field);
-      return el ? el.value : h[field] || '';
+    // 更新 HEALERS profile 对象（用于 profile 详情页）
+    if (healersRes.data) {
+      healersRes.data.forEach(function(h) {
+        HEALERS[h.id] = {
+          name: h.name_zh, title: h.title_en || h.title_zh,
+          sub: h.sub_en || h.sub_zh, emoji: h.emoji, bg: h.bg,
+          price: h.price, loc: h.location_zh,
+          bookZh: '预约 ' + (h.name_en || h.name_zh),
+          bookEn: 'Book ' + (h.name_en || h.name_zh),
+          day: h.book_day, month: h.book_month
+        };
+      });
     }
-    h.name_zh    = g('name_zh');
-    h.name_en    = g('name_en');
-    h.title_zh   = g('title_zh');
-    h.title_en   = g('title_en');
-    h.sub_zh     = g('sub_zh');
-    h.sub_en     = g('sub_en');
-    h.bio_zh     = g('bio_zh');
-    h.bio_en     = g('bio_en');
-    h.price      = g('price');
-    h.location_zh = g('loc_zh');
-    h.location_en = g('loc_en');
-    h.book_day   = g('day');
-    h.book_month = g('month');
-  });
-  localStorage.setItem(HEALERS_KEY, JSON.stringify(healers));
-  // Update live healer cards in the main site
-  applyHealerDataToSite(healers);
-  showSaveMsg('healersSaveMsg');
-  renderHealerCards();
+
+    // 更新 ticker 跑马灯
+    if (tickerRes.data && tickerRes.data.length > 0) applyTickerData(tickerRes.data);
+
+    // 最后重新应用语言
+    if (typeof applyLang === 'function') applyLang();
+
+  } catch(e) {
+    console.warn('Supabase 加载失败，使用硬编码数据:', e);
+    // 失败时不做任何操作，保持页面原有硬编码内容
+  }
 }
 
-// ── Homepage ───────────────────────────────────────────────────────────
-function loadHomepageForm() {
-  var hp = getHomepageData();
-  function set(id, val) { var el=document.getElementById(id); if(el) el.value = val||''; }
-  set('hp_hero_title_zh', hp.hero_title_zh);
-  set('hp_hero_sub_en',   hp.hero_sub_en);
-  set('hp_hero_desc_zh',  hp.hero_desc_zh);
-  set('hp_stat_content',  hp.stat_content);
-  set('hp_stat_healers',  hp.stat_healers);
-  set('hp_stat_domains',  hp.stat_domains);
-  set('hp_founder_quote_zh', hp.founder_quote_zh);
-  set('hp_founder_name_zh',  hp.founder_name_zh);
+function applyHomepageData(hp) {
+  // Hero 标题
+  var heroH1 = document.querySelector('.hero-h1');
+  if (heroH1 && hp.hero_title_zh) {
+    heroH1.setAttribute('data-zh', hp.hero_title_zh);
+    heroH1.textContent = hp.hero_title_zh;
+  }
+  // Hero 副标题
+  var heroSub = document.querySelector('.hero-h1-zh');
+  if (heroSub && hp.hero_sub_en) {
+    heroSub.textContent = hp.hero_sub_en;
+  }
+  // Hero 描述
+  var heroDesc = document.querySelector('.hero-desc');
+  if (heroDesc && hp.hero_desc_zh) {
+    heroDesc.setAttribute('data-zh', hp.hero_desc_zh);
+    if (hp.hero_desc_en) heroDesc.setAttribute('data-en', hp.hero_desc_en);
+    heroDesc.textContent = hp.hero_desc_zh;
+  }
+  // 统计数字
+  var statNums = document.querySelectorAll('.stat-num');
+  if (statNums[0] && hp.stat_content) statNums[0].textContent = hp.stat_content;
+  if (statNums[1] && hp.stat_healers) statNums[1].textContent = hp.stat_healers;
+  if (statNums[2] && hp.stat_domains) statNums[2].textContent = hp.stat_domains;
+  // 创始人引言
+  var founderQuote = document.querySelector('.founder-quote-text');
+  if (founderQuote && hp.founder_quote_zh) {
+    founderQuote.setAttribute('data-zh', hp.founder_quote_zh);
+    if (hp.founder_quote_en) founderQuote.setAttribute('data-en', hp.founder_quote_en);
+    founderQuote.textContent = hp.founder_quote_zh;
+  }
+  var founderBig = document.querySelector('.founder-quote-big');
+  if (founderBig && hp.founder_quote_zh) {
+    founderBig.setAttribute('data-zh', hp.founder_quote_zh);
+    if (hp.founder_quote_en) founderBig.setAttribute('data-en', hp.founder_quote_en);
+    founderBig.textContent = hp.founder_quote_zh;
+  }
 }
 
-function saveHomepage() {
-  function g(id) { var el=document.getElementById(id); return el?el.value:''; }
-  var hp = {
-    hero_title_zh:    g('hp_hero_title_zh'),
-    hero_sub_en:      g('hp_hero_sub_en'),
-    hero_desc_zh:     g('hp_hero_desc_zh'),
-    stat_content:     g('hp_stat_content'),
-    stat_healers:     g('hp_stat_healers'),
-    stat_domains:     g('hp_stat_domains'),
-    founder_quote_zh: g('hp_founder_quote_zh'),
-    founder_name_zh:  g('hp_founder_name_zh')
-  };
-  localStorage.setItem(HOMEPAGE_KEY, JSON.stringify(hp));
-  applyHomepageDataToSite(hp);
-  showSaveMsg('homepageSaveMsg');
-}
-
-// ── Apply to live site ─────────────────────────────────────────────────
-function applyHealerDataToSite(healers) {
-  // Update HEALERS object used by profile view
-  if (typeof HEALERS !== 'undefined') {
-    healers.forEach(function(h) {
-      if (HEALERS[h.id]) {
-        HEALERS[h.id].name = h.name_zh;
-        HEALERS[h.id].title = h.title_zh;
-        HEALERS[h.id].sub = h.sub_zh;
-        HEALERS[h.id].price = h.price;
-        HEALERS[h.id].loc = h.location_zh;
-        HEALERS[h.id].day = h.book_day;
-        HEALERS[h.id].mo = h.book_month;
-      }
+function applyTickerData(items) {
+  var inner = document.querySelector('.ticker-inner');
+  if (!inner) return;
+  // 生成两组（循环滚动）
+  var html = '';
+  for (var round = 0; round < 2; round++) {
+    items.forEach(function(t) {
+      html += '<span class="ticker-item">' + t.label + '</span>';
     });
   }
-  // Rebuild the healers grid
-  rebuildHealersGrid(healers);
+  inner.innerHTML = html;
 }
 
-function rebuildHealersGrid(healers) {
-  var grid = document.querySelector('#view-healers .healers-grid');
-  if (!grid) return;
-  var cards = grid.querySelectorAll('.healer-card:not(.join-card)');
-  healers.forEach(function(h, i) {
-    if (cards[i]) {
-      var nameEl = cards[i].querySelector('.hc-name');
-      var titleEl = cards[i].querySelector('.hc-title');
-      var priceEl = cards[i].querySelector('.hc-price-val');
-      var locEl = cards[i].querySelector('.hc-loc span:last-child');
-      if (nameEl) { nameEl.setAttribute('data-zh', h.name_zh); nameEl.setAttribute('data-en', h.name_en); }
-      if (titleEl) { titleEl.setAttribute('data-zh', h.title_zh); titleEl.setAttribute('data-en', h.title_en); }
-      if (priceEl) priceEl.textContent = h.price;
-      if (locEl) { locEl.setAttribute('data-zh', h.location_zh); locEl.setAttribute('data-en', h.location_en); }
-    }
-  });
-}
-
-function applyHomepageDataToSite(hp) {
-  // Hero title
-  var heroTitle = document.querySelector('.hero-title');
-  if (heroTitle) heroTitle.setAttribute('data-zh', hp.hero_title_zh);
-  // Hero subtitle
-  var heroSub = document.querySelector('.hero-sub');
-  if (heroSub) heroSub.textContent = hp.hero_sub_en;
-  // Stats
-  var statEls = document.querySelectorAll('.stat-num');
-  if (statEls[0]) statEls[0].textContent = hp.stat_content;
-  if (statEls[1]) statEls[1].textContent = hp.stat_healers;
-  if (statEls[2]) statEls[2].textContent = hp.stat_domains;
-  // Founder quote
-  var quoteEl = document.querySelector('.founder-quote p');
-  if (quoteEl) { quoteEl.setAttribute('data-zh', hp.founder_quote_zh); }
-  var quoteName = document.querySelector('.founder-quote cite');
-  if (quoteName) { quoteName.setAttribute('data-zh', hp.founder_name_zh); }
-  if (typeof applyLang === 'function') applyLang();
-}
-
-// ── Settings ───────────────────────────────────────────────────────────
-function changeAdminPw() {
-  var oldPw = document.getElementById('settings_old_pw').value;
-  var newPw = document.getElementById('settings_new_pw').value;
-  var msgEl = document.getElementById('pwChangeMsg');
-  if (oldPw !== getAdminPw()) {
-    msgEl.style.display = 'block'; msgEl.style.color = '#ef4444';
-    msgEl.textContent = '❌ 当前密码错误'; return;
-  }
-  if (newPw.length < 6) {
-    msgEl.style.display = 'block'; msgEl.style.color = '#ef4444';
-    msgEl.textContent = '❌ 新密码至少需要6位'; return;
-  }
-  localStorage.setItem(ADMIN_PW_KEY, newPw);
-  msgEl.style.display = 'block'; msgEl.style.color = '#4ade80';
-  msgEl.textContent = '✅ 密码已更新';
-  document.getElementById('settings_old_pw').value = '';
-  document.getElementById('settings_new_pw').value = '';
-}
-
-function showSaveMsg(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add('visible');
-  setTimeout(function() { el.classList.remove('visible'); }, 2500);
-}
-
-// ── Boot: load saved data into live site on page load ──────────────────
-(function initSiteData() {
-  var healers = getHealersData();
-  var hp = getHomepageData();
-  // Defer until DOM ready
-  function applyAll() {
-    applyHealerDataToSite(healers);
-    applyHomepageDataToSite(hp);
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', applyAll);
-  } else {
-    setTimeout(applyAll, 100);
-  }
-})();
-
-// ── Hash routing for admin ─────────────────────────────────────────────
+// ── Admin hash 路由：重定向到 admin.html ──────────────────
 (function() {
   function checkAdminHash() {
     if (window.location.hash === '#admin') {
-      // Show admin view
-      document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
-      var adminView = document.getElementById('view-admin');
-      if (adminView) {
-        adminView.classList.add('active');
-        // Check if already logged in
-        if (localStorage.getItem('as_admin_logged') === '1') {
-          document.getElementById('adminLogin').style.display = 'none';
-          document.getElementById('adminDashboard').classList.add('active');
-          initAdminDashboard();
-        }
-      }
+      window.location.href = 'admin.html';
     }
   }
   window.addEventListener('hashchange', checkAdminHash);
-  // Run on load after slight delay to let main showView init first
-  setTimeout(checkAdminHash, 200);
+  setTimeout(checkAdminHash, 100);
+})();
+
+// ── 页面加载时从 Supabase 拉取最新数据 ──────────────────
+(function() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadSiteData);
+  } else {
+    setTimeout(loadSiteData, 100);
+  }
 })();
 
 </script>
 
 <!-- ══════════════════════════════════
-     ADMIN PANEL VIEW
+     ADMIN PANEL VIEW — 已迁移到独立 admin.html
+     访问 #admin 会自动重定向
      ══════════════════════════════════ -->
 <div id="view-admin" class="view">
-
-  <!-- LOGIN SCREEN -->
-  <div class="admin-login" id="adminLogin">
-    <div class="admin-login-box">
-      <div class="admin-login-logo">🌿</div>
-      <div class="admin-login-title">AwakenSphere 管理后台</div>
-      <div class="admin-login-sub">Admin Dashboard · 请输入管理员密码</div>
-      <input class="admin-input" type="password" id="adminPwInput" placeholder="密码" autocomplete="off" onkeydown="if(event.key==='Enter')doAdminLogin()">
-      <button class="admin-btn-primary" onclick="doAdminLogin()">进入后台</button>
-      <div class="admin-login-error" id="adminLoginError">密码错误，请重试</div>
+  <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f1117;">
+    <div style="text-align:center;color:#9ca3af;">
+      <div style="font-size:40px;margin-bottom:16px;">🌿</div>
+      <div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;">正在跳转到管理后台…</div>
+      <div style="font-size:13px;">如果没有自动跳转，请 <a href="admin.html" style="color:#35845D;">点击这里</a></div>
     </div>
   </div>
-
-  <!-- DASHBOARD -->
-  <div class="admin-dashboard" id="adminDashboard">
-
-    <!-- SIDEBAR -->
-    <div class="admin-sidebar">
-      <div class="admin-sidebar-logo">
-        <span>🌿 AwakenSphere</span>
-        <small>内容管理后台</small>
-      </div>
-      <div class="admin-nav-item active" data-page="healers" onclick="adminNav('healers',this)">
-        <span class="admin-nav-icon">👤</span> 疗愈师管理
-      </div>
-      <div class="admin-nav-item" data-page="homepage" onclick="adminNav('homepage',this)">
-        <span class="admin-nav-icon">🏠</span> 首页内容
-      </div>
-      <div class="admin-nav-item" data-page="settings" onclick="adminNav('settings',this)">
-        <span class="admin-nav-icon">⚙️</span> 设置
-      </div>
-      <div class="admin-sidebar-bottom">
-        <button class="admin-logout-btn" onclick="adminLogout()">
-          <span>🚪</span> 退出登录
-        </button>
-      </div>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div class="admin-main">
-
-      <!-- PAGE: HEALERS -->
-      <div class="admin-page active" id="adminPage-healers">
-        <div class="admin-page-title">👤 疗愈师管理</div>
-        <div class="admin-page-sub">编辑平台上的疗愈师信息，保存后立即在前台生效</div>
-
-        <div id="adminHealersList"></div>
-
-        <div class="admin-save-bar">
-          <span class="admin-save-msg" id="healersSaveMsg">✅ 已保存</span>
-          <button class="admin-btn-save" onclick="saveHealers()">
-            <span>💾</span> 保存疗愈师信息
-          </button>
-        </div>
-      </div>
-
-      <!-- PAGE: HOMEPAGE -->
-      <div class="admin-page" id="adminPage-homepage">
-        <div class="admin-page-title">🏠 首页内容</div>
-        <div class="admin-page-sub">编辑首页展示的文案和数字</div>
-
-        <div class="admin-card">
-          <div class="admin-card-title">🌱 Hero 区域</div>
-          <div style="height:16px"></div>
-          <div class="admin-field-row">
-            <div class="admin-field">
-              <div class="admin-label">标题（中文）</div>
-              <input id="hp_hero_title_zh" type="text" placeholder="疗愈，从内而生">
-            </div>
-            <div class="admin-field">
-              <div class="admin-label">副标题（英文）</div>
-              <input id="hp_hero_sub_en" type="text" placeholder="The true healer is within you.">
-            </div>
-          </div>
-          <div class="admin-field-row">
-            <div class="admin-field admin-field-full">
-              <div class="admin-label">描述文字（中文）</div>
-              <textarea id="hp_hero_desc_zh" placeholder="精选全球顶级疗愈内容..."></textarea>
-            </div>
-          </div>
-        </div>
-
-        <div class="admin-card">
-          <div class="admin-card-title">📊 统计数字</div>
-          <div style="height:16px"></div>
-          <div class="admin-field-row">
-            <div class="admin-field">
-              <div class="admin-label">内容数量</div>
-              <input id="hp_stat_content" type="text" placeholder="200+">
-            </div>
-            <div class="admin-field">
-              <div class="admin-label">认证疗愈师</div>
-              <input id="hp_stat_healers" type="text" placeholder="30+">
-            </div>
-            <div class="admin-field">
-              <div class="admin-label">疗愈领域</div>
-              <input id="hp_stat_domains" type="text" placeholder="12">
-            </div>
-          </div>
-        </div>
-
-        <div class="admin-card">
-          <div class="admin-card-title">💬 创始人寄语</div>
-          <div style="height:16px"></div>
-          <div class="admin-field-row">
-            <div class="admin-field admin-field-full">
-              <div class="admin-label">引言（中文）</div>
-              <textarea id="hp_founder_quote_zh" placeholder="真正的疗愈，不是修复破碎..."></textarea>
-            </div>
-          </div>
-          <div class="admin-field-row">
-            <div class="admin-field">
-              <div class="admin-label">署名（中文）</div>
-              <input id="hp_founder_name_zh" type="text" placeholder="杨凯莉，AwakenSphere 创始人">
-            </div>
-          </div>
-        </div>
-
-        <div class="admin-save-bar">
-          <span class="admin-save-msg" id="homepageSaveMsg">✅ 已保存</span>
-          <button class="admin-btn-save" onclick="saveHomepage()">
-            <span>💾</span> 保存首页内容
-          </button>
-        </div>
-      </div>
-
-      <!-- PAGE: SETTINGS -->
-      <div class="admin-page" id="adminPage-settings">
-        <div class="admin-page-title">⚙️ 设置</div>
-        <div class="admin-page-sub">管理后台系统设置</div>
-
-        <div class="admin-stats-row">
-          <div class="admin-stat-card">
-            <div class="admin-stat-num" id="adminStatHealers">7</div>
-            <div class="admin-stat-label">疗愈师</div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="admin-stat-num">∞</div>
-            <div class="admin-stat-label">免费托管</div>
-          </div>
-          <div class="admin-stat-card">
-            <div class="admin-stat-num">✓</div>
-            <div class="admin-stat-label">数据已同步</div>
-          </div>
-        </div>
-
-        <div class="admin-card">
-          <div class="admin-card-title">🔐 修改管理密码</div>
-          <div style="height:16px"></div>
-          <div class="admin-field-row">
-            <div class="admin-field">
-              <div class="admin-label">当前密码</div>
-              <input id="settings_old_pw" type="password" placeholder="当前密码">
-            </div>
-            <div class="admin-field">
-              <div class="admin-label">新密码</div>
-              <input id="settings_new_pw" type="password" placeholder="新密码（至少6位）">
-            </div>
-          </div>
-          <button class="admin-btn-save" style="margin-top:4px" onclick="changeAdminPw()">
-            更新密码
-          </button>
-          <div id="pwChangeMsg" style="margin-top:10px;font-size:13px;display:none"></div>
-        </div>
-
-        <div class="admin-card">
-          <div class="admin-card-title">📋 使用说明</div>
-          <div style="height:12px"></div>
-          <div style="color:#9ca3af;font-size:14px;line-height:1.8">
-            <p>• 数据保存在本浏览器的本地存储中，换设备需重新编辑</p>
-            <p>• 在<strong style="color:#fff">疗愈师管理</strong>页面编辑并保存后，前台疗愈师目录立即更新</p>
-            <p>• 在<strong style="color:#fff">首页内容</strong>页面可修改标题、描述和数字统计</p>
-            <p>• 访问地址：<code style="background:#111827;padding:2px 6px;border-radius:4px;color:#4ade80">awakens.life/#admin</code></p>
-            <p>• 默认密码：<code style="background:#111827;padding:2px 6px;border-radius:4px;color:#4ade80">awakens2025</code>（建议在设置里修改）</p>
-          </div>
-        </div>
-      </div>
-
-    </div><!-- /admin-main -->
-  </div><!-- /admin-dashboard -->
-</div><!-- /view-admin -->
+</div>
 
 </body>
 </html>

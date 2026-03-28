@@ -6,6 +6,7 @@
 <title>AwakenSphere 管理后台</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; }
 body { font-family:'Cabin',sans-serif; background:#0f1117; color:#fff; min-height:100vh; }
@@ -150,6 +151,9 @@ body { font-family:'Cabin',sans-serif; background:#0f1117; color:#fff; min-heigh
 .img-preview-box img { width:100%; height:100%; object-fit:cover; display:block; }
 .img-preview-box .img-clear { display:none; position:absolute; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; font-size:18px; cursor:pointer; }
 .img-preview-box:hover .img-clear { display:flex; }
+.img-preview-box .img-upload-hint { display:none; position:absolute; inset:0; background:rgba(0,0,0,.45); align-items:center; justify-content:center; font-size:22px; pointer-events:none; }
+.img-preview-box.no-img:hover .img-upload-hint { display:flex; }
+.img-preview-box.no-img:hover .img-clear { display:none; }
 .img-controls { flex:1; display:flex; flex-direction:column; gap:8px; }
 .img-url-inp { background:#111827; border:1px solid #374151; border-radius:8px; color:#fff; font-size:13px; padding:8px 12px; outline:none; font-family:inherit; width:100%; transition:border-color .2s; }
 .img-url-inp:focus { border-color:#35845D; }
@@ -158,6 +162,11 @@ body { font-family:'Cabin',sans-serif; background:#0f1117; color:#fff; min-heigh
 .img-upload-label input[type=file] { display:none; }
 .img-hint { font-size:11px; color:#4b5563; line-height:1.5; }
 .img-hint a { color:#35845D; }
+/* Audio section */
+.audio-section { margin-bottom:14px; }
+.audio-section audio { width:100%; border-radius:8px; margin-bottom:8px; display:block; background:#111827; }
+.audio-upload-row { display:flex; align-items:center; gap:8px; margin-top:8px; }
+.audio-section .sub-label { font-size:12px; color:#6b7280; font-weight:500; margin:12px 0 6px; }
 
 code { background:#111827; padding:2px 6px; border-radius:4px; color:#4ade80; font-size:13px; }
 p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
@@ -170,10 +179,11 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
   <div class="login-box">
     <div class="login-logo">🌿</div>
     <div class="login-title">AwakenSphere 管理后台</div>
-    <div class="login-sub">请输入管理员密码</div>
-    <input class="inp" type="password" id="pwInput" placeholder="密码" autocomplete="off">
+    <div class="login-sub">请使用管理员账号登录</div>
+    <input class="inp" type="email" id="emailInput" placeholder="管理员邮箱" autocomplete="email" style="margin-bottom:10px">
+    <input class="inp" type="password" id="pwInput" placeholder="密码" autocomplete="current-password">
     <button class="btn-primary" onclick="doLogin()">进入后台</button>
-    <div class="login-err" id="loginErr">密码错误，请重试</div>
+    <div class="login-err" id="loginErr">登录失败，请检查邮箱和密码</div>
   </div>
 </div>
 
@@ -304,8 +314,8 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
           <div class="card-title">🔐 修改密码</div>
           <div style="height:16px"></div>
           <div class="field-row">
-            <div class="field"><div class="label">当前密码</div><input type="password" id="oldPw"></div>
             <div class="field"><div class="label">新密码（至少6位）</div><input type="password" id="newPw"></div>
+            <div class="field"><div class="label">确认新密码</div><input type="password" id="confirmPw"></div>
           </div>
           <button class="btn-save" style="margin-top:4px" onclick="changePw()">更新密码</button>
           <div id="pwMsg" style="margin-top:10px;font-size:13px;display:none"></div>
@@ -313,9 +323,10 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
         <div class="card">
           <div class="card-title">📋 使用说明</div>
           <div style="height:12px"></div>
-          <p>• 数据存储在本浏览器本地，前台 index.html 读取同一份数据实时更新</p>
-          <p>• 后台地址：<code>awakens.life/admin.html</code> · 默认密码：<code>awakens2025</code></p>
-          <p>• 下一步：接入 Supabase，实现多设备云端同步</p>
+          <p>• 数据存储在 Supabase 云端，多设备实时同步</p>
+          <p>• 后台地址：<code>awakens.life/admin.html</code></p>
+          <p>• 登录使用 Supabase Auth 邮箱/密码认证</p>
+          <p>• 前台 index.html 匿名读取，仅显示 active=true 的记录</p>
         </div>
       </div>
 
@@ -332,7 +343,6 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
     </div>
     <div class="modal-body">
       <div class="field-row">
-        <div class="field"><div class="label">Emoji 头像</div><input id="nh_emoji" placeholder="🌸 粘贴一个 emoji"></div>
         <div class="field"><div class="label">ID <small>（英文小写，无空格）</small></div><input id="nh_id" placeholder="例：lily"></div>
       </div>
       <div class="field-row">
@@ -426,77 +436,69 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
   </div>
 </div>
 
-<script>
-// ── Keys (matched to index.html) ─────────────────────────────
-const PW_KEY      = 'as_admin_pw';
-const HEALERS_KEY = 'as_healers_v2';
-const HP_KEY      = 'as_homepage_v2';
-const CONTENT_KEY = 'as_content_v1';
-const TICKER_KEY  = 'as_ticker_v1';
-const LI_KEY      = 'as_admin_logged';
 
-// ── Defaults ─────────────────────────────────────────────────
+<script>
+// ═══════════════════════════════════════════════════════════
+// AwakenSphere Admin — Supabase 版本
+// ═══════════════════════════════════════════════════════════
+
+const SUPABASE_URL  = 'https://qsmoyzilsolkcwovkpoe.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzbW95emlsc29sa2N3b3ZrcG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzI5NzQsImV4cCI6MjA5MDI0ODk3NH0.TzeMlevcOgmEs9vBFlJ0M0DuvvisjQL1Sux5OA-qp0E';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
 const BG_CLASSES = ['hc1','hc2','hc3','hc4','hc5','hc6','hc7','hc8'];
 
-const DEFAULT_HEALERS = [
-  { id:'zoe',    emoji:'🌸', bg:'hc1', name_zh:'赵子珊 Zoe Zhao',    name_en:'Zoe Zhao',       title_zh:'Esalen® 按摩疗愈师',       title_en:'Esalen® Massage Practitioner',        sub_zh:'芳香脉轮治疗师',               sub_en:'Aroma Chakra Therapist',           bio_zh:'来自武汉，现居巴厘岛/新西兰，2022年完成Esalen认证。',     bio_en:'From Wuhan, Esalen-certified practitioner.',            price:'¥200',    location_zh:'武汉',   location_en:'Wuhan',      avail_zh:'线上可约', avail_en:'Online available', tags:['Esalen 按摩','芳香疗法','脉轮'],       book_day:'22', book_month:'June',  avatar_url:'', active:true },
-  { id:'carrie', emoji:'🌙', bg:'hc2', name_zh:'杨凯莉 Carrie Yang',  name_en:'Carrie Yang',    title_zh:'疗愈空间创建者',             title_en:'Healing Space Creator',               sub_zh:'课程开发者 & AwakenSphere 创始人', sub_en:'Course Developer & Founder',       bio_zh:'从事身心疗愈工作多年，创立AwakenSphere平台。',           bio_en:'Founder of AwakenSphere healing platform.',             price:'$111',    location_zh:'巴厘岛', location_en:'Bali',       avail_zh:'线上可约', avail_en:'Online available', tags:['身体疗愈','冥想','身心觉察'],           book_day:'22', book_month:'April', avatar_url:'', active:true },
-  { id:'lin',    emoji:'🍃', bg:'hc3', name_zh:'林山 Lin Shan',        name_en:'Lin Shan',       title_zh:'动态艺术家',                 title_en:'Movement Artist',                     sub_zh:'正念引导者 & 工作坊导师',         sub_en:'Mindfulness Guide & Workshop Facilitator', bio_zh:'以身体动作为媒介，结合觉察情绪的独特实践方式。',     bio_en:'Uses movement as a healing medium.',                    price:'SGD 150', location_zh:'新加坡', location_en:'Singapore',  avail_zh:'线上可约', avail_en:'Online available', tags:['动态冥想','正念','工作坊'],             book_day:'15', book_month:'May',   avatar_url:'', active:true },
-  { id:'mei',    emoji:'🎵', bg:'hc4', name_zh:'陈美玲 Mei Chen',      name_en:'Mei Chen',       title_zh:'声音疗愈师',                 title_en:'Sound Healing Practitioner',          sub_zh:'水晶颂钵演奏者',                 sub_en:'Crystal Bowl Practitioner',        bio_zh:'专注声音疗愈十年，结合颂钵、水晶进行个人及团体疗愈。', bio_en:'Decade of sound healing with singing bowls and crystals.', price:'¥300', location_zh:'香港', location_en:'Hong Kong', avail_zh:'线上可约', avail_en:'Online available', tags:['声音疗愈','水晶颂钵'],                 book_day:'10', book_month:'May',   avatar_url:'', active:true },
-  { id:'aria',   emoji:'🌻', bg:'hc5', name_zh:'周雅慧 Aria Zhou',     name_en:'Aria Zhou',      title_zh:'内在小孩工作者',             title_en:'Inner Child Practitioner',            sub_zh:'表达性艺术治疗师',               sub_en:'Expressive Arts Therapist',        bio_zh:'通过绘画、写作帮助人们与内在小孩重建连接，释放深层创伤。', bio_en:'Reconnects people with their inner child through art.',  price:'NT$3000', location_zh:'台北', location_en:'Taipei',  avail_zh:'面谈为主', avail_en:'In-person',        tags:['内在小孩','艺术治疗','情绪释放'],       book_day:'20', book_month:'May',   avatar_url:'', active:true },
-  { id:'wei',    emoji:'🪷', bg:'hc6', name_zh:'刘薇 Wei Liu',          name_en:'Wei Liu',        title_zh:'创伤知情身体工作者',         title_en:'Trauma-Informed Bodyworker',          sub_zh:'合作伙伴体验导师',               sub_en:'Partner Experience Facilitator',   bio_zh:'整合Somatic Experiencing与传统中医，专注慢性压力和创伤。',  bio_en:'Integrates SE with TCM for chronic stress and trauma.',  price:'¥400',    location_zh:'上海', location_en:'Shanghai', avail_zh:'线上可约', avail_en:'Online available', tags:['创伤疗愈','SE','中医'],                 book_day:'18', book_month:'May',   avatar_url:'', active:true },
-  { id:'ming',   emoji:'🌊', bg:'hc7', name_zh:'张明远 MingYuan',       name_en:'MingYuan Zhang', title_zh:'正念冥想导师',               title_en:'Mindfulness Meditation Teacher',      sub_zh:'静修营举办者',                   sub_en:'Retreat Facilitator',              bio_zh:'在巴厘岛主持正念课程和周末静修营。',                   bio_en:'Leads mindfulness courses and weekend retreats in Bali.', price:'$80', location_zh:'巴厘岛', location_en:'Bali', avail_zh:'线上可约', avail_en:'Online available', tags:['正念','冥想','静修营','MBSR'],          book_day:'25', book_month:'May',   avatar_url:'', active:true },
-];
+// ── 缓存 ─────────────────────────────────────────────────
+var cache = { healers: null, homepage: null, content: null, ticker: null };
 
-const DEFAULT_HOMEPAGE = {
-  hero_title_zh:'疗愈，从内而生', hero_sub_en:'The true healer is within you.',
-  hero_desc_zh:'精选全球顶级疗愈内容，连接认证疗愈师，用中文探索身心灵最前沿的智慧与实践。',
-  hero_desc_en:'Curated healing content and certified practitioners, bringing global wisdom to the Chinese-speaking world.',
-  stat_content:'200+', stat_healers:'30+', stat_domains:'12',
-  founder_quote_zh:'「真正的疗愈，不是修复破碎，而是重新记起自己本来的完整。」',
-  founder_quote_en:'"True healing is not about fixing what is broken, but remembering the wholeness you have always been."',
-  founder_name_zh:'— Carrie Yang，AwakenSphere 创始人'
-};
+// ── 数据读取 ─────────────────────────────────────────────
+async function fetchHealers() {
+  var { data, error } = await sb.from('healers').select('*').order('sort_order');
+  if (error) { console.error('fetchHealers:', error); return cache.healers || []; }
+  cache.healers = data; return data;
+}
+async function fetchHomepage() {
+  var { data, error } = await sb.from('homepage').select('*').eq('id', 1).single();
+  if (error) { console.error('fetchHomepage:', error); return cache.homepage || {}; }
+  cache.homepage = data; return data;
+}
+async function fetchContent() {
+  var { data, error } = await sb.from('content').select('*').order('sort_order');
+  if (error) { console.error('fetchContent:', error); return cache.content || []; }
+  cache.content = data; return data;
+}
+async function fetchTicker() {
+  var { data, error } = await sb.from('ticker').select('*').order('sort_order');
+  if (error) { console.error('fetchTicker:', error); return cache.ticker || []; }
+  cache.ticker = data; return data;
+}
 
-const DEFAULT_CONTENT = [
-  { id:'c1', type:'article',    emoji:'🌊', title_zh:'当身体开始说话：如何倾听内在的智慧信号',   title_en:'When the Body Speaks: Listening to Inner Wisdom',       summary_zh:'身体是我们最诚实的老师，每一个症状都是它在对话。',   author:'Jack Kornfield', duration_zh:'8 分钟',  duration_en:'8 min',  tags:['身体疗愈','正念'],      featured:true,  cover_url:'', active:true },
-  { id:'c2', type:'meditation', emoji:'🧘', title_zh:'身体扫描冥想：从头到脚释放紧绷',           title_en:'Body Scan: Release Tension Head to Toe',                summary_zh:'跟随引导，逐步放松全身肌肉，回到当下。',             author:'Tara Brach',     duration_zh:'20 分钟', duration_en:'20 min', tags:['冥想','正念'],           featured:true,  cover_url:'', active:true },
-  { id:'c3', type:'podcast',    emoji:'🎧', title_zh:'与焦虑和平共处：一个前金融人的疗愈旅程',   title_en:"Making Peace with Anxiety: A Healer's Journey",         summary_zh:'Carrie 分享从高压职场到踏上疗愈之路的真实故事。',   author:'Carrie Yang',    duration_zh:'38 分钟', duration_en:'38 min', tags:['情绪疗愈','创伤'],      featured:true,  cover_url:'', active:true },
-  { id:'c4', type:'article',    emoji:'🌿', title_zh:'Esalen 的智慧：用触碰重新连接身体',        title_en:"Esalen's Wisdom: Reconnecting Through Touch",           summary_zh:'探索 Esalen 按摩背后的哲学与疗愈原理。',             author:'赵子珊 Zoe',     duration_zh:'12 分钟', duration_en:'12 min', tags:['Esalen 按摩','身体疗愈'], featured:false, cover_url:'', active:true },
-  { id:'c5', type:'meditation', emoji:'🌙', title_zh:'入睡冥想：释放今日的重量',                 title_en:'Sleep Meditation: Release the Weight of the Day',       summary_zh:'睡前 15 分钟，让身体和心灵真正得到休息。',           author:'张明远',         duration_zh:'15 分钟', duration_en:'15 min', tags:['冥想','睡眠'],           featured:false, cover_url:'', active:true },
-  { id:'c6', type:'podcast',    emoji:'🎵', title_zh:'声音如何疗愈：颂钵与神经系统的对话',       title_en:'How Sound Heals: Singing Bowls and the Nervous System', summary_zh:'声音疗愈师陈美玲解析声音对身心的深层影响。',         author:'陈美玲 Mei',     duration_zh:'45 分钟', duration_en:'45 min', tags:['声音疗愈','神经系统'],  featured:false, cover_url:'', active:true },
-];
+// ── Tag 状态 ─────────────────────────────────────────────
+var tagState = {};
 
-const DEFAULT_TICKER = ['正念冥想','身体疗愈','情绪释放','灵性成长','芳香疗法','声音治疗','内在小孩','创伤疗愈','冥想引导','茶道疗愈'];
-
-// ── Accessors ────────────────────────────────────────────────
-function getPw()      { return localStorage.getItem(PW_KEY)      || 'awakens2025'; }
-function getHealers() { try { return JSON.parse(localStorage.getItem(HEALERS_KEY)) || DEFAULT_HEALERS; } catch(e) { return DEFAULT_HEALERS; } }
-function getHp()      { try { return JSON.parse(localStorage.getItem(HP_KEY))      || DEFAULT_HOMEPAGE; } catch(e) { return DEFAULT_HOMEPAGE; } }
-function getContent() { try { return JSON.parse(localStorage.getItem(CONTENT_KEY)) || DEFAULT_CONTENT;  } catch(e) { return DEFAULT_CONTENT; } }
-function getTicker()  { try { return JSON.parse(localStorage.getItem(TICKER_KEY))  || DEFAULT_TICKER;   } catch(e) { return DEFAULT_TICKER; } }
-
-// ── Tag state ────────────────────────────────────────────────
-var tagState = {};  // key → string[]
-
-// ── Auth ─────────────────────────────────────────────────────
+// ── Auth ─────────────────────────────────────────────────
 document.getElementById('pwInput').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+document.getElementById('emailInput').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('pwInput').focus(); });
 
-function doLogin() {
-  if (document.getElementById('pwInput').value === getPw()) {
-    localStorage.setItem(LI_KEY, '1');
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'block';
-    initDashboard();
-  } else {
+async function doLogin() {
+  var email = document.getElementById('emailInput').value.trim();
+  var pw    = document.getElementById('pwInput').value;
+  if (!email || !pw) { document.getElementById('loginErr').style.display = 'block'; return; }
+  var { data, error } = await sb.auth.signInWithPassword({ email: email, password: pw });
+  if (error) {
     document.getElementById('loginErr').style.display = 'block';
     document.getElementById('pwInput').value = '';
     document.getElementById('pwInput').focus();
+    return;
   }
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display   = 'block';
+  await initDashboard();
 }
-function doLogout() { localStorage.removeItem(LI_KEY); location.reload(); }
+async function doLogout() { await sb.auth.signOut(); location.reload(); }
 
-// ── Nav ──────────────────────────────────────────────────────
+// ── Nav ──────────────────────────────────────────────────
 function goPage(name, el) {
   document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
   el.classList.add('active');
@@ -504,82 +506,56 @@ function goPage(name, el) {
   document.getElementById('page-' + name).classList.add('active');
 }
 
-// ── Init ─────────────────────────────────────────────────────
-function initDashboard() {
-  renderHealers();
-  loadHomepage();
-  renderContent();
-  renderTicker();
+// ── Init ─────────────────────────────────────────────────
+async function initDashboard() {
+  await Promise.all([renderHealers(), loadHomepage(), renderContent(), renderTicker()]);
   updateStats();
 }
 
-// ── Helpers ──────────────────────────────────────────────────
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function escText(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function field(lbl, id, val) {
-  return '<div class="field"><div class="label">' + lbl + '</div><input id="' + id + '" value="' + esc(val) + '"></div>';
-}
-function showMsg(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  el.classList.add('show');
-  setTimeout(function(){ el.classList.remove('show'); }, 2500);
-}
+// ── Helpers ──────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escText(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function field(lbl, id, val) { return '<div class="field"><div class="label">' + lbl + '</div><input id="' + id + '" value="' + esc(val) + '"></div>'; }
+function showMsg(id) { var el = document.getElementById(id); if(!el)return; el.classList.add('show'); setTimeout(function(){ el.classList.remove('show'); }, 2500); }
 function toggleCard(bodyId) {
-  var body = document.getElementById('cb_' + bodyId);
-  if (!body) return;
+  var body = document.getElementById('cb_' + bodyId); if(!body)return;
   var btn = body.previousElementSibling && body.previousElementSibling.querySelector('.collapse-btn');
   var col = body.classList.toggle('collapsed');
   if (btn) btn.textContent = col ? '展开 ▼' : '收起 ▲';
 }
 
-// ── Tag editor ───────────────────────────────────────────────
+// ── Tag editor ───────────────────────────────────────────
 function renderChips(key) {
-  return (tagState[key] || []).map(function(t) {
-    return '<span class="tag-chip">' + esc(t) +
-      '<button class="tag-chip-del" onclick="removeTag(\'' + key + '\',\'' + t.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">×</button></span>';
+  return (tagState[key]||[]).map(function(t) {
+    return '<span class="tag-chip">' + esc(t) + '<button class="tag-chip-del" onclick="removeTag(\'' + key + '\',\'' + t.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">×</button></span>';
   }).join('');
 }
 function tagEditor(key, placeholder) {
-  return '<div class="tag-editor" id="te_' + key + '" onclick="focusTagInput(\'' + key + '\')">' +
-    renderChips(key) +
-    '<input class="tag-input" id="ti_' + key + '" placeholder="' + (placeholder||'添加标签…') + '" onkeydown="handleTagKey(event,\'' + key + '\')">' +
-  '</div>';
+  return '<div class="tag-editor" id="te_' + key + '" onclick="focusTagInput(\'' + key + '\')">' + renderChips(key) +
+    '<input class="tag-input" id="ti_' + key + '" placeholder="' + (placeholder||'添加标签…') + '" onkeydown="handleTagKey(event,\'' + key + '\')"></div>';
 }
-function focusTagInput(key) { var el = document.getElementById('ti_' + key); if (el) el.focus(); }
+function focusTagInput(key) { var el = document.getElementById('ti_' + key); if(el)el.focus(); }
 function handleTagKey(e, key) {
   if (e.key !== 'Enter' && e.key !== ',') return;
   e.preventDefault();
   var v = e.target.value.replace(/,/g,'').trim();
-  if (v && !(tagState[key]||[]).includes(v)) {
-    if (!tagState[key]) tagState[key] = [];
-    tagState[key].push(v);
-    refreshTagEditor(key);
-  }
+  if (v && !(tagState[key]||[]).includes(v)) { if(!tagState[key])tagState[key]=[]; tagState[key].push(v); refreshTagEditor(key); }
   e.target.value = '';
 }
-function removeTag(key, tag) {
-  tagState[key] = (tagState[key]||[]).filter(function(t){ return t !== tag; });
-  refreshTagEditor(key);
-}
+function removeTag(key, tag) { tagState[key] = (tagState[key]||[]).filter(function(t){ return t !== tag; }); refreshTagEditor(key); }
 function refreshTagEditor(key) {
-  var te = document.getElementById('te_' + key);
-  if (!te) return;
+  var te = document.getElementById('te_' + key); if(!te)return;
   var curInput = document.getElementById('ti_' + key);
   var saved = curInput ? curInput.value : '';
-  te.innerHTML = renderChips(key) +
-    '<input class="tag-input" id="ti_' + key + '" placeholder="添加标签…" onkeydown="handleTagKey(event,\'' + key + '\')">';
-  var ni = document.getElementById('ti_' + key);
-  if (ni) { ni.value = saved; ni.focus(); }
+  te.innerHTML = renderChips(key) + '<input class="tag-input" id="ti_' + key + '" placeholder="添加标签…" onkeydown="handleTagKey(event,\'' + key + '\')">';
+  var ni = document.getElementById('ti_' + key); if(ni){ ni.value=saved; ni.focus(); }
 }
 
-// ── Healers ──────────────────────────────────────────────────
-function renderHealers() {
-  var healers = getHealers();
+// ══════════════════════════════════════════════════════════
+// HEALERS
+// ══════════════════════════════════════════════════════════
+async function renderHealers() {
+  var healers = await fetchHealers();
   document.getElementById('healersList').innerHTML = healers.map(function(h) {
     tagState[h.id] = (h.tags || []).slice();
     return healerCard(h);
@@ -599,453 +575,320 @@ function healerCard(h) {
         '</div>',
       '</div>',
       '<div class="card-body" id="cb_h_' + h.id + '">',
-
-        // Emoji + active
-        '<div class="field-row">',
-          '<div class="field"><div class="label">Emoji 头像</div><input id="hf_' + h.id + '_emoji" value="' + esc(h.emoji||'') + '" placeholder="粘贴 emoji"></div>',
-          '<div class="field" style="justify-content:flex-end;padding-top:22px">',
-            '<label class="toggle-wrap">',
-              '<input type="checkbox" ' + chk + ' id="hf_' + h.id + '_active">',
-              '<div class="toggle-track"></div>',
-              '<span class="toggle-lbl">上线显示</span>',
-            '</label>',
-          '</div>',
-        '</div>',
-
-        // Avatar image
-        '<div class="field" style="margin-bottom:14px">',
-          '<div class="label">头像图片 <small>（有图片时优先显示，覆盖 Emoji）</small></div>',
-          '<div class="img-edit-row">',
-            '<div class="img-preview-box" id="hprev_' + h.id + '">',
-              (h.avatar_url ? '<img src="' + esc(h.avatar_url) + '" onerror="this.parentNode.textContent=\'' + esc(h.emoji||'🌿') + '\'">' : esc(h.emoji||'🌿')),
-              '<div class="img-clear" onclick="clearImg(\'' + h.id + '\',\'healer\',\'' + esc(h.emoji||'🌿') + '\')">🗑</div>',
-            '</div>',
-            '<div class="img-controls">',
-              '<input class="img-url-inp" id="hf_' + h.id + '_avatar_url" value="' + esc(h.avatar_url||'') + '" placeholder="粘贴图片 URL（https://…）" oninput="previewImg(\'' + h.id + '\',\'healer\',this.value,\'' + esc(h.emoji||'🌿') + '\')">',
-              '<label class="img-upload-label">📷 从本地上传<input type="file" accept="image/*" onchange="uploadImg(event,\'' + h.id + '\',\'healer\',\'' + esc(h.emoji||'🌿') + '\')"></label>',
-              '<div class="img-hint">建议 < 300 KB · 或用 <a href="https://imgur.com" target="_blank">Imgur</a> 上传后粘贴链接</div>',
-            '</div>',
-          '</div>',
-        '</div>',
-
-        // Names
-        '<div class="field-row">',
-          field('中文名字', 'hf_' + h.id + '_name_zh', h.name_zh),
-          field('英文名字', 'hf_' + h.id + '_name_en', h.name_en),
-        '</div>',
-
-        // Titles
-        '<div class="field-row">',
-          field('职称（中文）', 'hf_' + h.id + '_title_zh', h.title_zh),
-          field('职称（英文）', 'hf_' + h.id + '_title_en', h.title_en),
-        '</div>',
-
-        // Sub
-        '<div class="field-row">',
-          field('副标题（中文）', 'hf_' + h.id + '_sub_zh', h.sub_zh),
-          field('副标题（英文）', 'hf_' + h.id + '_sub_en', h.sub_en),
-        '</div>',
-
-        // Bio
-        '<div class="field-row"><div class="field full"><div class="label">简介（中文）</div><textarea id="hf_' + h.id + '_bio_zh">' + escText(h.bio_zh) + '</textarea></div></div>',
-        '<div class="field-row"><div class="field full"><div class="label">简介（英文）</div><textarea id="hf_' + h.id + '_bio_en">' + escText(h.bio_en) + '</textarea></div></div>',
-
-        // Price + location
-        '<div class="field-row col3">',
-          field('价格', 'hf_' + h.id + '_price', h.price),
-          field('所在地（中文）', 'hf_' + h.id + '_location_zh', h.location_zh),
-          field('所在地（英文）', 'hf_' + h.id + '_location_en', h.location_en),
-        '</div>',
-
-        // Avail
-        '<div class="field-row">',
-          field('可约状态（中文）', 'hf_' + h.id + '_avail_zh', h.avail_zh || '线上可约'),
-          field('可约状态（英文）', 'hf_' + h.id + '_avail_en', h.avail_en || 'Online available'),
-        '</div>',
-
-        // Booking
-        '<div class="field-row">',
-          field('预约日期', 'hf_' + h.id + '_book_day', h.book_day),
-          field('预约月份', 'hf_' + h.id + '_book_month', h.book_month),
-        '</div>',
-
-        // Tags
-        '<div class="field" style="margin-bottom:14px">',
-          '<div class="label">标签 <small>（输入后按 Enter 添加）</small></div>',
-          tagEditor(h.id),
-        '</div>',
-
+        '<div class="field-row"><div class="field" style="justify-content:flex-end;padding-top:4px"><label class="toggle-wrap"><input type="checkbox" ' + chk + ' id="hf_' + h.id + '_active"><div class="toggle-track"></div><span class="toggle-lbl">上线显示</span></label></div></div>',
+        // 头像
+        '<div class="field" style="margin-bottom:14px"><div class="label">头像</div><div class="img-edit-row">',
+          '<div class="img-preview-box ' + (h.avatar_url?'':'no-img') + '" id="hprev_' + h.id + '" onclick="document.getElementById(\'hfile_' + h.id + '\').click()" title="点击上传头像">',
+            (h.avatar_url ? '<img src="' + esc(h.avatar_url) + '" onerror="this.parentNode.classList.add(\'no-img\');this.remove()">' : esc(h.emoji||'🌿')),
+            '<div class="img-clear" onclick="event.stopPropagation();clearImg(\'' + h.id + '\',\'healer\',\'' + esc(h.emoji||'🌿') + '\')">🗑</div><div class="img-upload-hint">📷</div></div>',
+          '<div class="img-controls">',
+            '<input class="img-url-inp" id="hf_' + h.id + '_avatar_url" value="' + esc(h.avatar_url||'') + '" placeholder="粘贴图片 URL" oninput="previewImg(\'' + h.id + '\',\'healer\',this.value,\'' + esc(h.emoji||'🌿') + '\')">',
+            '<label class="img-upload-label">📷 从本地上传<input type="file" id="hfile_' + h.id + '" accept="image/*" onchange="uploadImg(event,\'' + h.id + '\',\'healer\',\'' + esc(h.emoji||'🌿') + '\')"></label>',
+            '<div class="img-hint">点击头像或按钮上传 · 或粘贴图片 URL</div></div></div></div>',
+        '<div class="field-row">', field('中文名字','hf_'+h.id+'_name_zh',h.name_zh), field('英文名字','hf_'+h.id+'_name_en',h.name_en), '</div>',
+        '<div class="field-row">', field('职称（中文）','hf_'+h.id+'_title_zh',h.title_zh), field('职称（英文）','hf_'+h.id+'_title_en',h.title_en), '</div>',
+        '<div class="field-row">', field('副标题（中文）','hf_'+h.id+'_sub_zh',h.sub_zh), field('副标题（英文）','hf_'+h.id+'_sub_en',h.sub_en), '</div>',
+        '<div class="field-row"><div class="field full"><div class="label">简介（中文）</div><textarea id="hf_'+h.id+'_bio_zh">'+escText(h.bio_zh)+'</textarea></div></div>',
+        '<div class="field-row"><div class="field full"><div class="label">简介（英文）</div><textarea id="hf_'+h.id+'_bio_en">'+escText(h.bio_en)+'</textarea></div></div>',
+        '<div class="field-row col3">', field('价格','hf_'+h.id+'_price',h.price), field('所在地（中文）','hf_'+h.id+'_location_zh',h.location_zh), field('所在地（英文）','hf_'+h.id+'_location_en',h.location_en), '</div>',
+        '<div class="field-row">', field('可约状态（中文）','hf_'+h.id+'_avail_zh',h.avail_zh||'线上可约'), field('可约状态（英文）','hf_'+h.id+'_avail_en',h.avail_en||'Online available'), '</div>',
+        '<div class="field-row">', field('预约日期','hf_'+h.id+'_book_day',h.book_day), field('预约月份','hf_'+h.id+'_book_month',h.book_month), '</div>',
+        '<div class="field" style="margin-bottom:14px"><div class="label">标签 <small>（输入后按 Enter 添加）</small></div>', tagEditor(h.id), '</div>',
       '</div>',
     '</div>'
   ].join('');
 }
 
-function saveHealers() {
-  var healers = getHealers();
-  healers.forEach(function(h) {
-    function g(f) { var el = document.getElementById('hf_' + h.id + '_' + f); return el ? el.value : (h[f]||''); }
-    function cb(f) { var el = document.getElementById('hf_' + h.id + '_' + f); return el ? el.checked : !!h[f]; }
-    h.emoji       = g('emoji');
-    h.name_zh     = g('name_zh');   h.name_en     = g('name_en');
-    h.title_zh    = g('title_zh');  h.title_en    = g('title_en');
-    h.sub_zh      = g('sub_zh');    h.sub_en      = g('sub_en');
-    h.bio_zh      = g('bio_zh');    h.bio_en      = g('bio_en');
-    h.price       = g('price');
-    h.location_zh = g('location_zh'); h.location_en = g('location_en');
-    h.avail_zh    = g('avail_zh');  h.avail_en    = g('avail_en');
-    h.book_day    = g('book_day');  h.book_month  = g('book_month');
-    h.tags        = (tagState[h.id] || []).slice();
-    h.avatar_url  = g('avatar_url');
-    h.active      = cb('active');
+async function saveHealers() {
+  var healers = cache.healers || [];
+  var updates = healers.map(function(h) {
+    function g(f) { var el = document.getElementById('hf_'+h.id+'_'+f); return el ? el.value : (h[f]||''); }
+    function cb(f) { var el = document.getElementById('hf_'+h.id+'_'+f); return el ? el.checked : !!h[f]; }
+    return { id:h.id, emoji:h.emoji, bg:h.bg, sort_order:h.sort_order,
+      name_zh:g('name_zh'), name_en:g('name_en'), title_zh:g('title_zh'), title_en:g('title_en'),
+      sub_zh:g('sub_zh'), sub_en:g('sub_en'), bio_zh:g('bio_zh'), bio_en:g('bio_en'),
+      price:g('price'), location_zh:g('location_zh'), location_en:g('location_en'),
+      avail_zh:g('avail_zh'), avail_en:g('avail_en'), book_day:g('book_day'), book_month:g('book_month'),
+      tags:(tagState[h.id]||[]).slice(), avatar_url:g('avatar_url'), active:cb('active') };
   });
-  localStorage.setItem(HEALERS_KEY, JSON.stringify(healers));
-  showMsg('healerMsg');
-  renderHealers();
-  updateStats();
+  var { error } = await sb.from('healers').upsert(updates);
+  if (error) { alert('保存失败: ' + error.message); return; }
+  showMsg('healerMsg'); await renderHealers(); updateStats();
 }
 
-// Add healer
-function openAddHealer() {
-  ['nh_emoji','nh_id','nh_name_zh','nh_name_en','nh_title_zh','nh_title_en',
-   'nh_sub_zh','nh_sub_en','nh_bio_zh','nh_bio_en','nh_price',
-   'nh_loc_zh','nh_loc_en','nh_avail_zh','nh_avail_en','nh_day','nh_month'].forEach(function(id){
-    var el = document.getElementById(id); if (el) el.value = '';
-  });
+async function openAddHealer() {
+  ['nh_id','nh_name_zh','nh_name_en','nh_title_zh','nh_title_en','nh_sub_zh','nh_sub_en','nh_bio_zh','nh_bio_en','nh_price','nh_loc_zh','nh_loc_en','nh_avail_zh','nh_avail_en','nh_day','nh_month'].forEach(function(id){ var el=document.getElementById(id); if(el)el.value=''; });
   document.getElementById('nh_avail_zh').value = '线上可约';
   document.getElementById('nh_avail_en').value = 'Online available';
   document.getElementById('modalHealer').style.display = 'flex';
 }
 function closeAddHealer() { document.getElementById('modalHealer').style.display = 'none'; }
-function confirmAddHealer() {
+
+async function confirmAddHealer() {
   var id = (document.getElementById('nh_id').value||'').trim().replace(/\s+/g,'_').toLowerCase();
   if (!id) { alert('请填写 ID'); return; }
-  var healers = getHealers();
-  if (healers.find(function(h){ return h.id === id; })) { alert('该 ID 已存在，请换一个'); return; }
   function v(fid) { return (document.getElementById(fid)||{value:''}).value; }
-  healers.push({
-    id: id, emoji: v('nh_emoji')||'🌿', bg: BG_CLASSES[healers.length % BG_CLASSES.length],
-    name_zh: v('nh_name_zh'), name_en: v('nh_name_en'),
-    title_zh: v('nh_title_zh'), title_en: v('nh_title_en'),
-    sub_zh: v('nh_sub_zh'), sub_en: v('nh_sub_en'),
-    bio_zh: v('nh_bio_zh'), bio_en: v('nh_bio_en'),
-    price: v('nh_price'), location_zh: v('nh_loc_zh'), location_en: v('nh_loc_en'),
-    avail_zh: v('nh_avail_zh')||'线上可约', avail_en: v('nh_avail_en')||'Online available',
-    book_day: v('nh_day'), book_month: v('nh_month'),
-    tags: [], active: true
+  var maxOrder = (cache.healers||[]).reduce(function(m,h){ return Math.max(m,h.sort_order||0); }, 0);
+  var { error } = await sb.from('healers').insert({
+    id:id, emoji:'🌿', bg:BG_CLASSES[(cache.healers||[]).length % BG_CLASSES.length],
+    name_zh:v('nh_name_zh'), name_en:v('nh_name_en'), title_zh:v('nh_title_zh'), title_en:v('nh_title_en'),
+    sub_zh:v('nh_sub_zh'), sub_en:v('nh_sub_en'), bio_zh:v('nh_bio_zh'), bio_en:v('nh_bio_en'),
+    price:v('nh_price'), location_zh:v('nh_loc_zh'), location_en:v('nh_loc_en'),
+    avail_zh:v('nh_avail_zh')||'线上可约', avail_en:v('nh_avail_en')||'Online available',
+    book_day:v('nh_day'), book_month:v('nh_month'),
+    tags:[], avatar_url:'', active:true, sort_order:maxOrder+1
   });
-  localStorage.setItem(HEALERS_KEY, JSON.stringify(healers));
-  closeAddHealer();
-  renderHealers();
-  updateStats();
-  showMsg('healerMsg');
+  if (error) { alert('添加失败: '+error.message); return; }
+  closeAddHealer(); await renderHealers(); updateStats(); showMsg('healerMsg');
 }
 
-// Delete (shared confirm)
+// ── Delete (shared) ──────────────────────────────────────
 var pendingDel = null;
 function confirmDelete(type, id, name) {
-  pendingDel = { type: type, id: id };
-  document.getElementById('confirmTitle').textContent = '删除「' + name + '」';
-  document.getElementById('confirmSub').textContent   = '删除后无法恢复，请确认。';
+  pendingDel = { type:type, id:id };
+  document.getElementById('confirmTitle').textContent = '删除「'+name+'」';
+  document.getElementById('confirmSub').textContent = '删除后无法恢复，请确认。';
   document.getElementById('confirmDlg').style.display = 'flex';
 }
-function closeConfirm() { pendingDel = null; document.getElementById('confirmDlg').style.display = 'none'; }
-function execConfirm() {
-  if (!pendingDel) return;
-  if (pendingDel.type === 'healer')  { deleteHealer(pendingDel.id); }
-  if (pendingDel.type === 'content') { deleteContent(pendingDel.id); }
+function closeConfirm() { pendingDel=null; document.getElementById('confirmDlg').style.display='none'; }
+async function execConfirm() {
+  if(!pendingDel) return;
+  if(pendingDel.type==='healer')  await deleteHealer(pendingDel.id);
+  if(pendingDel.type==='content') await deleteContent(pendingDel.id);
   closeConfirm();
 }
-function deleteHealer(id) {
-  var healers = getHealers().filter(function(h){ return h.id !== id; });
-  localStorage.setItem(HEALERS_KEY, JSON.stringify(healers));
+async function deleteHealer(id) {
+  await sb.from('healers').delete().eq('id',id);
   delete tagState[id];
-  renderHealers(); updateStats(); showMsg('healerMsg');
+  await renderHealers(); updateStats(); showMsg('healerMsg');
 }
 
-// ── Homepage ─────────────────────────────────────────────────
-function loadHomepage() {
-  var hp = getHp();
-  function set(id, v) { var el = document.getElementById(id); if (el) el.value = v||''; }
-  set('hp_hero_title_zh',    hp.hero_title_zh);
-  set('hp_hero_sub_en',      hp.hero_sub_en);
-  set('hp_hero_desc_zh',     hp.hero_desc_zh);
-  set('hp_hero_desc_en',     hp.hero_desc_en);
-  set('hp_stat_content',     hp.stat_content);
-  set('hp_stat_healers',     hp.stat_healers);
-  set('hp_stat_domains',     hp.stat_domains);
-  set('hp_founder_quote_zh', hp.founder_quote_zh);
-  set('hp_founder_quote_en', hp.founder_quote_en);
-  set('hp_founder_name_zh',  hp.founder_name_zh);
+// ══════════════════════════════════════════════════════════
+// HOMEPAGE
+// ══════════════════════════════════════════════════════════
+async function loadHomepage() {
+  var hp = await fetchHomepage();
+  function set(id,v) { var el=document.getElementById(id); if(el)el.value=v||''; }
+  set('hp_hero_title_zh',hp.hero_title_zh); set('hp_hero_sub_en',hp.hero_sub_en);
+  set('hp_hero_desc_zh',hp.hero_desc_zh);   set('hp_hero_desc_en',hp.hero_desc_en);
+  set('hp_stat_content',hp.stat_content);   set('hp_stat_healers',hp.stat_healers);
+  set('hp_stat_domains',hp.stat_domains);   set('hp_founder_quote_zh',hp.founder_quote_zh);
+  set('hp_founder_quote_en',hp.founder_quote_en); set('hp_founder_name_zh',hp.founder_name_zh);
 }
-function saveHomepage() {
-  function g(id) { var el = document.getElementById(id); return el ? el.value : ''; }
-  localStorage.setItem(HP_KEY, JSON.stringify({
-    hero_title_zh:    g('hp_hero_title_zh'),
-    hero_sub_en:      g('hp_hero_sub_en'),
-    hero_desc_zh:     g('hp_hero_desc_zh'),
-    hero_desc_en:     g('hp_hero_desc_en'),
-    stat_content:     g('hp_stat_content'),
-    stat_healers:     g('hp_stat_healers'),
-    stat_domains:     g('hp_stat_domains'),
-    founder_quote_zh: g('hp_founder_quote_zh'),
-    founder_quote_en: g('hp_founder_quote_en'),
-    founder_name_zh:  g('hp_founder_name_zh')
-  }));
+async function saveHomepage() {
+  function g(id) { var el=document.getElementById(id); return el?el.value:''; }
+  var { error } = await sb.from('homepage').upsert({ id:1,
+    hero_title_zh:g('hp_hero_title_zh'), hero_sub_en:g('hp_hero_sub_en'),
+    hero_desc_zh:g('hp_hero_desc_zh'), hero_desc_en:g('hp_hero_desc_en'),
+    stat_content:g('hp_stat_content'), stat_healers:g('hp_stat_healers'), stat_domains:g('hp_stat_domains'),
+    founder_quote_zh:g('hp_founder_quote_zh'), founder_quote_en:g('hp_founder_quote_en'), founder_name_zh:g('hp_founder_name_zh')
+  });
+  if (error) { alert('保存失败: '+error.message); return; }
   showMsg('homepageMsg');
 }
 
-// ── Content ──────────────────────────────────────────────────
-var TYPE_INFO = {
-  article:    { label:'📄 文章',    cls:'badge-article' },
-  podcast:    { label:'🎧 播客',    cls:'badge-podcast' },
-  meditation: { label:'🧘 冥想引导', cls:'badge-meditation' }
-};
+// ══════════════════════════════════════════════════════════
+// CONTENT
+// ══════════════════════════════════════════════════════════
+var TYPE_INFO = { article:{label:'📄 文章',cls:'badge-article'}, podcast:{label:'🎧 播客',cls:'badge-podcast'}, meditation:{label:'🧘 冥想引导',cls:'badge-meditation'} };
 
-function renderContent() {
-  var items = getContent();
+async function renderContent() {
+  var items = await fetchContent();
   document.getElementById('contentList').innerHTML = items.map(function(c) {
-    tagState['c_' + c.id] = (c.tags||[]).slice();
+    tagState['c_'+c.id] = (c.tags||[]).slice();
     return contentCard(c);
   }).join('');
 }
 
 function contentCard(c) {
-  var info = TYPE_INFO[c.type] || TYPE_INFO.article;
-  var activeChk   = c.active   !== false ? 'checked' : '';
-  var featuredChk = c.featured ? 'checked' : '';
-  var ckey = 'c_' + c.id;
+  var info = TYPE_INFO[c.type]||TYPE_INFO.article;
+  var activeChk = c.active!==false?'checked':'';
+  var featuredChk = c.featured?'checked':'';
+  var ckey = 'c_'+c.id;
   return [
-    '<div class="card" id="ccard_' + c.id + '">',
-      '<div class="card-header">',
-        '<div class="card-title">',
-          '<span class="type-badge ' + info.cls + '">' + info.label + '</span> ',
-          esc(c.title_zh || '（无标题）'),
-        '</div>',
-        '<div class="card-actions">',
-          '<button class="collapse-btn" onclick="toggleCard(\'c_' + c.id + '\')">收起 ▲</button>',
-          '<button class="delete-btn" onclick="confirmDelete(\'content\',\'' + c.id + '\',\'' + esc(c.title_zh||'') + '\')">删除</button>',
-        '</div>',
-      '</div>',
-      '<div class="card-body" id="cb_c_' + c.id + '">',
-
-        // Type + emoji + toggles
-        '<div class="field-row">',
-          '<div class="field"><div class="label">内容类型</div>',
-            '<select id="cf_' + c.id + '_type">',
-              '<option value="article"'    + (c.type==='article'   ?' selected':'') + '>📄 文章</option>',
-              '<option value="podcast"'    + (c.type==='podcast'   ?' selected':'') + '>🎧 播客</option>',
-              '<option value="meditation"' + (c.type==='meditation'?' selected':'') + '>🧘 冥想引导</option>',
-            '</select>',
-          '</div>',
-          '<div class="field"><div class="label">封面 Emoji</div><input id="cf_' + c.id + '_emoji" value="' + esc(c.emoji||'') + '"></div>',
-        '</div>',
-
+    '<div class="card" id="ccard_'+c.id+'">',
+      '<div class="card-header"><div class="card-title"><span class="type-badge '+info.cls+'">'+info.label+'</span> '+esc(c.title_zh||'（无标题）')+'</div>',
+        '<div class="card-actions"><button class="collapse-btn" onclick="toggleCard(\'c_'+c.id+'\')">收起 ▲</button>',
+        '<button class="delete-btn" onclick="confirmDelete(\'content\',\''+c.id+'\',\''+esc(c.title_zh||'')+'\')">删除</button></div></div>',
+      '<div class="card-body" id="cb_c_'+c.id+'">',
+        '<div class="field-row"><div class="field"><div class="label">内容类型</div><select id="cf_'+c.id+'_type" onchange="toggleAudioSection(\''+c.id+'\')">',
+          '<option value="article"'+(c.type==='article'?' selected':'')+'>📄 文章</option>',
+          '<option value="podcast"'+(c.type==='podcast'?' selected':'')+'>🎧 播客</option>',
+          '<option value="meditation"'+(c.type==='meditation'?' selected':'')+'>🧘 冥想引导</option></select></div>',
+          '<div class="field"><div class="label">封面 Emoji</div><input id="cf_'+c.id+'_emoji" value="'+esc(c.emoji||'')+'"></div></div>',
         '<div style="display:flex;gap:20px;margin-bottom:14px">',
-          '<label class="toggle-wrap"><input type="checkbox" ' + activeChk   + ' id="cf_' + c.id + '_active"  ><div class="toggle-track"></div><span class="toggle-lbl">上线显示</span></label>',
-          '<label class="toggle-wrap"><input type="checkbox" ' + featuredChk + ' id="cf_' + c.id + '_featured"><div class="toggle-track"></div><span class="toggle-lbl">本周推荐</span></label>',
-        '</div>',
-
-        // Cover image
-        '<div class="field" style="margin-bottom:14px">',
-          '<div class="label">封面图片 <small>（有图片时优先显示，覆盖 Emoji）</small></div>',
-          '<div class="img-edit-row">',
-            '<div class="img-preview-box" id="cprev_' + c.id + '">',
-              (c.cover_url ? '<img src="' + esc(c.cover_url) + '" onerror="this.parentNode.textContent=\'' + esc(c.emoji||'📄') + '\'">' : esc(c.emoji||'📄')),
-              '<div class="img-clear" onclick="clearImg(\'' + c.id + '\',\'content\',\'' + esc(c.emoji||'📄') + '\')">🗑</div>',
-            '</div>',
-            '<div class="img-controls">',
-              '<input class="img-url-inp" id="cf_' + c.id + '_cover_url" value="' + esc(c.cover_url||'') + '" placeholder="粘贴图片 URL（https://…）" oninput="previewImg(\'' + c.id + '\',\'content\',this.value,\'' + esc(c.emoji||'📄') + '\')">',
-              '<label class="img-upload-label">📷 从本地上传<input type="file" accept="image/*" onchange="uploadImg(event,\'' + c.id + '\',\'content\',\'' + esc(c.emoji||'📄') + '\')"></label>',
-              '<div class="img-hint">建议 < 300 KB · 或用 <a href="https://imgur.com" target="_blank">Imgur</a> 上传后粘贴链接</div>',
-            '</div>',
-          '</div>',
-        '</div>',
-
-        // Titles
-        '<div class="field-row"><div class="field full"><div class="label">标题（中文）</div><input id="cf_' + c.id + '_title_zh" value="' + esc(c.title_zh||'') + '"></div></div>',
-        '<div class="field-row"><div class="field full"><div class="label">标题（英文）</div><input id="cf_' + c.id + '_title_en" value="' + esc(c.title_en||'') + '"></div></div>',
-        '<div class="field-row"><div class="field full"><div class="label">摘要（中文）</div><textarea id="cf_' + c.id + '_summary_zh">' + escText(c.summary_zh||'') + '</textarea></div></div>',
-
-        // Author + duration
-        '<div class="field-row col3">',
-          field('作者', 'cf_' + c.id + '_author', c.author),
-          field('时长（中文）', 'cf_' + c.id + '_duration_zh', c.duration_zh),
-          field('时长（英文）', 'cf_' + c.id + '_duration_en', c.duration_en),
-        '</div>',
-
-        // Tags
-        '<div class="field" style="margin-bottom:14px">',
-          '<div class="label">标签 <small>（输入后按 Enter 添加）</small></div>',
-          tagEditor(ckey),
-        '</div>',
-
+          '<label class="toggle-wrap"><input type="checkbox" '+activeChk+' id="cf_'+c.id+'_active"><div class="toggle-track"></div><span class="toggle-lbl">上线显示</span></label>',
+          '<label class="toggle-wrap"><input type="checkbox" '+featuredChk+' id="cf_'+c.id+'_featured"><div class="toggle-track"></div><span class="toggle-lbl">本周推荐</span></label></div>',
+        // 封面
+        '<div class="field" style="margin-bottom:14px"><div class="label">封面图片</div><div class="img-edit-row">',
+          '<div class="img-preview-box '+(c.cover_url?'':'no-img')+'" id="cprev_'+c.id+'" onclick="document.getElementById(\'cfile_'+c.id+'\').click()">',
+            (c.cover_url?'<img src="'+esc(c.cover_url)+'" onerror="this.parentNode.classList.add(\'no-img\');this.remove()">':esc(c.emoji||'📄')),
+            '<div class="img-clear" onclick="event.stopPropagation();clearImg(\''+c.id+'\',\'content\',\''+esc(c.emoji||'📄')+'\')">🗑</div><div class="img-upload-hint">📷</div></div>',
+          '<div class="img-controls"><input class="img-url-inp" id="cf_'+c.id+'_cover_url" value="'+esc(c.cover_url||'')+'" placeholder="粘贴图片 URL" oninput="previewImg(\''+c.id+'\',\'content\',this.value,\''+esc(c.emoji||'📄')+'\')">',
+            '<label class="img-upload-label">📷 从本地上传<input type="file" id="cfile_'+c.id+'" accept="image/*" onchange="uploadImg(event,\''+c.id+'\',\'content\',\''+esc(c.emoji||'📄')+'\')"></label>',
+            '<div class="img-hint">点击封面或按钮上传</div></div></div></div>',
+        // 音频
+        '<div class="audio-section" id="caudio_'+c.id+'" style="'+(c.type==='article'?'display:none':'')+'">',
+          '<div class="label">🎵 音频文件</div><div id="caudiowrap_'+c.id+'">'+(c.audio_url?'<audio controls src="'+esc(c.audio_url)+'"></audio>':'')+'</div>',
+          '<input class="img-url-inp" id="cf_'+c.id+'_audio_url" value="'+esc(c.audio_url||'')+'" placeholder="粘贴音频直链" oninput="previewAudio(\''+c.id+'\',this.value)" style="margin-bottom:8px">',
+          '<div class="audio-upload-row"><label class="img-upload-label">🎵 上传音频<input type="file" id="afile_'+c.id+'" accept="audio/*" onchange="uploadAudio(event,\''+c.id+'\')"></label><div class="img-hint">支持 MP3 · M4A · OGG</div></div>',
+          '<div class="sub-label">外部收听链接</div><input class="img-url-inp" id="cf_'+c.id+'_podcast_link" value="'+esc(c.podcast_link||'')+'" placeholder="小宇宙 / Spotify 链接"></div>',
+        '<div class="field-row"><div class="field full"><div class="label">标题（中文）</div><input id="cf_'+c.id+'_title_zh" value="'+esc(c.title_zh||'')+'"></div></div>',
+        '<div class="field-row"><div class="field full"><div class="label">标题（英文）</div><input id="cf_'+c.id+'_title_en" value="'+esc(c.title_en||'')+'"></div></div>',
+        '<div class="field-row"><div class="field full"><div class="label">摘要（中文）</div><textarea id="cf_'+c.id+'_summary_zh">'+escText(c.summary_zh||'')+'</textarea></div></div>',
+        '<div class="field-row col3">',field('作者','cf_'+c.id+'_author',c.author),field('时长（中文）','cf_'+c.id+'_duration_zh',c.duration_zh),field('时长（英文）','cf_'+c.id+'_duration_en',c.duration_en),'</div>',
+        '<div class="field" style="margin-bottom:14px"><div class="label">标签</div>',tagEditor(ckey),'</div>',
       '</div>',
     '</div>'
   ].join('');
 }
 
-function saveContent() {
-  var items = getContent();
-  items.forEach(function(c) {
-    function g(f) { var el = document.getElementById('cf_' + c.id + '_' + f); return el ? el.value : (c[f]||''); }
-    function cb(f) { var el = document.getElementById('cf_' + c.id + '_' + f); return el ? el.checked : !!c[f]; }
-    c.type        = g('type');       c.emoji       = g('emoji');
-    c.title_zh    = g('title_zh');   c.title_en    = g('title_en');
-    c.summary_zh  = g('summary_zh');
-    c.author      = g('author');
-    c.duration_zh = g('duration_zh'); c.duration_en = g('duration_en');
-    c.tags        = (tagState['c_' + c.id] || []).slice();
-    c.cover_url   = g('cover_url');
-    c.active      = cb('active');    c.featured    = cb('featured');
+async function saveContent() {
+  var items = cache.content||[];
+  var updates = items.map(function(c) {
+    function g(f) { var el=document.getElementById('cf_'+c.id+'_'+f); return el?el.value:(c[f]||''); }
+    function cb(f) { var el=document.getElementById('cf_'+c.id+'_'+f); return el?el.checked:!!c[f]; }
+    return { id:c.id, sort_order:c.sort_order, type:g('type'), emoji:g('emoji'),
+      title_zh:g('title_zh'), title_en:g('title_en'), summary_zh:g('summary_zh'),
+      author:g('author'), duration_zh:g('duration_zh'), duration_en:g('duration_en'),
+      tags:(tagState['c_'+c.id]||[]).slice(), cover_url:g('cover_url'), audio_url:g('audio_url'),
+      podcast_link:g('podcast_link'), active:cb('active'), featured:cb('featured') };
   });
-  localStorage.setItem(CONTENT_KEY, JSON.stringify(items));
-  showMsg('contentMsg');
-  renderContent();
-  updateStats();
+  var { error } = await sb.from('content').upsert(updates);
+  if (error) { alert('保存失败: '+error.message); return; }
+  showMsg('contentMsg'); await renderContent(); updateStats();
 }
 
 function openAddContent() {
-  ['nc_emoji','nc_title_zh','nc_title_en','nc_summary_zh','nc_author','nc_duration_zh'].forEach(function(id){
-    var el = document.getElementById(id); if (el) el.value = '';
-  });
+  ['nc_emoji','nc_title_zh','nc_title_en','nc_summary_zh','nc_author','nc_duration_zh'].forEach(function(id){ var el=document.getElementById(id); if(el)el.value=''; });
   document.getElementById('nc_type').value = 'article';
   document.getElementById('modalContent').style.display = 'flex';
 }
-function closeAddContent() { document.getElementById('modalContent').style.display = 'none'; }
-function confirmAddContent() {
+function closeAddContent() { document.getElementById('modalContent').style.display='none'; }
+
+async function confirmAddContent() {
   function v(id) { return (document.getElementById(id)||{value:''}).value; }
-  var items = getContent();
-  items.push({
-    id: 'c' + Date.now(),
-    type:        v('nc_type'),
-    emoji:       v('nc_emoji') || '📄',
-    title_zh:    v('nc_title_zh'),
-    title_en:    v('nc_title_en'),
-    summary_zh:  v('nc_summary_zh'),
-    author:      v('nc_author'),
-    duration_zh: v('nc_duration_zh'),
-    duration_en: '',
-    tags: [], featured: false, active: true
+  var maxOrder = (cache.content||[]).reduce(function(m,c){ return Math.max(m,c.sort_order||0); },0);
+  var { error } = await sb.from('content').insert({
+    id:'c'+Date.now(), type:v('nc_type'), emoji:v('nc_emoji')||'📄',
+    title_zh:v('nc_title_zh'), title_en:v('nc_title_en'), summary_zh:v('nc_summary_zh'),
+    author:v('nc_author'), duration_zh:v('nc_duration_zh'), duration_en:'',
+    tags:[], cover_url:'', audio_url:'', podcast_link:'', featured:false, active:true, sort_order:maxOrder+1
   });
-  localStorage.setItem(CONTENT_KEY, JSON.stringify(items));
-  closeAddContent();
-  renderContent(); updateStats(); showMsg('contentMsg');
+  if (error) { alert('添加失败: '+error.message); return; }
+  closeAddContent(); await renderContent(); updateStats(); showMsg('contentMsg');
 }
-function deleteContent(id) {
-  var items = getContent().filter(function(c){ return c.id !== id; });
-  localStorage.setItem(CONTENT_KEY, JSON.stringify(items));
-  delete tagState['c_' + id];
-  renderContent(); updateStats(); showMsg('contentMsg');
+async function deleteContent(id) {
+  await sb.from('content').delete().eq('id',id);
+  delete tagState['c_'+id];
+  await renderContent(); updateStats(); showMsg('contentMsg');
 }
 
-// ── Ticker ───────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════
+// TICKER
+// ══════════════════════════════════════════════════════════
 var tickerData = [];
 
-function renderTicker() {
-  tickerData = getTicker().slice();
+async function renderTicker() {
+  var items = await fetchTicker();
+  tickerData = items.map(function(t){ return {id:t.id, label:t.label, sort_order:t.sort_order}; });
   rebuildTickerUI();
 }
 function rebuildTickerUI() {
   var n = tickerData.length;
-  document.getElementById('tickerList').innerHTML = tickerData.map(function(tag, i) {
-    return '<div class="ticker-row">' +
-      '<span class="ticker-name">' + esc(tag) + '</span>' +
-      '<div class="ticker-btns">' +
-        '<button class="ticker-btn" onclick="moveTickerItem(' + i + ',-1)"' + (i===0?' disabled':'') + '>▲</button>' +
-        '<button class="ticker-btn" onclick="moveTickerItem(' + i + ',1)"'  + (i===n-1?' disabled':'') + '>▼</button>' +
-        '<button class="ticker-btn del" onclick="delTickerItem(' + i + ')">×</button>' +
-      '</div>' +
-    '</div>';
+  document.getElementById('tickerList').innerHTML = tickerData.map(function(tag,i) {
+    return '<div class="ticker-row"><span class="ticker-name">'+esc(tag.label)+'</span><div class="ticker-btns">'+
+      '<button class="ticker-btn" onclick="moveTickerItem('+i+',-1)"'+(i===0?' disabled':'')+'>▲</button>'+
+      '<button class="ticker-btn" onclick="moveTickerItem('+i+',1)"'+(i===n-1?' disabled':'')+'>▼</button>'+
+      '<button class="ticker-btn del" onclick="delTickerItem('+i+')">×</button></div></div>';
   }).join('');
 }
-function moveTickerItem(i, dir) {
-  var j = i + dir;
-  if (j < 0 || j >= tickerData.length) return;
-  var t = tickerData[i]; tickerData[i] = tickerData[j]; tickerData[j] = t;
-  rebuildTickerUI();
-}
-function delTickerItem(i) { tickerData.splice(i, 1); rebuildTickerUI(); }
+function moveTickerItem(i,dir) { var j=i+dir; if(j<0||j>=tickerData.length)return; var t=tickerData[i]; tickerData[i]=tickerData[j]; tickerData[j]=t; rebuildTickerUI(); }
+function delTickerItem(i) { tickerData.splice(i,1); rebuildTickerUI(); }
 function addTickerTag() {
-  var el = document.getElementById('tickerNewInput');
-  var v = el.value.trim();
-  if (!v || tickerData.includes(v)) { el.value=''; return; }
-  tickerData.push(v);
-  el.value = '';
-  rebuildTickerUI();
-}
-function saveTicker() {
-  localStorage.setItem(TICKER_KEY, JSON.stringify(tickerData));
-  showMsg('tickerMsg');
-  updateStats();
+  var el=document.getElementById('tickerNewInput'); var v=el.value.trim();
+  if(!v||tickerData.find(function(t){return t.label===v;})){ el.value=''; return; }
+  tickerData.push({id:null,label:v,sort_order:tickerData.length+1}); el.value=''; rebuildTickerUI();
 }
 
-// ── Settings ─────────────────────────────────────────────────
-function changePw() {
-  var old = document.getElementById('oldPw').value;
-  var nw  = document.getElementById('newPw').value;
+async function saveTicker() {
+  // 删除旧数据，重新插入（ticker 数据量小，简单方案）
+  await sb.from('ticker').delete().gte('id',0);
+  var inserts = tickerData.map(function(t,i){ return {label:t.label, sort_order:i+1}; });
+  if (inserts.length>0) { var {error}=await sb.from('ticker').insert(inserts); if(error){alert('保存失败: '+error.message);return;} }
+  showMsg('tickerMsg'); await renderTicker(); updateStats();
+}
+
+// ══════════════════════════════════════════════════════════
+// SETTINGS
+// ══════════════════════════════════════════════════════════
+async function changePw() {
+  var nw = document.getElementById('newPw').value;
+  var cf = document.getElementById('confirmPw').value;
   var msg = document.getElementById('pwMsg');
   msg.style.display = 'block';
-  if (old !== getPw()) { msg.style.color='#ef4444'; msg.textContent='❌ 当前密码错误'; return; }
-  if (nw.length < 6)   { msg.style.color='#ef4444'; msg.textContent='❌ 新密码至少6位'; return; }
-  localStorage.setItem(PW_KEY, nw);
+  if (nw.length<6)  { msg.style.color='#ef4444'; msg.textContent='❌ 新密码至少6位'; return; }
+  if (nw !== cf)    { msg.style.color='#ef4444'; msg.textContent='❌ 两次输入不一致'; return; }
+  var { error } = await sb.auth.updateUser({ password: nw });
+  if (error) { msg.style.color='#ef4444'; msg.textContent='❌ '+error.message; return; }
   msg.style.color='#4ade80'; msg.textContent='✅ 密码已更新';
-  document.getElementById('oldPw').value = '';
-  document.getElementById('newPw').value = '';
+  document.getElementById('newPw').value=''; document.getElementById('confirmPw').value='';
 }
+
 function updateStats() {
-  var h = document.getElementById('st-healers');
-  var c = document.getElementById('st-content');
-  var t = document.getElementById('st-ticker');
-  if (h) h.textContent = getHealers().length;
-  if (c) c.textContent = getContent().length;
-  if (t) t.textContent = getTicker().length;
+  var h=document.getElementById('st-healers'), c=document.getElementById('st-content'), t=document.getElementById('st-ticker');
+  if(h)h.textContent=(cache.healers||[]).length;
+  if(c)c.textContent=(cache.content||[]).length;
+  if(t)t.textContent=tickerData.length;
 }
 
-// ── Image helpers ────────────────────────────────────────────
-function previewImg(id, type, url, fallbackEmoji) {
-  var box = document.getElementById(type === 'healer' ? 'hprev_' + id : 'cprev_' + id);
-  if (!box) return;
-  if (url) {
-    box.innerHTML = '<img src="' + url + '" onerror="this.parentNode.innerHTML=\'' + fallbackEmoji + '\'">' +
-      '<div class="img-clear" onclick="clearImg(\'' + id + '\',\'' + type + '\',\'' + fallbackEmoji + '\')">🗑</div>';
-  } else {
-    box.innerHTML = fallbackEmoji +
-      '<div class="img-clear" onclick="clearImg(\'' + id + '\',\'' + type + '\',\'' + fallbackEmoji + '\')">🗑</div>';
+// ══════════════════════════════════════════════════════════
+// IMAGE / AUDIO HELPERS（仍使用 Cloudinary）
+// ══════════════════════════════════════════════════════════
+function previewImg(id,type,url,fallbackEmoji) {
+  var box=document.getElementById(type==='healer'?'hprev_'+id:'cprev_'+id); if(!box)return;
+  var ov='<div class="img-clear" onclick="event.stopPropagation();clearImg(\''+id+'\',\''+type+'\',\''+fallbackEmoji+'\')">🗑</div><div class="img-upload-hint">📷</div>';
+  if(url){ box.classList.remove('no-img'); box.innerHTML='<img src="'+url+'" onerror="this.parentNode.classList.add(\'no-img\');this.innerHTML=\''+fallbackEmoji+ov+'\'">'+ov; }
+  else { box.classList.add('no-img'); box.innerHTML=fallbackEmoji+ov; }
+}
+function clearImg(id,type,fallbackEmoji) { var el=document.getElementById(type==='healer'?'hf_'+id+'_avatar_url':'cf_'+id+'_cover_url'); if(el)el.value=''; previewImg(id,type,'',fallbackEmoji); }
+function uploadImg(event,id,type,fallbackEmoji) {
+  var file=event.target.files[0]; if(!file)return;
+  var el=document.getElementById(type==='healer'?'hf_'+id+'_avatar_url':'cf_'+id+'_cover_url');
+  var box=document.getElementById(type==='healer'?'hprev_'+id:'cprev_'+id);
+  if(box)box.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">上传中…</div>';
+  var fd=new FormData(); fd.append('file',file); fd.append('upload_preset','awakensphere');
+  fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/image/upload',{method:'POST',body:fd})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.secure_url){if(el)el.value=d.secure_url;previewImg(id,type,d.secure_url,fallbackEmoji);}
+    else{alert('上传失败');previewImg(id,type,el?el.value:'',fallbackEmoji);}
+  }).catch(function(e){alert('上传出错：'+e.message);previewImg(id,type,el?el.value:'',fallbackEmoji);});
+}
+function toggleAudioSection(id) { var s=document.getElementById('cf_'+id+'_type'),sec=document.getElementById('caudio_'+id); if(s&&sec)sec.style.display=(s.value==='article')?'none':''; }
+function previewAudio(id,url) { var w=document.getElementById('caudiowrap_'+id); if(w)w.innerHTML=url?'<audio controls src="'+url+'"></audio>':''; }
+function uploadAudio(event,id) {
+  var file=event.target.files[0]; if(!file)return;
+  var el=document.getElementById('cf_'+id+'_audio_url'), w=document.getElementById('caudiowrap_'+id);
+  if(w)w.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">上传中…</div>';
+  var fd=new FormData(); fd.append('file',file); fd.append('upload_preset','awakensphere');
+  fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/auto/upload',{method:'POST',body:fd})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.secure_url){if(el)el.value=d.secure_url;previewAudio(id,d.secure_url);}
+    else{alert('上传失败');if(w)w.innerHTML='';}
+  }).catch(function(e){alert('上传出错：'+e.message);if(w)w.innerHTML='';});
+}
+
+// ══════════════════════════════════════════════════════════
+// BOOT — 检查现有 session 自动登录
+// ══════════════════════════════════════════════════════════
+(async function boot() {
+  var { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display   = 'block';
+    await initDashboard();
   }
-}
-
-function clearImg(id, type, fallbackEmoji) {
-  var inputId = type === 'healer' ? 'hf_' + id + '_avatar_url' : 'cf_' + id + '_cover_url';
-  var el = document.getElementById(inputId);
-  if (el) el.value = '';
-  previewImg(id, type, '', fallbackEmoji);
-}
-
-function uploadImg(event, id, type, fallbackEmoji) {
-  var file = event.target.files[0];
-  if (!file) return;
-  if (file.size > 400 * 1024) {
-    alert('图片超过 400 KB，建议先压缩（推荐 squoosh.app）或改用外部 URL');
-    event.target.value = '';
-    return;
-  }
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var b64 = e.target.result;
-    var inputId = type === 'healer' ? 'hf_' + id + '_avatar_url' : 'cf_' + id + '_cover_url';
-    var el = document.getElementById(inputId);
-    if (el) el.value = b64;
-    previewImg(id, type, b64, fallbackEmoji);
-  };
-  reader.readAsDataURL(file);
-}
-
-// ── Boot ─────────────────────────────────────────────────────
-if (localStorage.getItem(LI_KEY) === '1') {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('dashboard').style.display = 'block';
-  initDashboard();
-}
+})();
 </script>
 </body>
 </html>

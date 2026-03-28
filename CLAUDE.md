@@ -1,109 +1,85 @@
-# CLAUDE.md — AwakenSphere 项目上下文
+# AwakenSphere — CLAUDE.md
 
-## 项目定位
+## 项目概述
+AwakenSphere 是一个中文疗愈内容平台（awakens.life），由 Kelly/Carrie Yang 创立。
+单页 SPA 架构，部署在 Netlify（site ID: `friendly-daffodil-81cfed`）。
+管理后台通过 admin.html 访问。
 
-awakens.life 是面向全球华语用户的疗愈内容平台，对标 Sounds True 中文版。
-三类核心内容：**内容库（文章/播客/冥想）、疗愈师目录、社群/会员**。
+## 技术栈
+- **前端**: 纯 HTML/CSS/JS 单文件 SPA（index.html + admin.html）
+- **数据**: Supabase（PostgreSQL + Auth + RLS）
+- **图片/音频 CDN**: Cloudinary（upload_preset: `awakensphere`, cloud: `dvufhc3ee`）
+- **部署**: Netlify ZIP 上传（WordPress.com 不支持自定义 JS）
+- **字体**: Cabin / Raleway / Noto Sans SC（Google Fonts）
 
----
+## Supabase 配置
+- **URL**: `https://qsmoyzilsolkcwovkpoe.supabase.co`
+- **Anon Key**: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzbW95emlsc29sa2N3b3ZrcG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzI5NzQsImV4cCI6MjA5MDI0ODk3NH0.TzeMlevcOgmEs9vBFlJ0M0DuvvisjQL1Sux5OA-qp0E`
+- **表**: healers, homepage, content, ticker
+- **认证**: Supabase Auth（邮箱/密码）
+- **RLS**: anon 只读 active 记录，authenticated 完全访问
 
-## 当前技术状态
+## 数据表结构
 
-| 层级 | 现状 |
-|------|------|
-| 前端 | 纯 HTML/CSS/JS，单文件 SPA（`index.html`），无框架 |
-| 后台 | `admin.html`，数据存 localStorage（非持久化，换设备丢失） |
-| 数据库 | 无 — 内容全部硬编码在 `index.html` 里 |
-| 托管 | Netlify（friendly-daffodil-81cfed），免费方案 |
-| 域名 | awakens.life，DNS 在 WordPress.com 管理 |
-| 仓库 | github.com/notashhui/awakensphere，main 分支自动部署 |
+### healers
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | TEXT PK | 英文标识符（如 zoe, carrie） |
+| emoji | TEXT | 占位 emoji |
+| bg | TEXT | CSS 背景类名（hc1-hc8） |
+| name_zh/en | TEXT | 中英文名 |
+| title_zh/en | TEXT | 职称 |
+| sub_zh/en | TEXT | 副标题 |
+| bio_zh/en | TEXT | 简介 |
+| price | TEXT | 价格（含货币符号） |
+| location_zh/en | TEXT | 所在地 |
+| avail_zh/en | TEXT | 可约状态 |
+| book_day/month | TEXT | 预约日期 |
+| tags | TEXT[] | 标签数组 |
+| avatar_url | TEXT | Cloudinary 图片 URL |
+| active | BOOLEAN | 是否上线 |
+| sort_order | INT | 排序 |
 
-**核心问题**：前台 `index.html` 内容是硬编码的，现有后台 `admin.html` 的修改只改了本地 localStorage，不影响实际网站。
+### homepage（单行，id=1）
+hero_title_zh, hero_sub_en, hero_desc_zh/en, stat_content/healers/domains, founder_quote_zh/en, founder_name_zh
 
----
+### content
+类似 healers，额外字段: type (article/podcast/meditation), summary_zh, author, duration_zh/en, featured, cover_url, audio_url, podcast_link
 
-## 目标架构（方案 A，优先执行）
+### ticker
+id (SERIAL), label (TEXT), sort_order (INT)
 
+## 文件结构
 ```
-前台 index.html  ──读取──▶  Supabase DB
-后台 admin.html  ──写入──▶  Supabase DB
-图片             ──存储──▶  Supabase Storage
-部署                         Netlify（GitHub CI/CD）
-```
-
-- **后端**：Supabase（免费方案，提供 PostgreSQL + 文件存储 + REST API）
-- **前端**：现有 HTML/JS 直接调用 Supabase JS SDK，不引入框架
-- **管理后台**：`admin.html` 改造为真正的 CMS，纯 JS 操作 Supabase
-
----
-
-## 前端与后端的连接点（改后端必看）
-
-以下是前台 `index.html` 依赖的数据，**修改后端数据结构时必须保持字段兼容**：
-
-### 疗愈师数据结构
-
-```json
-{
-  "id": "zoe",
-  "emoji": "🌸",
-  "name_zh": "赵子珊 Zoe Zhao",
-  "name_en": "Zoe Zhao",
-  "title_zh": "Esalen® 按摩疗愈师",
-  "title_en": "Esalen® Massage Practitioner",
-  "sub_zh": "芳香脉轮治疗师",
-  "sub_en": "Aroma Chakra Therapist",
-  "bio_zh": "来自武汉，现居巴厘岛/新西兰，2022年完成Esalen认证。",
-  "bio_en": "From Wuhan, Esalen-certified practitioner.",
-  "price": "¥200",
-  "location_zh": "武汉",
-  "location_en": "Wuhan",
-  "tags": ["Esalen 按摩", "芳香疗法", "脉轮"],
-  "avail": "线上可约",
-  "book_day": "22",
-  "book_month": "June",
-  "active": true
-}
+/
+├── index.html          # 前台 SPA（匿名读取 Supabase）
+├── admin.html          # 管理后台（Supabase Auth 登录 + 读写）
+├── schema.sql          # 数据库 schema + seed data + RLS
+└── CLAUDE.md           # 本文件
 ```
 
-> `emoji` 字段将被 `avatar_url`（Supabase Storage 图片链接）替代，但过渡期需同时支持两者。
+## 开发注意事项
 
-### 首页内容（Hero 区域）
+### Plan First
+- 复杂改动先写伪代码/方案，确认后再实施
+- 完整文件优先（不用 diff）
 
-- 标题/描述（中英文双语）
-- 统计数字：内容数量、疗愈师数、领域数
-- 创始人寄语
+### Safety Guardrails
+- 不要删除现有的 CSS 变量或设计 token
+- Supabase Anon Key 可公开（前端使用），但不要暴露 Service Role Key
+- 图片上传仍走 Cloudinary，不走 Supabase Storage
+- RLS 策略：anon 只能读 active=true 记录
 
-### 内容库条目
+### What NOT to Do
+- 不要把 admin 逻辑嵌入 index.html（已拆分为独立 admin.html）
+- 不要用 localStorage 做持久化存储（已迁移到 Supabase）
+- 不要在前台暴露 Supabase Auth session 或用户信息
+- 不要删除 `data-zh` / `data-en` 属性（这是双语切换机制）
 
-- 类型：文章 / 播客 / 冥想引导
-- 字段：标题、摘要、标签、作者、封面图、分类、发布状态
+### 部署流程
+1. 本地改好 index.html + admin.html
+2. ZIP 打包两个文件
+3. Netlify → Sites → friendly-daffodil-81cfed → Deploys → 拖拽上传 ZIP
 
----
-
-## 开发优先级
-
-1. **疗愈师管理**（高）— 增删改查 + 头像上传 + 上下线控制
-2. **首页内容管理**（高）— Hero 文案、统计数字
-3. **内容库管理**（中）— 文章/播客/冥想条目
-4. **账号权限**（低）— 密码修改，未来多用户扩展
-
----
-
-## 重要约束
-
-- **不改前端框架**：`index.html` 继续用纯 HTML/CSS/JS，不引入 React/Vue
-- **双语支持**：所有面向用户的内容字段都有 `_zh` / `_en` 两个版本
-- **向后兼容**：Supabase 表结构字段名应与现有 JSON 数据结构保持一致，方便迁移
-- **非技术用户**：后台操作者（Kelly）不懂代码，界面必须清晰易用
-- **免费方案限制**：Supabase 免费额度（500MB 数据库，1GB 存储），设计时避免浪费
-
----
-
-## 关键账号（仅供开发参考）
-
-| 服务 | 账号 |
-|------|------|
-| Netlify | 233ashes@gmail.com（Google 登录） |
-| GitHub | notashhui |
-| 现有后台密码 | awakens2025 |
+### 中文注释规范
+所有代码注释使用中文
