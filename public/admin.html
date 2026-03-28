@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AwakenSphere 管理后台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cabin', sans-serif; background: #0f1117; color: #fff; min-height: 100vh; }
+
+/* ── Login ── */
+#loginScreen {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #0f1117 0%, #1a1f2e 100%);
+}
+.login-box {
+  background: #1e2330; border: 1px solid #2d3548; border-radius: 16px;
+  padding: 48px; width: 360px; text-align: center;
+}
+.login-logo { font-size: 40px; margin-bottom: 8px; }
+.login-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+.login-sub { color: #6b7280; font-size: 13px; margin-bottom: 32px; }
+.inp {
+  width: 100%; background: #111827; border: 1px solid #374151;
+  border-radius: 10px; color: #fff; font-size: 15px;
+  padding: 12px 16px; outline: none; transition: border-color .2s; font-family: inherit;
+}
+.inp:focus { border-color: #35845D; }
+.btn-primary {
+  width: 100%; background: #35845D; color: #fff; border: none;
+  border-radius: 10px; padding: 13px; font-size: 15px; font-weight: 600;
+  cursor: pointer; margin-top: 12px; transition: background .2s;
+}
+.btn-primary:hover { background: #2d7050; }
+.login-err { color: #ef4444; font-size: 13px; margin-top: 10px; display: none; }
+
+/* ── Dashboard ── */
+#dashboard { display: none; min-height: 100vh; }
+.layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: 220px; min-width: 220px; background: #1e2330;
+  border-right: 1px solid #2d3548; display: flex; flex-direction: column;
+  padding: 24px 0; position: sticky; top: 0; height: 100vh;
+}
+.sidebar-logo { padding: 0 20px 24px; border-bottom: 1px solid #2d3548; margin-bottom: 16px; }
+.sidebar-logo span { font-size: 15px; font-weight: 700; }
+.sidebar-logo small { display: block; color: #6b7280; font-size: 11px; margin-top: 2px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 20px;
+  color: #9ca3af; cursor: pointer; font-size: 14px; font-weight: 500;
+  transition: all .15s; border-left: 3px solid transparent;
+}
+.nav-item:hover { color: #fff; background: #111827; }
+.nav-item.active { color: #fff; background: rgba(53,132,93,.12); border-left-color: #35845D; }
+.sidebar-bottom { margin-top: auto; padding: 16px 20px; border-top: 1px solid #2d3548; }
+.logout-btn {
+  display: flex; align-items: center; gap: 8px; color: #6b7280;
+  background: none; border: none; cursor: pointer; font-size: 13px;
+  padding: 8px 12px; border-radius: 8px; transition: all .15s; width: 100%;
+}
+.logout-btn:hover { color: #ef4444; background: rgba(239,68,68,.08); }
+
+.main { flex: 1; padding: 32px; overflow-y: auto; }
+.page { display: none; }
+.page.active { display: block; }
+.page-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+.page-sub { color: #6b7280; font-size: 14px; margin-bottom: 28px; }
+
+/* ── Cards ── */
+.card {
+  background: #1e2330; border: 1px solid #2d3548; border-radius: 14px;
+  padding: 24px; margin-bottom: 16px;
+}
+.card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.card-title { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.collapse-btn {
+  background: none; border: 1px solid #374151; color: #9ca3af;
+  border-radius: 6px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: all .15s;
+}
+.collapse-btn:hover { border-color: #35845D; color: #fff; }
+.card-body.collapsed { display: none; }
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.field { display: flex; flex-direction: column; gap: 5px; }
+.field.full { grid-column: 1 / -1; }
+.label { color: #9ca3af; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.field input, .field textarea {
+  background: #111827; border: 1px solid #374151; border-radius: 8px;
+  color: #fff; font-size: 14px; padding: 9px 12px; outline: none;
+  transition: border-color .2s; font-family: inherit; resize: vertical;
+}
+.field input:focus, .field textarea:focus { border-color: #35845D; }
+.field textarea { min-height: 72px; }
+
+/* ── Save Bar ── */
+.save-bar {
+  position: sticky; bottom: 0; background: #1e2330; border-top: 1px solid #2d3548;
+  padding: 14px 32px; display: flex; align-items: center; justify-content: space-between;
+  margin: 0 -32px -32px;
+}
+.save-msg { color: #4ade80; font-size: 13px; opacity: 0; transition: opacity .3s; }
+.save-msg.show { opacity: 1; }
+.btn-save {
+  background: #35845D; color: #fff; border: none; border-radius: 8px;
+  padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: background .2s; display: flex; align-items: center; gap: 8px;
+}
+.btn-save:hover { background: #2d7050; }
+
+/* ── Stats ── */
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 28px; }
+.stat-card { background: #1e2330; border: 1px solid #2d3548; border-radius: 12px; padding: 16px 20px; text-align: center; }
+.stat-num { color: #35845D; font-size: 28px; font-weight: 700; }
+.stat-label { color: #6b7280; font-size: 12px; margin-top: 2px; }
+
+code { background: #111827; padding: 2px 6px; border-radius: 4px; color: #4ade80; font-size: 13px; }
+p { line-height: 1.8; color: #9ca3af; font-size: 14px; margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">🌿</div>
+    <div class="login-title">AwakenSphere 管理后台</div>
+    <div class="login-sub">请输入管理员密码</div>
+    <input class="inp" type="password" id="pwInput" placeholder="密码" autocomplete="off">
+    <button class="btn-primary" onclick="doLogin()">进入后台</button>
+    <div class="login-err" id="loginErr">密码错误，请重试</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <span>🌿 AwakenSphere</span>
+        <small>内容管理后台</small>
+      </div>
+      <div class="nav-item active" onclick="goPage('healers',this)">👤 疗愈师管理</div>
+      <div class="nav-item" onclick="goPage('homepage',this)">🏠 首页内容</div>
+      <div class="nav-item" onclick="goPage('settings',this)">⚙️ 设置</div>
+      <div class="sidebar-bottom">
+        <button class="logout-btn" onclick="doLogout()">🚪 退出登录</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+      <!-- 疗愈师 -->
+      <div class="page active" id="page-healers">
+        <div class="page-title">👤 疗愈师管理</div>
+        <div class="page-sub">编辑平台上的疗愈师信息，保存后前台立即更新</div>
+        <div id="healersList"></div>
+        <div class="save-bar">
+          <span class="save-msg" id="healerMsg">✅ 已保存</span>
+          <button class="btn-save" onclick="saveHealers()">💾 保存疗愈师信息</button>
+        </div>
+      </div>
+
+      <!-- 首页 -->
+      <div class="page" id="page-homepage">
+        <div class="page-title">🏠 首页内容</div>
+        <div class="page-sub">编辑首页展示的文案和数字</div>
+
+        <div class="card">
+          <div class="card-title">🌱 Hero 区域</div>
+          <div style="height:16px"></div>
+          <div class="field-row">
+            <div class="field"><div class="label">标题（中文）</div><input id="hp_title_zh" placeholder="疗愈，从内而生"></div>
+            <div class="field"><div class="label">副标题（英文）</div><input id="hp_sub_en" placeholder="The true healer is within you."></div>
+          </div>
+          <div class="field-row">
+            <div class="field full"><div class="label">描述（中文）</div><textarea id="hp_desc_zh"></textarea></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📊 统计数字</div>
+          <div style="height:16px"></div>
+          <div class="field-row">
+            <div class="field"><div class="label">精选内容</div><input id="hp_stat1" placeholder="200+"></div>
+            <div class="field"><div class="label">认证疗愈师</div><input id="hp_stat2" placeholder="30+"></div>
+            <div class="field"><div class="label">疗愈领域</div><input id="hp_stat3" placeholder="12"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💬 创始人寄语</div>
+          <div style="height:16px"></div>
+          <div class="field-row">
+            <div class="field full"><div class="label">引言（中文）</div><textarea id="hp_quote"></textarea></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><div class="label">署名</div><input id="hp_author"></div>
+          </div>
+        </div>
+
+        <div class="save-bar">
+          <span class="save-msg" id="homepageMsg">✅ 已保存</span>
+          <button class="btn-save" onclick="saveHomepage()">💾 保存首页内容</button>
+        </div>
+      </div>
+
+      <!-- 设置 -->
+      <div class="page" id="page-settings">
+        <div class="page-title">⚙️ 设置</div>
+        <div class="page-sub">系统设置</div>
+
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-num">7</div><div class="stat-label">疗愈师</div></div>
+          <div class="stat-card"><div class="stat-num">∞</div><div class="stat-label">免费托管</div></div>
+          <div class="stat-card"><div class="stat-num">✓</div><div class="stat-label">数据已同步</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🔐 修改密码</div>
+          <div style="height:16px"></div>
+          <div class="field-row">
+            <div class="field"><div class="label">当前密码</div><input type="password" id="oldPw"></div>
+            <div class="field"><div class="label">新密码（至少6位）</div><input type="password" id="newPw"></div>
+          </div>
+          <button class="btn-save" style="margin-top:4px" onclick="changePw()">更新密码</button>
+          <div id="pwMsg" style="margin-top:10px;font-size:13px;display:none"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📋 使用说明</div>
+          <div style="height:12px"></div>
+          <p>• 数据保存在本浏览器的本地存储中，在 Kelly 自己的电脑上操作即可</p>
+          <p>• <strong style="color:#fff">疗愈师管理</strong> 页面编辑保存后，前台疗愈师页面立即更新</p>
+          <p>• 管理后台地址：<code>awakens.life/admin.html</code></p>
+          <p>• 默认密码：<code>awakens2025</code>（建议修改）</p>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────
+const DEFAULTS = {
+  healers: [
+    { id:'zoe',   emoji:'🌸', name_zh:'赵子珊 Zoe Zhao',    name_en:'Zoe Zhao',    title_zh:'Esalen® 按摩疗愈师',   title_en:'Esalen® Massage Practitioner', sub_zh:'芳香脉轮治疗师',                 sub_en:'Aroma Chakra Therapist',         bio_zh:'来自武汉，现居巴厘岛/新西兰，2022年完成Esalen认证。', bio_en:'From Wuhan, Esalen-certified practitioner.', price:'¥200',    loc_zh:'武汉',  loc_en:'Wuhan',     day:'22', month:'June'   },
+    { id:'carrie',emoji:'🌙', name_zh:'杨凯莉 Carrie Yang',  name_en:'Carrie Yang', title_zh:'疗愈空间创建者',       title_en:'Healing Space Creator',        sub_zh:'课程开发者 & AwakenSphere 创始人', sub_en:'Course Developer & Founder',     bio_zh:'从事身心疗愈工作多年，创立AwakenSphere平台。',    bio_en:'Founder of AwakenSphere healing platform.',  price:'$111',   loc_zh:'巴厘岛', loc_en:'Bali',      day:'22', month:'April'  },
+    { id:'lin',   emoji:'🍃', name_zh:'林山 Lin Shan',       name_en:'Lin Shan',    title_zh:'动态艺术家',           title_en:'Movement Artist',              sub_zh:'正念引导者 & 工作坊导师',          sub_en:'Mindfulness Guide',              bio_zh:'以身体动作为媒介，结合觉察情绪的独特实践方式。',  bio_en:'Uses movement as a healing medium.',         price:'SGD 150', loc_zh:'新加坡', loc_en:'Singapore', day:'15', month:'May'    },
+    { id:'mei',   emoji:'🎵', name_zh:'陈美玲 Mei Chen',     name_en:'Mei Chen',    title_zh:'声音疗愈师',           title_en:'Sound Healing Practitioner',   sub_zh:'水晶颂钵演奏者',                 sub_en:'Crystal Bowl Practitioner',      bio_zh:'专注声音疗愈十年，结合颂钵、水晶进行疗愈。',    bio_en:'Decade of sound healing experience.',        price:'¥300',   loc_zh:'香港',  loc_en:'Hong Kong', day:'10', month:'May'    },
+    { id:'aria',  emoji:'🌻', name_zh:'周雅慧 Aria Zhou',    name_en:'Aria Zhou',   title_zh:'内在小孩工作者',       title_en:'Inner Child Practitioner',     sub_zh:'表达性艺术治疗师',               sub_en:'Expressive Arts Therapist',      bio_zh:'通过绘画、写作帮助人们与内在小孩重建连接。',    bio_en:'Reconnects people with their inner child.',  price:'NT$3000', loc_zh:'台北',  loc_en:'Taipei',    day:'20', month:'May'    },
+    { id:'wei',   emoji:'🪷', name_zh:'刘薇 Wei Liu',         name_en:'Wei Liu',     title_zh:'创伤知情身体工作者',   title_en:'Trauma-Informed Bodyworker',   sub_zh:'合作伙伴体验导师',               sub_en:'Partner Experience Facilitator', bio_zh:'整合Somatic Experiencing与传统中医，处理创伤。', bio_en:'Integrates SE with TCM for trauma healing.',  price:'¥400',   loc_zh:'上海',  loc_en:'Shanghai',  day:'18', month:'May'    },
+    { id:'ming',  emoji:'🌊', name_zh:'张明远 MingYuan',      name_en:'MingYuan',    title_zh:'正念冥想导师',         title_en:'Mindfulness Teacher',          sub_zh:'静修营举办者',                   sub_en:'Retreat Facilitator',            bio_zh:'在巴厘岛主持正念课程和周末静修营。',            bio_en:'Leads mindfulness retreats in Bali.',        price:'$80',    loc_zh:'巴厘岛', loc_en:'Bali',     day:'25', month:'May'    },
+  ],
+  homepage: {
+    title_zh: '疗愈，从内而生', sub_en: 'The true healer is within you.',
+    desc_zh: '精选全球顶级疗愈内容，连接认证疗愈师，用中文探索身心灵最前沿的智慧与实践。',
+    stat1: '200+', stat2: '30+', stat3: '12',
+    quote: '「真正的疗愈，不是修复破碎，而是重新记起自己本来的完整。」',
+    author: '— Carrie Yang，AwakenSphere 创始人'
+  }
+};
+
+const PW_KEY = 'as_pw';
+const H_KEY  = 'as_healers_v2';
+const HP_KEY = 'as_hp_v2';
+const LI_KEY = 'as_li';
+
+const getPw = () => localStorage.getItem(PW_KEY) || 'awakens2025';
+const getHealers = () => { try { return JSON.parse(localStorage.getItem(H_KEY)) || DEFAULTS.healers; } catch(e) { return DEFAULTS.healers; } };
+const getHp = () => { try { return JSON.parse(localStorage.getItem(HP_KEY)) || DEFAULTS.homepage; } catch(e) { return DEFAULTS.homepage; } };
+
+// ── Auth ──────────────────────────────────────────────────────────────
+function doLogin() {
+  const pw = document.getElementById('pwInput').value;
+  if (pw === getPw()) {
+    localStorage.setItem(LI_KEY, '1');
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    initDashboard();
+  } else {
+    document.getElementById('loginErr').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+document.getElementById('pwInput').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+function doLogout() {
+  localStorage.removeItem(LI_KEY);
+  location.reload();
+}
+
+// ── Nav ───────────────────────────────────────────────────────────────
+function goPage(name, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+function initDashboard() {
+  renderHealers();
+  loadHp();
+}
+
+// ── Healers ───────────────────────────────────────────────────────────
+function field(label, id, val, cls) {
+  return `<div class="field${cls||''}"><div class="label">${label}</div><input id="${id}" value="${(val||'').replace(/"/g,'&quot;')}"></div>`;
+}
+function textarea(label, id, val, cls) {
+  return `<div class="field${cls||''}"><div class="label">${label}</div><textarea id="${id}">${val||''}</textarea></div>`;
+}
+
+function renderHealers() {
+  document.getElementById('healersList').innerHTML = getHealers().map(h => `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><span style="font-size:24px">${h.emoji}</span> ${h.name_zh}</div>
+        <button class="collapse-btn" onclick="toggleCard('${h.id}')">收起 ▲</button>
+      </div>
+      <div class="card-body" id="cb_${h.id}">
+        <div class="field-row">
+          ${field('中文名字','f_'+h.id+'_name_zh',h.name_zh)}
+          ${field('英文名字','f_'+h.id+'_name_en',h.name_en)}
+        </div>
+        <div class="field-row">
+          ${field('职称（中文）','f_'+h.id+'_title_zh',h.title_zh)}
+          ${field('职称（英文）','f_'+h.id+'_title_en',h.title_en)}
+        </div>
+        <div class="field-row">
+          ${field('副标题（中文）','f_'+h.id+'_sub_zh',h.sub_zh)}
+          ${field('副标题（英文）','f_'+h.id+'_sub_en',h.sub_en)}
+        </div>
+        <div class="field-row">${textarea('简介（中文）','f_'+h.id+'_bio_zh',h.bio_zh,' full')}</div>
+        <div class="field-row">${textarea('简介（英文）','f_'+h.id+'_bio_en',h.bio_en,' full')}</div>
+        <div class="field-row">
+          ${field('价格','f_'+h.id+'_price',h.price)}
+          ${field('所在地（中文）','f_'+h.id+'_loc_zh',h.loc_zh)}
+          ${field('所在地（英文）','f_'+h.id+'_loc_en',h.loc_en)}
+        </div>
+        <div class="field-row">
+          ${field('预约日期','f_'+h.id+'_day',h.day)}
+          ${field('预约月份','f_'+h.id+'_month',h.month)}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleCard(id) {
+  const body = document.getElementById('cb_' + id);
+  const btn = body.previousElementSibling.querySelector('.collapse-btn');
+  const collapsed = body.classList.toggle('collapsed');
+  btn.textContent = collapsed ? '展开 ▼' : '收起 ▲';
+}
+
+function saveHealers() {
+  const healers = getHealers();
+  healers.forEach(h => {
+    const g = f => (document.getElementById('f_'+h.id+'_'+f)||{value:''}).value;
+    h.name_zh = g('name_zh'); h.name_en = g('name_en');
+    h.title_zh = g('title_zh'); h.title_en = g('title_en');
+    h.sub_zh = g('sub_zh'); h.sub_en = g('sub_en');
+    h.bio_zh = g('bio_zh'); h.bio_en = g('bio_en');
+    h.price = g('price'); h.loc_zh = g('loc_zh'); h.loc_en = g('loc_en');
+    h.day = g('day'); h.month = g('month');
+  });
+  localStorage.setItem(H_KEY, JSON.stringify(healers));
+  showMsg('healerMsg');
+  renderHealers();
+}
+
+// ── Homepage ──────────────────────────────────────────────────────────
+function loadHp() {
+  const hp = getHp();
+  const s = (id, v) => { const el = document.getElementById(id); if(el) el.value = v||''; };
+  s('hp_title_zh', hp.title_zh); s('hp_sub_en', hp.sub_en);
+  s('hp_desc_zh', hp.desc_zh); s('hp_stat1', hp.stat1);
+  s('hp_stat2', hp.stat2); s('hp_stat3', hp.stat3);
+  s('hp_quote', hp.quote); s('hp_author', hp.author);
+}
+
+function saveHomepage() {
+  const g = id => (document.getElementById(id)||{value:''}).value;
+  const hp = {
+    title_zh: g('hp_title_zh'), sub_en: g('hp_sub_en'),
+    desc_zh: g('hp_desc_zh'), stat1: g('hp_stat1'),
+    stat2: g('hp_stat2'), stat3: g('hp_stat3'),
+    quote: g('hp_quote'), author: g('hp_author')
+  };
+  localStorage.setItem(HP_KEY, JSON.stringify(hp));
+  showMsg('homepageMsg');
+}
+
+// ── Settings ──────────────────────────────────────────────────────────
+function changePw() {
+  const old = document.getElementById('oldPw').value;
+  const nw = document.getElementById('newPw').value;
+  const msg = document.getElementById('pwMsg');
+  msg.style.display = 'block';
+  if (old !== getPw()) { msg.style.color = '#ef4444'; msg.textContent = '❌ 当前密码错误'; return; }
+  if (nw.length < 6) { msg.style.color = '#ef4444'; msg.textContent = '❌ 新密码至少6位'; return; }
+  localStorage.setItem(PW_KEY, nw);
+  msg.style.color = '#4ade80'; msg.textContent = '✅ 密码已更新';
+  document.getElementById('oldPw').value = '';
+  document.getElementById('newPw').value = '';
+}
+
+function showMsg(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────
+if (localStorage.getItem(LI_KEY) === '1') {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  initDashboard();
+}
+</script>
+</body>
+</html>
