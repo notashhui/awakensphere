@@ -2039,18 +2039,39 @@ applyLang();
 
 
 /* ══════════════════════════════════════
-   SUPABASE 数据加载（替代 localStorage）
+   SUPABASE 数据加载 + P0 前台渲染
    ══════════════════════════════════════ */
 
 const SUPABASE_URL  = 'https://qsmoyzilsolkcwovkpoe.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzbW95emlsc29sa2N3b3ZrcG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzI5NzQsImV4cCI6MjA5MDI0ODk3NH0.TzeMlevcOgmEs9vBFlJ0M0DuvvisjQL1Sux5OA-qp0E';
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// ── 从 Supabase 加载数据并更新前台 DOM ─────────────────
+// 缓存
+var sbCache = { healers: null, content: null };
+
+// ── Markdown → HTML 渲染器 ──────────────────────────────
+function mdRender(md) {
+  if (!md) return '';
+  var h = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  h = h.replace(/^### (.+)$/gm, '<h3 style="font-family:var(--fh);font-size:20px;font-weight:700;color:var(--text);margin:28px 0 10px;">$1</h3>');
+  h = h.replace(/^## (.+)$/gm, '<h3 style="font-family:var(--fh);font-size:22px;font-weight:700;color:var(--text);margin:32px 0 12px;">$1</h3>');
+  h = h.replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text);">$1</strong>');
+  h = h.replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:3px solid var(--green);padding:14px 20px;background:rgba(53,132,93,.06);border-radius:0 6px 6px 0;margin:24px 0;font-style:italic;color:var(--dark);font-size:16px;line-height:1.75;">$1</blockquote>');
+  h = h.replace(/^\d+\. (.+)$/gm, '<li style="font-size:16px;line-height:1.8;margin-bottom:6px;">$1</li>');
+  h = h.replace(/^- (.+)$/gm, '<li style="font-size:16px;line-height:1.8;margin-bottom:6px;">$1</li>');
+  h = h.replace(/(<li[^>]*>.*<\/li>\n?)+/g, function(m) { return '<ol style="padding-left:24px;margin:16px 0;">' + m + '</ol>'; });
+  h = h.replace(/\n\n/g, '</p><p style="font-size:16px;line-height:1.88;margin-bottom:20px;color:#3A3A3A;">');
+  h = '<p style="font-size:16px;line-height:1.88;margin-bottom:20px;color:#3A3A3A;">' + h + '</p>';
+  // 清理嵌套
+  h = h.replace(/<p[^>]*><h3/g, '<h3').replace(/<\/h3><\/p>/g, '</h3>');
+  h = h.replace(/<p[^>]*><blockquote/g, '<blockquote').replace(/<\/blockquote><\/p>/g, '</blockquote>');
+  h = h.replace(/<p[^>]*><ol/g, '<ol').replace(/<\/ol><\/p>/g, '</ol>');
+  return h;
+}
+
+// ── 首页数据加载 ─────────────────────────────────────────
 async function loadSiteData() {
   try {
-    // 并行加载所有数据
     var [healersRes, homepageRes, contentRes, tickerRes] = await Promise.all([
       sb.from('healers').select('*').eq('active', true).order('sort_order'),
       sb.from('homepage').select('*').eq('id', 1).single(),
@@ -2058,113 +2079,258 @@ async function loadSiteData() {
       sb.from('ticker').select('*').order('sort_order')
     ]);
 
-    // 更新首页数据
     if (homepageRes.data) applyHomepageData(homepageRes.data);
 
-    // 更新 HEALERS profile 对象（用于 profile 详情页）
     if (healersRes.data) {
+      sbCache.healers = healersRes.data;
       healersRes.data.forEach(function(h) {
         HEALERS[h.id] = {
           name: h.name_zh, title: h.title_en || h.title_zh,
           sub: h.sub_en || h.sub_zh, emoji: h.emoji, bg: h.bg,
           price: h.price, loc: h.location_zh,
-          bookZh: '预约 ' + (h.name_en || h.name_zh),
-          bookEn: 'Book ' + (h.name_en || h.name_zh),
+          bookZh: '预约 ' + (h.name_en || h.name_zh).split(' ')[0],
+          bookEn: 'Book ' + (h.name_en || h.name_zh).split(' ')[0],
           day: h.book_day, month: h.book_month
         };
       });
     }
 
-    // 更新 ticker 跑马灯
+    if (contentRes.data) {
+      sbCache.content = contentRes.data;
+    }
+
     if (tickerRes.data && tickerRes.data.length > 0) applyTickerData(tickerRes.data);
-
-    // 最后重新应用语言
     if (typeof applyLang === 'function') applyLang();
-
   } catch(e) {
     console.warn('Supabase 加载失败，使用硬编码数据:', e);
-    // 失败时不做任何操作，保持页面原有硬编码内容
   }
 }
 
 function applyHomepageData(hp) {
-  // Hero 标题
   var heroH1 = document.querySelector('.hero-h1');
-  if (heroH1 && hp.hero_title_zh) {
-    heroH1.setAttribute('data-zh', hp.hero_title_zh);
-    heroH1.textContent = hp.hero_title_zh;
-  }
-  // Hero 副标题
+  if (heroH1 && hp.hero_title_zh) { heroH1.setAttribute('data-zh', hp.hero_title_zh); heroH1.textContent = hp.hero_title_zh; }
   var heroSub = document.querySelector('.hero-h1-zh');
-  if (heroSub && hp.hero_sub_en) {
-    heroSub.textContent = hp.hero_sub_en;
-  }
-  // Hero 描述
+  if (heroSub && hp.hero_sub_en) heroSub.textContent = hp.hero_sub_en;
   var heroDesc = document.querySelector('.hero-desc');
-  if (heroDesc && hp.hero_desc_zh) {
-    heroDesc.setAttribute('data-zh', hp.hero_desc_zh);
-    if (hp.hero_desc_en) heroDesc.setAttribute('data-en', hp.hero_desc_en);
-    heroDesc.textContent = hp.hero_desc_zh;
-  }
-  // 统计数字
+  if (heroDesc && hp.hero_desc_zh) { heroDesc.setAttribute('data-zh', hp.hero_desc_zh); if (hp.hero_desc_en) heroDesc.setAttribute('data-en', hp.hero_desc_en); heroDesc.textContent = hp.hero_desc_zh; }
   var statNums = document.querySelectorAll('.stat-num');
   if (statNums[0] && hp.stat_content) statNums[0].textContent = hp.stat_content;
   if (statNums[1] && hp.stat_healers) statNums[1].textContent = hp.stat_healers;
   if (statNums[2] && hp.stat_domains) statNums[2].textContent = hp.stat_domains;
-  // 创始人引言
-  var founderQuote = document.querySelector('.founder-quote-text');
-  if (founderQuote && hp.founder_quote_zh) {
-    founderQuote.setAttribute('data-zh', hp.founder_quote_zh);
-    if (hp.founder_quote_en) founderQuote.setAttribute('data-en', hp.founder_quote_en);
-    founderQuote.textContent = hp.founder_quote_zh;
-  }
-  var founderBig = document.querySelector('.founder-quote-big');
-  if (founderBig && hp.founder_quote_zh) {
-    founderBig.setAttribute('data-zh', hp.founder_quote_zh);
-    if (hp.founder_quote_en) founderBig.setAttribute('data-en', hp.founder_quote_en);
-    founderBig.textContent = hp.founder_quote_zh;
-  }
+  var fq = document.querySelector('.founder-quote-text');
+  if (fq && hp.founder_quote_zh) { fq.setAttribute('data-zh', hp.founder_quote_zh); if (hp.founder_quote_en) fq.setAttribute('data-en', hp.founder_quote_en); fq.textContent = hp.founder_quote_zh; }
+  var fb = document.querySelector('.founder-quote-big');
+  if (fb && hp.founder_quote_zh) { fb.setAttribute('data-zh', hp.founder_quote_zh); if (hp.founder_quote_en) fb.setAttribute('data-en', hp.founder_quote_en); fb.textContent = hp.founder_quote_zh; }
 }
 
 function applyTickerData(items) {
   var inner = document.querySelector('.ticker-inner');
   if (!inner) return;
-  // 生成两组（循环滚动）
   var html = '';
-  for (var round = 0; round < 2; round++) {
-    items.forEach(function(t) {
-      html += '<span class="ticker-item">' + t.label + '</span>';
-    });
-  }
+  for (var r = 0; r < 2; r++) { items.forEach(function(t) { html += '<span class="ticker-item">' + t.label + '</span>'; }); }
   inner.innerHTML = html;
 }
 
-// ── Admin hash 路由：重定向到 admin.html ──────────────────
+// ══════════════════════════════════════════════════════════
+// P0: 疗愈师 Profile 完整渲染
+// ══════════════════════════════════════════════════════════
+async function loadProfileFromSupabase(id) {
+  // 先用 HEALERS 缓存快速填充基本信息
+  var p = HEALERS[id] || HEALERS.zoe || {};
+  document.getElementById('profileName').textContent = p.name || '';
+  document.getElementById('profileTitle').textContent = p.title || '';
+  document.getElementById('profileSubtitle').textContent = p.sub || '';
+  var ph = document.getElementById('profilePhoto');
+  if (ph) { ph.className = 'profile-photo ' + (p.bg||'hc1'); ph.textContent = p.emoji||'🌿'; ph.style.fontSize = '110px'; }
+
+  // 从 Supabase 获取完整数据
+  var healer = null;
+  if (sbCache.healers) {
+    healer = sbCache.healers.find(function(h) { return h.id === id; });
+  }
+  if (!healer) {
+    var { data } = await sb.from('healers').select('*').eq('id', id).single();
+    healer = data;
+  }
+  if (!healer) return;
+
+  // 基本信息
+  document.getElementById('profileName').textContent = healer.name_zh;
+  document.getElementById('profileTitle').textContent = healer.title_en || healer.title_zh;
+  document.getElementById('profileSubtitle').textContent = healer.sub_en || healer.sub_zh;
+
+  // 头像
+  if (healer.avatar_url && ph) {
+    ph.innerHTML = '<img src="' + healer.avatar_url + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=\'' + (healer.emoji||'🌿') + '\'">';
+  }
+
+  // 预约信息
+  document.getElementById('schedPrice').textContent = healer.price || '';
+  document.getElementById('schedLoc').textContent = healer.location_zh || '';
+  var b = document.getElementById('bookBtn');
+  var firstName = (healer.name_en || healer.name_zh).split(' ')[0];
+  if (b) { b.setAttribute('data-zh', '预约 ' + firstName); b.setAttribute('data-en', 'Book ' + firstName); b.textContent = currentLang === 'en' ? 'Book ' + firstName : '预约 ' + firstName; }
+
+  // P0: 长 Bio
+  var bioZh = document.getElementById('profileBioZh');
+  var bioEn = document.getElementById('profileBioEn');
+  if (bioZh && healer.long_bio_zh) {
+    bioZh.innerHTML = healer.long_bio_zh.split('\n').filter(function(p){return p.trim();}).map(function(p){return '<p>'+p+'</p>';}).join('');
+  } else if (bioZh && healer.bio_zh) {
+    bioZh.innerHTML = '<p>' + healer.bio_zh + '</p>';
+  }
+  if (bioEn && healer.long_bio_en) {
+    bioEn.innerHTML = healer.long_bio_en.split('\n').filter(function(p){return p.trim();}).map(function(p){return '<p>'+p+'</p>';}).join('');
+  } else if (bioEn && healer.bio_en) {
+    bioEn.innerHTML = '<p>' + healer.bio_en + '</p>';
+  }
+
+  // P0: 活动日程
+  var events = healer.events || [];
+  if (events.length > 0) {
+    var evt = events[0];
+    document.getElementById('schedDay').textContent = evt.date ? evt.date.split('-')[2] : '';
+    document.getElementById('schedMonth').textContent = evt.date ? (['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(evt.date.split('-')[1])] || '') : '';
+    var sn = document.getElementById('schedName');
+    if (sn) sn.textContent = currentLang === 'en' ? (evt.title_en || evt.title_zh) : evt.title_zh;
+  }
+
+  // P0: 服务列表
+  var services = healer.services || [];
+  var svcGrid = document.querySelector('#view-profile .services-grid');
+  if (svcGrid && services.length > 0) {
+    var bgStyles = ['si1','si2','si3','si4'];
+    var icons = ['🤲','🌸','📅','✨','🧘','💆'];
+    svcGrid.innerHTML = services.map(function(s, i) {
+      return '<div class="service-card"><div class="service-img ' + (bgStyles[i % bgStyles.length]) + '">' + (icons[i % icons.length]) + '</div>' +
+        '<div class="service-body"><div class="service-name">' + (currentLang === 'en' ? (s.name_en||s.name_zh) : s.name_zh) + '</div>' +
+        '<div class="service-detail">' + (s.duration||'') + (s.price ? ' · ' + s.price : '') + '</div></div></div>';
+    }).join('');
+  }
+
+  // P0: 品牌产品
+  var products = healer.products || [];
+  var brandSection = document.querySelector('#view-profile .divider-row');
+  if (brandSection) {
+    if (products.length > 0) {
+      brandSection.style.display = '';
+      var brandGrid = brandSection.querySelector('.brand-grid');
+      if (brandGrid) {
+        var brandBgs = ['linear-gradient(135deg,#E8DFCE,#C4B090)','linear-gradient(135deg,#C8D8C0,#80A870)','linear-gradient(135deg,#D8C8A8,#A08840)','linear-gradient(135deg,#C8D8CC,#70A880)'];
+        brandGrid.innerHTML = products.map(function(p, i) {
+          return '<div class="brand-item"><div class="brand-img" style="background:' + brandBgs[i % brandBgs.length] + ';">🧴</div>' +
+            '<div class="brand-name">' + p.name_zh + '</div>' +
+            '<div class="brand-sub-text">' + (p.price||'') + '</div></div>';
+        }).join('');
+      }
+    } else {
+      brandSection.style.display = 'none';
+    }
+  }
+}
+
+// 重写原始 loadProfile 以调用 Supabase 版本
+var _origLoadProfile = loadProfile;
+loadProfile = function(id) {
+  _origLoadProfile(id); // 先快速填基本信息
+  loadProfileFromSupabase(id); // 异步加载完整数据
+};
+
+// ══════════════════════════════════════════════════════════
+// P0: 内容详情页渲染
+// ══════════════════════════════════════════════════════════
+async function loadContentDetail(contentId) {
+  var item = null;
+  if (sbCache.content) {
+    item = sbCache.content.find(function(c) { return c.id === contentId; });
+  }
+  if (!item) {
+    var { data } = await sb.from('content').select('*').eq('id', contentId).single();
+    item = data;
+  }
+  if (!item) return;
+
+  // 标题
+  var tz = document.getElementById('detailTitleZh');
+  var te = document.getElementById('detailTitleEn');
+  if (tz) tz.textContent = item.title_zh || '';
+  if (te) te.textContent = item.title_en || item.title_zh || '';
+
+  // 正文
+  var az = document.getElementById('articleZh');
+  var ae = document.getElementById('articleEn');
+  if (az && item.body_zh) {
+    az.innerHTML = mdRender(item.body_zh);
+  }
+  if (ae && item.body_en) {
+    ae.innerHTML = mdRender(item.body_en);
+  } else if (ae && !item.body_en && item.body_zh) {
+    // 没有英文正文时隐藏英文版
+    ae.innerHTML = '<p style="color:var(--muted);font-style:italic;">English version coming soon.</p>';
+  }
+
+  // 语言切换
+  if (az) az.style.display = currentLang === 'zh' ? '' : 'none';
+  if (ae) ae.style.display = currentLang === 'en' ? '' : 'none';
+  if (tz) tz.style.display = currentLang === 'zh' ? '' : 'none';
+  if (te) te.style.display = currentLang === 'en' ? '' : 'none';
+}
+
+// 重写 showView 以支持内容详情加载
+var _origShowView = showView;
+showView = function(name, data) {
+  _origShowView(name, data);
+  if (name === 'content-detail' && data) {
+    loadContentDetail(data);
+  }
+};
+
+// 给首页内容卡片和轮播添加点击传参
+function bindContentClicks() {
+  if (!sbCache.content) return;
+  // 首页卡片：按顺序绑定
+  var cards = document.querySelectorAll('#view-home .cards-grid .card');
+  var activeContent = sbCache.content.filter(function(c) { return c.active; });
+  cards.forEach(function(card, i) {
+    if (activeContent[i]) {
+      card.onclick = function() { showView('content-detail', activeContent[i].id); };
+    }
+  });
+  // 轮播标题点击
+  var slideTitles = document.querySelectorAll('.slide-title');
+  var carouselContent = sbCache.content.filter(function(c) { return c.carousel_order && c.carousel_order > 0; }).sort(function(a,b) { return a.carousel_order - b.carousel_order; });
+  slideTitles.forEach(function(title, i) {
+    if (carouselContent[i]) {
+      title.onclick = function() { showView('content-detail', carouselContent[i].id); };
+    }
+  });
+}
+
+// ── Admin redirect ───────────────────────────────────────
 (function() {
   function checkAdminHash() {
-    if (window.location.hash === '#admin') {
-      window.location.href = 'admin.html';
-    }
+    if (window.location.hash === '#admin') window.location.href = 'admin.html';
   }
   window.addEventListener('hashchange', checkAdminHash);
   setTimeout(checkAdminHash, 100);
 })();
 
-// ── 页面加载时从 Supabase 拉取最新数据 ──────────────────
+// ── Boot ─────────────────────────────────────────────────
 (function() {
+  async function boot() {
+    await loadSiteData();
+    bindContentClicks();
+  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadSiteData);
+    document.addEventListener('DOMContentLoaded', boot);
   } else {
-    setTimeout(loadSiteData, 100);
+    setTimeout(boot, 100);
   }
 })();
 
 </script>
 
-<!-- ══════════════════════════════════
-     ADMIN PANEL VIEW — 已迁移到独立 admin.html
-     访问 #admin 会自动重定向
-     ══════════════════════════════════ -->
+<!-- Admin 已迁移到独立 admin.html -->
 <div id="view-admin" class="view">
   <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0f1117;">
     <div style="text-align:center;color:#9ca3af;">
