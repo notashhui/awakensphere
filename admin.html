@@ -170,6 +170,35 @@ body { font-family:'Cabin',sans-serif; background:#0f1117; color:#fff; min-heigh
 
 code { background:#111827; padding:2px 6px; border-radius:4px; color:#4ade80; font-size:13px; }
 p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
+
+/* ══════════════════════════════════════
+   P0 ADDITIONS
+   ══════════════════════════════════════ */
+
+/* Markdown editor */
+.md-wrap { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.md-wrap textarea { min-height:200px; }
+.md-preview { background:#111827; border:1px solid #374151; border-radius:8px; padding:14px; color:#d1d5db; font-size:13px; line-height:1.8; min-height:200px; max-height:400px; overflow-y:auto; }
+.md-preview h2 { font-size:17px; font-weight:700; color:#fff; margin:14px 0 6px; }
+.md-preview h3 { font-size:14px; font-weight:600; color:#e5e7eb; margin:10px 0 4px; }
+.md-preview strong { color:#fff; }
+.md-preview blockquote { border-left:3px solid #35845D; padding-left:12px; color:#9ca3af; margin:8px 0; font-style:italic; }
+.md-preview ol,.md-preview ul { padding-left:20px; margin:8px 0; }
+.md-preview p { margin:6px 0; }
+
+/* JSONB list editor */
+.json-item { background:#111827; border:1px solid #374151; border-radius:10px; padding:14px; margin-bottom:10px; position:relative; }
+.json-item .field-row { margin-bottom:10px; }
+.json-item-del { position:absolute; top:10px; right:10px; background:none; border:1px solid #374151; color:#6b7280; border-radius:5px; width:24px; height:24px; cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:all .15s; font-family:inherit; padding:0; }
+.json-item-del:hover { border-color:#ef4444; color:#ef4444; }
+.json-add { display:inline-flex; align-items:center; gap:6px; background:rgba(53,132,93,.1); border:1px dashed rgba(53,132,93,.35); color:#4ade80; border-radius:8px; padding:8px 16px; font-size:13px; cursor:pointer; transition:all .15s; font-family:inherit; margin-bottom:14px; }
+.json-add:hover { background:rgba(53,132,93,.2); border-color:#35845D; }
+
+/* Sort controls in content cards */
+.card-header .sort-btns { display:flex; gap:4px; margin-right:8px; }
+.sort-btn { background:none; border:1px solid #374151; color:#6b7280; border-radius:5px; width:26px; height:26px; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; transition:all .15s; padding:0; font-family:inherit; }
+.sort-btn:hover { border-color:#35845D; color:#4ade80; }
+.carousel-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; padding:2px 7px; border-radius:4px; background:rgba(238,160,26,.15); color:#f4b942; border:1px solid rgba(238,160,26,.3); margin-left:6px; }
 </style>
 </head>
 <body>
@@ -439,18 +468,18 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// AwakenSphere Admin — Supabase 版本
+// AwakenSphere Admin — Supabase + P0 Features
 // ═══════════════════════════════════════════════════════════
 
 const SUPABASE_URL  = 'https://qsmoyzilsolkcwovkpoe.supabase.co';
 const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzbW95emlsc29sa2N3b3ZrcG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzI5NzQsImV4cCI6MjA5MDI0ODk3NH0.TzeMlevcOgmEs9vBFlJ0M0DuvvisjQL1Sux5OA-qp0E';
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
 const BG_CLASSES = ['hc1','hc2','hc3','hc4','hc5','hc6','hc7','hc8'];
 
-// ── 缓存 ─────────────────────────────────────────────────
-var cache = { healers: null, homepage: null, content: null, ticker: null };
+var cache = { healers:null, homepage:null, content:null, ticker:null };
+var tagState = {};
+// P0: JSONB 状态（服务、活动、产品）
+var jsonState = {};
 
 // ── 数据读取 ─────────────────────────────────────────────
 async function fetchHealers() {
@@ -474,31 +503,22 @@ async function fetchTicker() {
   cache.ticker = data; return data;
 }
 
-// ── Tag 状态 ─────────────────────────────────────────────
-var tagState = {};
-
 // ── Auth ─────────────────────────────────────────────────
 document.getElementById('pwInput').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 document.getElementById('emailInput').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('pwInput').focus(); });
 
 async function doLogin() {
   var email = document.getElementById('emailInput').value.trim();
-  var pw    = document.getElementById('pwInput').value;
+  var pw = document.getElementById('pwInput').value;
   if (!email || !pw) { document.getElementById('loginErr').style.display = 'block'; return; }
-  var { data, error } = await sb.auth.signInWithPassword({ email: email, password: pw });
-  if (error) {
-    document.getElementById('loginErr').style.display = 'block';
-    document.getElementById('pwInput').value = '';
-    document.getElementById('pwInput').focus();
-    return;
-  }
+  var { error } = await sb.auth.signInWithPassword({ email: email, password: pw });
+  if (error) { document.getElementById('loginErr').style.display='block'; document.getElementById('pwInput').value=''; return; }
   document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('dashboard').style.display   = 'block';
+  document.getElementById('dashboard').style.display = 'block';
   await initDashboard();
 }
 async function doLogout() { await sb.auth.signOut(); location.reload(); }
 
-// ── Nav ──────────────────────────────────────────────────
 function goPage(name, el) {
   document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
   el.classList.add('active');
@@ -506,7 +526,6 @@ function goPage(name, el) {
   document.getElementById('page-' + name).classList.add('active');
 }
 
-// ── Init ─────────────────────────────────────────────────
 async function initDashboard() {
   await Promise.all([renderHealers(), loadHomepage(), renderContent(), renderTicker()]);
   updateStats();
@@ -516,39 +535,161 @@ async function initDashboard() {
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function escText(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function field(lbl, id, val) { return '<div class="field"><div class="label">' + lbl + '</div><input id="' + id + '" value="' + esc(val) + '"></div>'; }
-function showMsg(id) { var el = document.getElementById(id); if(!el)return; el.classList.add('show'); setTimeout(function(){ el.classList.remove('show'); }, 2500); }
+function showMsg(id) { var el=document.getElementById(id); if(!el)return; el.classList.add('show'); setTimeout(function(){el.classList.remove('show');},2500); }
 function toggleCard(bodyId) {
-  var body = document.getElementById('cb_' + bodyId); if(!body)return;
-  var btn = body.previousElementSibling && body.previousElementSibling.querySelector('.collapse-btn');
-  var col = body.classList.toggle('collapsed');
-  if (btn) btn.textContent = col ? '展开 ▼' : '收起 ▲';
+  var body=document.getElementById('cb_'+bodyId); if(!body)return;
+  var btn=body.previousElementSibling&&body.previousElementSibling.querySelector('.collapse-btn');
+  body.classList.toggle('collapsed');
+  if(btn) btn.textContent=body.classList.contains('collapsed')?'展开 ▼':'收起 ▲';
 }
 
 // ── Tag editor ───────────────────────────────────────────
 function renderChips(key) {
   return (tagState[key]||[]).map(function(t) {
-    return '<span class="tag-chip">' + esc(t) + '<button class="tag-chip-del" onclick="removeTag(\'' + key + '\',\'' + t.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">×</button></span>';
+    return '<span class="tag-chip">'+esc(t)+'<button class="tag-chip-del" onclick="removeTag(\''+key+'\',\''+t.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">×</button></span>';
   }).join('');
 }
-function tagEditor(key, placeholder) {
-  return '<div class="tag-editor" id="te_' + key + '" onclick="focusTagInput(\'' + key + '\')">' + renderChips(key) +
-    '<input class="tag-input" id="ti_' + key + '" placeholder="' + (placeholder||'添加标签…') + '" onkeydown="handleTagKey(event,\'' + key + '\')"></div>';
+function tagEditor(key, ph) {
+  return '<div class="tag-editor" id="te_'+key+'" onclick="focusTagInput(\''+key+'\')">'+renderChips(key)+
+    '<input class="tag-input" id="ti_'+key+'" placeholder="'+(ph||'添加标签…')+'" onkeydown="handleTagKey(event,\''+key+'\')"></div>';
 }
-function focusTagInput(key) { var el = document.getElementById('ti_' + key); if(el)el.focus(); }
-function handleTagKey(e, key) {
-  if (e.key !== 'Enter' && e.key !== ',') return;
-  e.preventDefault();
-  var v = e.target.value.replace(/,/g,'').trim();
-  if (v && !(tagState[key]||[]).includes(v)) { if(!tagState[key])tagState[key]=[]; tagState[key].push(v); refreshTagEditor(key); }
-  e.target.value = '';
+function focusTagInput(key) { var el=document.getElementById('ti_'+key); if(el)el.focus(); }
+function handleTagKey(e,key) {
+  if(e.key!=='Enter'&&e.key!==',')return; e.preventDefault();
+  var v=e.target.value.replace(/,/g,'').trim();
+  if(v&&!(tagState[key]||[]).includes(v)){if(!tagState[key])tagState[key]=[];tagState[key].push(v);refreshTagEditor(key);}
+  e.target.value='';
 }
-function removeTag(key, tag) { tagState[key] = (tagState[key]||[]).filter(function(t){ return t !== tag; }); refreshTagEditor(key); }
+function removeTag(key,tag){tagState[key]=(tagState[key]||[]).filter(function(t){return t!==tag;});refreshTagEditor(key);}
 function refreshTagEditor(key) {
-  var te = document.getElementById('te_' + key); if(!te)return;
-  var curInput = document.getElementById('ti_' + key);
-  var saved = curInput ? curInput.value : '';
-  te.innerHTML = renderChips(key) + '<input class="tag-input" id="ti_' + key + '" placeholder="添加标签…" onkeydown="handleTagKey(event,\'' + key + '\')">';
-  var ni = document.getElementById('ti_' + key); if(ni){ ni.value=saved; ni.focus(); }
+  var te=document.getElementById('te_'+key); if(!te)return;
+  var ci=document.getElementById('ti_'+key), sv=ci?ci.value:'';
+  te.innerHTML=renderChips(key)+'<input class="tag-input" id="ti_'+key+'" placeholder="添加标签…" onkeydown="handleTagKey(event,\''+key+'\')">';
+  var ni=document.getElementById('ti_'+key); if(ni){ni.value=sv;ni.focus();}
+}
+
+// ══════════════════════════════════════════════════════════
+// P0: JSONB 列表编辑器
+// ══════════════════════════════════════════════════════════
+function getJson(key) { return jsonState[key] || []; }
+function setJson(key, arr) { jsonState[key] = arr; }
+
+function renderServicesList(hid) {
+  var key = 'svc_'+hid, items = getJson(key);
+  return '<div class="label">💆 服务列表</div>' +
+    '<div id="jl_'+key+'">' + items.map(function(s,i) {
+      return '<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+key+'\','+i+')">×</button>' +
+        '<div class="field-row">' + field('服务名称（中文）','j_'+key+'_'+i+'_name_zh',s.name_zh) + field('服务名称（英文）','j_'+key+'_'+i+'_name_en',s.name_en) + '</div>' +
+        '<div class="field-row"><div class="field full"><div class="label">描述</div><input id="j_'+key+'_'+i+'_desc" value="'+esc(s.description_zh)+'"></div></div>' +
+        '<div class="field-row">' + field('价格','j_'+key+'_'+i+'_price',s.price) + field('时长','j_'+key+'_'+i+'_duration',s.duration) + '</div></div>';
+    }).join('') + '</div>' +
+    '<button class="json-add" onclick="addService(\''+hid+'\')">＋ 添加服务</button>';
+}
+function addService(hid) {
+  var key='svc_'+hid; var arr=getJson(key); arr.push({name_zh:'',name_en:'',description_zh:'',price:'',duration:''});
+  setJson(key,arr); refreshJsonSection(key, hid, 'services');
+}
+function collectServices(hid) {
+  var key='svc_'+hid, arr=getJson(key);
+  return arr.map(function(s,i) {
+    function g(f){var el=document.getElementById('j_'+key+'_'+i+'_'+f);return el?el.value:'';}
+    return {name_zh:g('name_zh'),name_en:g('name_en'),description_zh:g('desc'),price:g('price'),duration:g('duration')};
+  });
+}
+
+function renderEventsList(hid) {
+  var key='evt_'+hid, items=getJson(key);
+  return '<div class="label">📅 活动日程</div>' +
+    '<div id="jl_'+key+'">' + items.map(function(e,i) {
+      return '<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+key+'\','+i+')">×</button>' +
+        '<div class="field-row">' + field('活动名称（中文）','j_'+key+'_'+i+'_title_zh',e.title_zh) + field('活动名称（英文）','j_'+key+'_'+i+'_title_en',e.title_en) + '</div>' +
+        '<div class="field-row">' + field('日期','j_'+key+'_'+i+'_date',e.date) + field('时间','j_'+key+'_'+i+'_time',e.time) + '</div>' +
+        '<div class="field-row">' + field('地点','j_'+key+'_'+i+'_loc',e.location_zh) + field('描述','j_'+key+'_'+i+'_desc',e.description_zh) + '</div></div>';
+    }).join('') + '</div>' +
+    '<button class="json-add" onclick="addEvent(\''+hid+'\')">＋ 添加活动</button>';
+}
+function addEvent(hid) {
+  var key='evt_'+hid; getJson(key).push({title_zh:'',title_en:'',date:'',time:'',location_zh:'',description_zh:''});
+  refreshJsonSection(key, hid, 'events');
+}
+function collectEvents(hid) {
+  var key='evt_'+hid;
+  return getJson(key).map(function(e,i) {
+    function g(f){var el=document.getElementById('j_'+key+'_'+i+'_'+f);return el?el.value:'';}
+    return {title_zh:g('title_zh'),title_en:g('title_en'),date:g('date'),time:g('time'),location_zh:g('loc'),description_zh:g('desc')};
+  });
+}
+
+function renderProductsList(hid) {
+  var key='prd_'+hid, items=getJson(key);
+  return '<div class="label">🛍️ 品牌产品</div>' +
+    '<div id="jl_'+key+'">' + items.map(function(p,i) {
+      return '<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+key+'\','+i+')">×</button>' +
+        '<div class="field-row">' + field('产品名称（中文）','j_'+key+'_'+i+'_name_zh',p.name_zh) + field('价格','j_'+key+'_'+i+'_price',p.price) + '</div>' +
+        '<div class="field-row"><div class="field full"><div class="label">描述</div><input id="j_'+key+'_'+i+'_desc" value="'+esc(p.description_zh)+'"></div></div></div>';
+    }).join('') + '</div>' +
+    '<button class="json-add" onclick="addProduct(\''+hid+'\')">＋ 添加产品</button>';
+}
+function addProduct(hid) {
+  var key='prd_'+hid; getJson(key).push({name_zh:'',name_en:'',price:'',image_url:'',description_zh:''});
+  refreshJsonSection(key, hid, 'products');
+}
+function collectProducts(hid) {
+  var key='prd_'+hid;
+  return getJson(key).map(function(p,i) {
+    function g(f){var el=document.getElementById('j_'+key+'_'+i+'_'+f);return el?el.value:'';}
+    return {name_zh:g('name_zh'),name_en:'',price:g('price'),image_url:'',description_zh:g('desc')};
+  });
+}
+
+function delJsonItem(key, idx) {
+  var arr=getJson(key); arr.splice(idx,1);
+  // 找到 healer id：key 格式是 svc_xxx, evt_xxx, prd_xxx
+  var parts=key.split('_'), type=parts[0], hid=parts.slice(1).join('_');
+  var typeMap={svc:'services',evt:'events',prd:'products'};
+  refreshJsonSection(key, hid, typeMap[type]);
+}
+function refreshJsonSection(key, hid, sectionType) {
+  // 先收集当前所有输入值再重新渲染
+  var container=document.getElementById('jsec_'+key);
+  if(!container) return;
+  var html='';
+  if(sectionType==='services') html=renderServicesList(hid);
+  else if(sectionType==='events') html=renderEventsList(hid);
+  else if(sectionType==='products') html=renderProductsList(hid);
+  container.innerHTML=html;
+}
+
+// ══════════════════════════════════════════════════════════
+// P0: Markdown 预览
+// ══════════════════════════════════════════════════════════
+function mdToHtml(md) {
+  if(!md) return '<span style="color:#6b7280;font-style:italic">（暂无内容，在左侧输入 Markdown）</span>';
+  var h = esc(md);
+  // 标题
+  h = h.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  h = h.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  // 粗体
+  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // 引用块
+  h = h.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+  // 有序列表
+  h = h.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  // 无序列表
+  h = h.replace(/^- (.+)$/gm, '<li>$1</li>');
+  // 段落（连续 li 包裹 ul）
+  h = h.replace(/(<li>.*<\/li>\n?)+/g, function(m){ return '<ul>'+m+'</ul>'; });
+  // 空行分段
+  h = h.replace(/\n\n/g, '</p><p>');
+  h = '<p>' + h + '</p>';
+  h = h.replace(/<p><h([23])>/g,'<h$1>').replace(/<\/h([23])><\/p>/g,'</h$1>');
+  h = h.replace(/<p><blockquote>/g,'<blockquote>').replace(/<\/blockquote><\/p>/g,'</blockquote>');
+  h = h.replace(/<p><ul>/g,'<ul>').replace(/<\/ul><\/p>/g,'</ul>');
+  return h;
+}
+function updateMdPreview(srcId, previewId) {
+  var src=document.getElementById(srcId), pre=document.getElementById(previewId);
+  if(src&&pre) pre.innerHTML=mdToHtml(src.value);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -557,225 +698,288 @@ function refreshTagEditor(key) {
 async function renderHealers() {
   var healers = await fetchHealers();
   document.getElementById('healersList').innerHTML = healers.map(function(h) {
-    tagState[h.id] = (h.tags || []).slice();
+    tagState[h.id] = (h.tags||[]).slice();
+    // P0: 初始化 JSONB 状态
+    jsonState['svc_'+h.id] = (h.services||[]).slice();
+    jsonState['evt_'+h.id] = (h.events||[]).slice();
+    jsonState['prd_'+h.id] = (h.products||[]).slice();
     return healerCard(h);
   }).join('');
 }
 
 function healerCard(h) {
-  var chk = h.active !== false ? 'checked' : '';
-  var offBadge = h.active === false ? ' <span style="font-size:11px;color:#ef4444;font-weight:400">· 已下线</span>' : '';
+  var chk = h.active!==false?'checked':'';
+  var off = h.active===false?' <span style="font-size:11px;color:#ef4444;font-weight:400">· 已下线</span>':'';
   return [
-    '<div class="card" id="hcard_' + h.id + '">',
+    '<div class="card" id="hcard_'+h.id+'">',
       '<div class="card-header">',
-        '<div class="card-title"><span style="font-size:22px">' + esc(h.emoji||'🌿') + '</span> ' + esc(h.name_zh) + offBadge + '</div>',
+        '<div class="card-title"><span style="font-size:22px">'+esc(h.emoji||'🌿')+'</span> '+esc(h.name_zh)+off+'</div>',
         '<div class="card-actions">',
-          '<button class="collapse-btn" onclick="toggleCard(\'h_' + h.id + '\')">收起 ▲</button>',
-          '<button class="delete-btn" onclick="confirmDelete(\'healer\',\'' + h.id + '\',\'' + esc(h.name_zh) + '\')">删除</button>',
+          '<button class="collapse-btn" onclick="toggleCard(\'h_'+h.id+'\')">收起 ▲</button>',
+          '<button class="delete-btn" onclick="confirmDelete(\'healer\',\''+h.id+'\',\''+esc(h.name_zh)+'\')">删除</button>',
         '</div>',
       '</div>',
-      '<div class="card-body" id="cb_h_' + h.id + '">',
-        '<div class="field-row"><div class="field" style="justify-content:flex-end;padding-top:4px"><label class="toggle-wrap"><input type="checkbox" ' + chk + ' id="hf_' + h.id + '_active"><div class="toggle-track"></div><span class="toggle-lbl">上线显示</span></label></div></div>',
+      '<div class="card-body" id="cb_h_'+h.id+'">',
+        // 上线开关
+        '<div class="field-row"><div class="field" style="justify-content:flex-end;padding-top:4px"><label class="toggle-wrap"><input type="checkbox" '+chk+' id="hf_'+h.id+'_active"><div class="toggle-track"></div><span class="toggle-lbl">上线显示</span></label></div></div>',
         // 头像
         '<div class="field" style="margin-bottom:14px"><div class="label">头像</div><div class="img-edit-row">',
-          '<div class="img-preview-box ' + (h.avatar_url?'':'no-img') + '" id="hprev_' + h.id + '" onclick="document.getElementById(\'hfile_' + h.id + '\').click()" title="点击上传头像">',
-            (h.avatar_url ? '<img src="' + esc(h.avatar_url) + '" onerror="this.parentNode.classList.add(\'no-img\');this.remove()">' : esc(h.emoji||'🌿')),
-            '<div class="img-clear" onclick="event.stopPropagation();clearImg(\'' + h.id + '\',\'healer\',\'' + esc(h.emoji||'🌿') + '\')">🗑</div><div class="img-upload-hint">📷</div></div>',
+          '<div class="img-preview-box '+(h.avatar_url?'':'no-img')+'" id="hprev_'+h.id+'" onclick="document.getElementById(\'hfile_'+h.id+'\').click()">',
+            (h.avatar_url?'<img src="'+esc(h.avatar_url)+'" onerror="this.parentNode.classList.add(\'no-img\');this.remove()">':esc(h.emoji||'🌿')),
+            '<div class="img-clear" onclick="event.stopPropagation();clearImg(\''+h.id+'\',\'healer\',\''+esc(h.emoji||'🌿')+'\')">🗑</div><div class="img-upload-hint">📷</div></div>',
           '<div class="img-controls">',
-            '<input class="img-url-inp" id="hf_' + h.id + '_avatar_url" value="' + esc(h.avatar_url||'') + '" placeholder="粘贴图片 URL" oninput="previewImg(\'' + h.id + '\',\'healer\',this.value,\'' + esc(h.emoji||'🌿') + '\')">',
-            '<label class="img-upload-label">📷 从本地上传<input type="file" id="hfile_' + h.id + '" accept="image/*" onchange="uploadImg(event,\'' + h.id + '\',\'healer\',\'' + esc(h.emoji||'🌿') + '\')"></label>',
-            '<div class="img-hint">点击头像或按钮上传 · 或粘贴图片 URL</div></div></div></div>',
-        '<div class="field-row">', field('中文名字','hf_'+h.id+'_name_zh',h.name_zh), field('英文名字','hf_'+h.id+'_name_en',h.name_en), '</div>',
-        '<div class="field-row">', field('职称（中文）','hf_'+h.id+'_title_zh',h.title_zh), field('职称（英文）','hf_'+h.id+'_title_en',h.title_en), '</div>',
-        '<div class="field-row">', field('副标题（中文）','hf_'+h.id+'_sub_zh',h.sub_zh), field('副标题（英文）','hf_'+h.id+'_sub_en',h.sub_en), '</div>',
+            '<input class="img-url-inp" id="hf_'+h.id+'_avatar_url" value="'+esc(h.avatar_url||'')+'" placeholder="粘贴图片 URL" oninput="previewImg(\''+h.id+'\',\'healer\',this.value,\''+esc(h.emoji||'🌿')+'\')">',
+            '<label class="img-upload-label">📷 从本地上传<input type="file" id="hfile_'+h.id+'" accept="image/*" onchange="uploadImg(event,\''+h.id+'\',\'healer\',\''+esc(h.emoji||'🌿')+'\')"></label>',
+          '</div></div></div>',
+        // 基本信息
+        '<div class="field-row">',field('中文名字','hf_'+h.id+'_name_zh',h.name_zh),field('英文名字','hf_'+h.id+'_name_en',h.name_en),'</div>',
+        '<div class="field-row">',field('职称（中文）','hf_'+h.id+'_title_zh',h.title_zh),field('职称（英文）','hf_'+h.id+'_title_en',h.title_en),'</div>',
+        '<div class="field-row">',field('副标题（中文）','hf_'+h.id+'_sub_zh',h.sub_zh),field('副标题（英文）','hf_'+h.id+'_sub_en',h.sub_en),'</div>',
         '<div class="field-row"><div class="field full"><div class="label">简介（中文）</div><textarea id="hf_'+h.id+'_bio_zh">'+escText(h.bio_zh)+'</textarea></div></div>',
         '<div class="field-row"><div class="field full"><div class="label">简介（英文）</div><textarea id="hf_'+h.id+'_bio_en">'+escText(h.bio_en)+'</textarea></div></div>',
-        '<div class="field-row col3">', field('价格','hf_'+h.id+'_price',h.price), field('所在地（中文）','hf_'+h.id+'_location_zh',h.location_zh), field('所在地（英文）','hf_'+h.id+'_location_en',h.location_en), '</div>',
-        '<div class="field-row">', field('可约状态（中文）','hf_'+h.id+'_avail_zh',h.avail_zh||'线上可约'), field('可约状态（英文）','hf_'+h.id+'_avail_en',h.avail_en||'Online available'), '</div>',
-        '<div class="field-row">', field('预约日期','hf_'+h.id+'_book_day',h.book_day), field('预约月份','hf_'+h.id+'_book_month',h.book_month), '</div>',
-        '<div class="field" style="margin-bottom:14px"><div class="label">标签 <small>（输入后按 Enter 添加）</small></div>', tagEditor(h.id), '</div>',
+        // P0: 完整简介
+        '<div class="field-row"><div class="field full"><div class="label">📝 完整简介（中文，用于个人主页）</div><textarea id="hf_'+h.id+'_long_bio_zh" style="min-height:120px">'+escText(h.long_bio_zh)+'</textarea></div></div>',
+        '<div class="field-row"><div class="field full"><div class="label">📝 完整简介（英文，用于个人主页）</div><textarea id="hf_'+h.id+'_long_bio_en" style="min-height:120px">'+escText(h.long_bio_en)+'</textarea></div></div>',
+        // 价格、位置
+        '<div class="field-row col3">',field('价格','hf_'+h.id+'_price',h.price),field('所在地（中文）','hf_'+h.id+'_location_zh',h.location_zh),field('所在地（英文）','hf_'+h.id+'_location_en',h.location_en),'</div>',
+        '<div class="field-row">',field('可约状态（中文）','hf_'+h.id+'_avail_zh',h.avail_zh||'线上可约'),field('可约状态（英文）','hf_'+h.id+'_avail_en',h.avail_en||'Online available'),'</div>',
+        '<div class="field-row">',field('预约日期','hf_'+h.id+'_book_day',h.book_day),field('预约月份','hf_'+h.id+'_book_month',h.book_month),'</div>',
+        // 标签
+        '<div class="field" style="margin-bottom:14px"><div class="label">标签</div>',tagEditor(h.id),'</div>',
+        // P0: 服务列表
+        '<div class="field" style="margin-bottom:14px" id="jsec_svc_'+h.id+'">',renderServicesList(h.id),'</div>',
+        // P0: 活动日程
+        '<div class="field" style="margin-bottom:14px" id="jsec_evt_'+h.id+'">',renderEventsList(h.id),'</div>',
+        // P0: 品牌产品
+        '<div class="field" style="margin-bottom:14px" id="jsec_prd_'+h.id+'">',renderProductsList(h.id),'</div>',
       '</div>',
     '</div>'
   ].join('');
 }
 
 async function saveHealers() {
-  var healers = cache.healers || [];
+  var healers = cache.healers||[];
+  // 先收集 JSONB 数据
+  healers.forEach(function(h) {
+    jsonState['svc_'+h.id] = collectServices(h.id);
+    jsonState['evt_'+h.id] = collectEvents(h.id);
+    jsonState['prd_'+h.id] = collectProducts(h.id);
+  });
   var updates = healers.map(function(h) {
-    function g(f) { var el = document.getElementById('hf_'+h.id+'_'+f); return el ? el.value : (h[f]||''); }
-    function cb(f) { var el = document.getElementById('hf_'+h.id+'_'+f); return el ? el.checked : !!h[f]; }
+    function g(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.value:(h[f]||'');}
+    function cb(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.checked:!!h[f];}
     return { id:h.id, emoji:h.emoji, bg:h.bg, sort_order:h.sort_order,
       name_zh:g('name_zh'), name_en:g('name_en'), title_zh:g('title_zh'), title_en:g('title_en'),
       sub_zh:g('sub_zh'), sub_en:g('sub_en'), bio_zh:g('bio_zh'), bio_en:g('bio_en'),
+      long_bio_zh:g('long_bio_zh'), long_bio_en:g('long_bio_en'),
       price:g('price'), location_zh:g('location_zh'), location_en:g('location_en'),
       avail_zh:g('avail_zh'), avail_en:g('avail_en'), book_day:g('book_day'), book_month:g('book_month'),
-      tags:(tagState[h.id]||[]).slice(), avatar_url:g('avatar_url'), active:cb('active') };
+      tags:(tagState[h.id]||[]).slice(), avatar_url:g('avatar_url'), active:cb('active'),
+      services:jsonState['svc_'+h.id], events:jsonState['evt_'+h.id], products:jsonState['prd_'+h.id]
+    };
   });
-  var { error } = await sb.from('healers').upsert(updates);
-  if (error) { alert('保存失败: ' + error.message); return; }
+  var {error}=await sb.from('healers').upsert(updates);
+  if(error){alert('保存失败: '+error.message);return;}
   showMsg('healerMsg'); await renderHealers(); updateStats();
 }
 
+// ── 新增疗愈师 ───────────────────────────────────────────
 async function openAddHealer() {
-  ['nh_id','nh_name_zh','nh_name_en','nh_title_zh','nh_title_en','nh_sub_zh','nh_sub_en','nh_bio_zh','nh_bio_en','nh_price','nh_loc_zh','nh_loc_en','nh_avail_zh','nh_avail_en','nh_day','nh_month'].forEach(function(id){ var el=document.getElementById(id); if(el)el.value=''; });
-  document.getElementById('nh_avail_zh').value = '线上可约';
-  document.getElementById('nh_avail_en').value = 'Online available';
-  document.getElementById('modalHealer').style.display = 'flex';
+  ['nh_id','nh_name_zh','nh_name_en','nh_title_zh','nh_title_en','nh_sub_zh','nh_sub_en','nh_bio_zh','nh_bio_en','nh_price','nh_loc_zh','nh_loc_en','nh_avail_zh','nh_avail_en','nh_day','nh_month'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('nh_avail_zh').value='线上可约';
+  document.getElementById('nh_avail_en').value='Online available';
+  document.getElementById('modalHealer').style.display='flex';
 }
-function closeAddHealer() { document.getElementById('modalHealer').style.display = 'none'; }
-
+function closeAddHealer(){document.getElementById('modalHealer').style.display='none';}
 async function confirmAddHealer() {
-  var id = (document.getElementById('nh_id').value||'').trim().replace(/\s+/g,'_').toLowerCase();
-  if (!id) { alert('请填写 ID'); return; }
-  function v(fid) { return (document.getElementById(fid)||{value:''}).value; }
-  var maxOrder = (cache.healers||[]).reduce(function(m,h){ return Math.max(m,h.sort_order||0); }, 0);
-  var { error } = await sb.from('healers').insert({
-    id:id, emoji:'🌿', bg:BG_CLASSES[(cache.healers||[]).length % BG_CLASSES.length],
-    name_zh:v('nh_name_zh'), name_en:v('nh_name_en'), title_zh:v('nh_title_zh'), title_en:v('nh_title_en'),
-    sub_zh:v('nh_sub_zh'), sub_en:v('nh_sub_en'), bio_zh:v('nh_bio_zh'), bio_en:v('nh_bio_en'),
-    price:v('nh_price'), location_zh:v('nh_loc_zh'), location_en:v('nh_loc_en'),
-    avail_zh:v('nh_avail_zh')||'线上可约', avail_en:v('nh_avail_en')||'Online available',
-    book_day:v('nh_day'), book_month:v('nh_month'),
-    tags:[], avatar_url:'', active:true, sort_order:maxOrder+1
+  var id=(document.getElementById('nh_id').value||'').trim().replace(/\s+/g,'_').toLowerCase();
+  if(!id){alert('请填写 ID');return;}
+  function v(fid){return(document.getElementById(fid)||{value:''}).value;}
+  var mx=(cache.healers||[]).reduce(function(m,h){return Math.max(m,h.sort_order||0);},0);
+  var {error}=await sb.from('healers').insert({
+    id:id,emoji:'🌿',bg:BG_CLASSES[(cache.healers||[]).length%BG_CLASSES.length],
+    name_zh:v('nh_name_zh'),name_en:v('nh_name_en'),title_zh:v('nh_title_zh'),title_en:v('nh_title_en'),
+    sub_zh:v('nh_sub_zh'),sub_en:v('nh_sub_en'),bio_zh:v('nh_bio_zh'),bio_en:v('nh_bio_en'),
+    price:v('nh_price'),location_zh:v('nh_loc_zh'),location_en:v('nh_loc_en'),
+    avail_zh:v('nh_avail_zh')||'线上可约',avail_en:v('nh_avail_en')||'Online available',
+    book_day:v('nh_day'),book_month:v('nh_month'),
+    tags:[],avatar_url:'',active:true,sort_order:mx+1,
+    services:'[]',events:'[]',products:'[]',long_bio_zh:'',long_bio_en:''
   });
-  if (error) { alert('添加失败: '+error.message); return; }
+  if(error){alert('添加失败: '+error.message);return;}
   closeAddHealer(); await renderHealers(); updateStats(); showMsg('healerMsg');
 }
 
-// ── Delete (shared) ──────────────────────────────────────
-var pendingDel = null;
-function confirmDelete(type, id, name) {
-  pendingDel = { type:type, id:id };
-  document.getElementById('confirmTitle').textContent = '删除「'+name+'」';
-  document.getElementById('confirmSub').textContent = '删除后无法恢复，请确认。';
-  document.getElementById('confirmDlg').style.display = 'flex';
-}
-function closeConfirm() { pendingDel=null; document.getElementById('confirmDlg').style.display='none'; }
-async function execConfirm() {
-  if(!pendingDel) return;
-  if(pendingDel.type==='healer')  await deleteHealer(pendingDel.id);
-  if(pendingDel.type==='content') await deleteContent(pendingDel.id);
-  closeConfirm();
-}
-async function deleteHealer(id) {
-  await sb.from('healers').delete().eq('id',id);
-  delete tagState[id];
-  await renderHealers(); updateStats(); showMsg('healerMsg');
-}
+// ── 删除 ─────────────────────────────────────────────────
+var pendingDel=null;
+function confirmDelete(t,id,name){pendingDel={type:t,id:id};document.getElementById('confirmTitle').textContent='删除「'+name+'」';document.getElementById('confirmSub').textContent='删除后无法恢复，请确认。';document.getElementById('confirmDlg').style.display='flex';}
+function closeConfirm(){pendingDel=null;document.getElementById('confirmDlg').style.display='none';}
+async function execConfirm(){if(!pendingDel)return;if(pendingDel.type==='healer')await deleteHealer(pendingDel.id);if(pendingDel.type==='content')await deleteContent(pendingDel.id);closeConfirm();}
+async function deleteHealer(id){await sb.from('healers').delete().eq('id',id);delete tagState[id];await renderHealers();updateStats();showMsg('healerMsg');}
 
 // ══════════════════════════════════════════════════════════
 // HOMEPAGE
 // ══════════════════════════════════════════════════════════
 async function loadHomepage() {
-  var hp = await fetchHomepage();
-  function set(id,v) { var el=document.getElementById(id); if(el)el.value=v||''; }
-  set('hp_hero_title_zh',hp.hero_title_zh); set('hp_hero_sub_en',hp.hero_sub_en);
-  set('hp_hero_desc_zh',hp.hero_desc_zh);   set('hp_hero_desc_en',hp.hero_desc_en);
-  set('hp_stat_content',hp.stat_content);   set('hp_stat_healers',hp.stat_healers);
-  set('hp_stat_domains',hp.stat_domains);   set('hp_founder_quote_zh',hp.founder_quote_zh);
-  set('hp_founder_quote_en',hp.founder_quote_en); set('hp_founder_name_zh',hp.founder_name_zh);
+  var hp=await fetchHomepage();
+  function set(id,v){var el=document.getElementById(id);if(el)el.value=v||'';}
+  set('hp_hero_title_zh',hp.hero_title_zh);set('hp_hero_sub_en',hp.hero_sub_en);
+  set('hp_hero_desc_zh',hp.hero_desc_zh);set('hp_hero_desc_en',hp.hero_desc_en);
+  set('hp_stat_content',hp.stat_content);set('hp_stat_healers',hp.stat_healers);set('hp_stat_domains',hp.stat_domains);
+  set('hp_founder_quote_zh',hp.founder_quote_zh);set('hp_founder_quote_en',hp.founder_quote_en);set('hp_founder_name_zh',hp.founder_name_zh);
 }
 async function saveHomepage() {
-  function g(id) { var el=document.getElementById(id); return el?el.value:''; }
-  var { error } = await sb.from('homepage').upsert({ id:1,
-    hero_title_zh:g('hp_hero_title_zh'), hero_sub_en:g('hp_hero_sub_en'),
-    hero_desc_zh:g('hp_hero_desc_zh'), hero_desc_en:g('hp_hero_desc_en'),
-    stat_content:g('hp_stat_content'), stat_healers:g('hp_stat_healers'), stat_domains:g('hp_stat_domains'),
-    founder_quote_zh:g('hp_founder_quote_zh'), founder_quote_en:g('hp_founder_quote_en'), founder_name_zh:g('hp_founder_name_zh')
+  function g(id){var el=document.getElementById(id);return el?el.value:'';}
+  var {error}=await sb.from('homepage').upsert({id:1,
+    hero_title_zh:g('hp_hero_title_zh'),hero_sub_en:g('hp_hero_sub_en'),
+    hero_desc_zh:g('hp_hero_desc_zh'),hero_desc_en:g('hp_hero_desc_en'),
+    stat_content:g('hp_stat_content'),stat_healers:g('hp_stat_healers'),stat_domains:g('hp_stat_domains'),
+    founder_quote_zh:g('hp_founder_quote_zh'),founder_quote_en:g('hp_founder_quote_en'),founder_name_zh:g('hp_founder_name_zh')
   });
-  if (error) { alert('保存失败: '+error.message); return; }
+  if(error){alert('保存失败: '+error.message);return;}
   showMsg('homepageMsg');
 }
 
 // ══════════════════════════════════════════════════════════
-// CONTENT
+// CONTENT（P0: 含正文编辑器 + 排序 + 轮播控制）
 // ══════════════════════════════════════════════════════════
-var TYPE_INFO = { article:{label:'📄 文章',cls:'badge-article'}, podcast:{label:'🎧 播客',cls:'badge-podcast'}, meditation:{label:'🧘 冥想引导',cls:'badge-meditation'} };
+var TYPE_INFO={article:{label:'📄 文章',cls:'badge-article'},podcast:{label:'🎧 播客',cls:'badge-podcast'},meditation:{label:'🧘 冥想引导',cls:'badge-meditation'}};
 
 async function renderContent() {
-  var items = await fetchContent();
-  document.getElementById('contentList').innerHTML = items.map(function(c) {
-    tagState['c_'+c.id] = (c.tags||[]).slice();
-    return contentCard(c);
+  var items=await fetchContent();
+  document.getElementById('contentList').innerHTML=items.map(function(c,idx) {
+    tagState['c_'+c.id]=(c.tags||[]).slice();
+    return contentCard(c,idx,items.length);
   }).join('');
 }
 
-function contentCard(c) {
-  var info = TYPE_INFO[c.type]||TYPE_INFO.article;
-  var activeChk = c.active!==false?'checked':'';
-  var featuredChk = c.featured?'checked':'';
-  var ckey = 'c_'+c.id;
+function contentCard(c,idx,total) {
+  var info=TYPE_INFO[c.type]||TYPE_INFO.article;
+  var activeChk=c.active!==false?'checked':'';
+  var featuredChk=c.featured?'checked':'';
+  var carouselBadge=(c.carousel_order&&c.carousel_order>0)?'<span class="carousel-badge">轮播 #'+c.carousel_order+'</span>':'';
+  var ckey='c_'+c.id;
   return [
     '<div class="card" id="ccard_'+c.id+'">',
-      '<div class="card-header"><div class="card-title"><span class="type-badge '+info.cls+'">'+info.label+'</span> '+esc(c.title_zh||'（无标题）')+'</div>',
-        '<div class="card-actions"><button class="collapse-btn" onclick="toggleCard(\'c_'+c.id+'\')">收起 ▲</button>',
-        '<button class="delete-btn" onclick="confirmDelete(\'content\',\''+c.id+'\',\''+esc(c.title_zh||'')+'\')">删除</button></div></div>',
+      '<div class="card-header">',
+        '<div class="card-title"><span class="type-badge '+info.cls+'">'+info.label+'</span> '+esc(c.title_zh||'（无标题）')+carouselBadge+'</div>',
+        '<div class="card-actions">',
+          // P0: 排序按钮
+          '<div class="sort-btns">',
+            '<button class="sort-btn" onclick="moveContent(\''+c.id+'\',-1)"'+(idx===0?' disabled':'')+' title="上移">▲</button>',
+            '<button class="sort-btn" onclick="moveContent(\''+c.id+'\',1)"'+(idx===total-1?' disabled':'')+' title="下移">▼</button>',
+          '</div>',
+          '<button class="collapse-btn" onclick="toggleCard(\'c_'+c.id+'\')">收起 ▲</button>',
+          '<button class="delete-btn" onclick="confirmDelete(\'content\',\''+c.id+'\',\''+esc(c.title_zh||'')+'\')">删除</button>',
+        '</div>',
+      '</div>',
       '<div class="card-body" id="cb_c_'+c.id+'">',
-        '<div class="field-row"><div class="field"><div class="label">内容类型</div><select id="cf_'+c.id+'_type" onchange="toggleAudioSection(\''+c.id+'\')">',
-          '<option value="article"'+(c.type==='article'?' selected':'')+'>📄 文章</option>',
-          '<option value="podcast"'+(c.type==='podcast'?' selected':'')+'>🎧 播客</option>',
-          '<option value="meditation"'+(c.type==='meditation'?' selected':'')+'>🧘 冥想引导</option></select></div>',
-          '<div class="field"><div class="label">封面 Emoji</div><input id="cf_'+c.id+'_emoji" value="'+esc(c.emoji||'')+'"></div></div>',
+        '<div class="field-row">',
+          '<div class="field"><div class="label">内容类型</div><select id="cf_'+c.id+'_type" onchange="toggleAudioSection(\''+c.id+'\')">',
+            '<option value="article"'+(c.type==='article'?' selected':'')+'>📄 文章</option>',
+            '<option value="podcast"'+(c.type==='podcast'?' selected':'')+'>🎧 播客</option>',
+            '<option value="meditation"'+(c.type==='meditation'?' selected':'')+'>🧘 冥想引导</option></select></div>',
+          '<div class="field"><div class="label">封面 Emoji</div><input id="cf_'+c.id+'_emoji" value="'+esc(c.emoji||'')+'"></div>',
+        '</div>',
         '<div style="display:flex;gap:20px;margin-bottom:14px">',
           '<label class="toggle-wrap"><input type="checkbox" '+activeChk+' id="cf_'+c.id+'_active"><div class="toggle-track"></div><span class="toggle-lbl">上线显示</span></label>',
-          '<label class="toggle-wrap"><input type="checkbox" '+featuredChk+' id="cf_'+c.id+'_featured"><div class="toggle-track"></div><span class="toggle-lbl">本周推荐</span></label></div>',
-        // 封面
+          '<label class="toggle-wrap"><input type="checkbox" '+featuredChk+' id="cf_'+c.id+'_featured"><div class="toggle-track"></div><span class="toggle-lbl">本周推荐</span></label>',
+        '</div>',
+        // P0: 轮播排序
+        '<div class="field-row"><div class="field"><div class="label">轮播位置 <small>（填 1-4 加入首页轮播，0=不显示）</small></div><input id="cf_'+c.id+'_carousel" type="number" min="0" max="10" value="'+(c.carousel_order||0)+'"></div></div>',
+        // 封面图片
         '<div class="field" style="margin-bottom:14px"><div class="label">封面图片</div><div class="img-edit-row">',
           '<div class="img-preview-box '+(c.cover_url?'':'no-img')+'" id="cprev_'+c.id+'" onclick="document.getElementById(\'cfile_'+c.id+'\').click()">',
             (c.cover_url?'<img src="'+esc(c.cover_url)+'" onerror="this.parentNode.classList.add(\'no-img\');this.remove()">':esc(c.emoji||'📄')),
             '<div class="img-clear" onclick="event.stopPropagation();clearImg(\''+c.id+'\',\'content\',\''+esc(c.emoji||'📄')+'\')">🗑</div><div class="img-upload-hint">📷</div></div>',
           '<div class="img-controls"><input class="img-url-inp" id="cf_'+c.id+'_cover_url" value="'+esc(c.cover_url||'')+'" placeholder="粘贴图片 URL" oninput="previewImg(\''+c.id+'\',\'content\',this.value,\''+esc(c.emoji||'📄')+'\')">',
-            '<label class="img-upload-label">📷 从本地上传<input type="file" id="cfile_'+c.id+'" accept="image/*" onchange="uploadImg(event,\''+c.id+'\',\'content\',\''+esc(c.emoji||'📄')+'\')"></label>',
-            '<div class="img-hint">点击封面或按钮上传</div></div></div></div>',
+            '<label class="img-upload-label">📷 从本地上传<input type="file" id="cfile_'+c.id+'" accept="image/*" onchange="uploadImg(event,\''+c.id+'\',\'content\',\''+esc(c.emoji||'📄')+'\')"></label></div></div></div>',
         // 音频
         '<div class="audio-section" id="caudio_'+c.id+'" style="'+(c.type==='article'?'display:none':'')+'">',
           '<div class="label">🎵 音频文件</div><div id="caudiowrap_'+c.id+'">'+(c.audio_url?'<audio controls src="'+esc(c.audio_url)+'"></audio>':'')+'</div>',
           '<input class="img-url-inp" id="cf_'+c.id+'_audio_url" value="'+esc(c.audio_url||'')+'" placeholder="粘贴音频直链" oninput="previewAudio(\''+c.id+'\',this.value)" style="margin-bottom:8px">',
-          '<div class="audio-upload-row"><label class="img-upload-label">🎵 上传音频<input type="file" id="afile_'+c.id+'" accept="audio/*" onchange="uploadAudio(event,\''+c.id+'\')"></label><div class="img-hint">支持 MP3 · M4A · OGG</div></div>',
+          '<div class="audio-upload-row"><label class="img-upload-label">🎵 上传音频<input type="file" id="afile_'+c.id+'" accept="audio/*" onchange="uploadAudio(event,\''+c.id+'\')"></label></div>',
           '<div class="sub-label">外部收听链接</div><input class="img-url-inp" id="cf_'+c.id+'_podcast_link" value="'+esc(c.podcast_link||'')+'" placeholder="小宇宙 / Spotify 链接"></div>',
+        // 标题 + 摘要
         '<div class="field-row"><div class="field full"><div class="label">标题（中文）</div><input id="cf_'+c.id+'_title_zh" value="'+esc(c.title_zh||'')+'"></div></div>',
         '<div class="field-row"><div class="field full"><div class="label">标题（英文）</div><input id="cf_'+c.id+'_title_en" value="'+esc(c.title_en||'')+'"></div></div>',
-        '<div class="field-row"><div class="field full"><div class="label">摘要（中文）</div><textarea id="cf_'+c.id+'_summary_zh">'+escText(c.summary_zh||'')+'</textarea></div></div>',
+        '<div class="field-row"><div class="field full"><div class="label">摘要（中文）</div><textarea id="cf_'+c.id+'_summary_zh" style="min-height:60px">'+escText(c.summary_zh||'')+'</textarea></div></div>',
         '<div class="field-row col3">',field('作者','cf_'+c.id+'_author',c.author),field('时长（中文）','cf_'+c.id+'_duration_zh',c.duration_zh),field('时长（英文）','cf_'+c.id+'_duration_en',c.duration_en),'</div>',
+        // P0: Markdown 正文编辑器
+        '<div class="field full" style="margin-bottom:14px">',
+          '<div class="label">📝 正文（中文 Markdown）<small> — 支持 ## 标题、**粗体**、> 引用、1. 列表</small></div>',
+          '<div class="md-wrap">',
+            '<textarea id="cf_'+c.id+'_body_zh" style="min-height:200px" oninput="updateMdPreview(\'cf_'+c.id+'_body_zh\',\'mdpre_'+c.id+'_zh\')">'+escText(c.body_zh||'')+'</textarea>',
+            '<div class="md-preview" id="mdpre_'+c.id+'_zh">'+mdToHtml(c.body_zh||'')+'</div>',
+          '</div>',
+        '</div>',
+        '<div class="field full" style="margin-bottom:14px">',
+          '<div class="label">📝 正文（英文 Markdown）</div>',
+          '<div class="md-wrap">',
+            '<textarea id="cf_'+c.id+'_body_en" style="min-height:200px" oninput="updateMdPreview(\'cf_'+c.id+'_body_en\',\'mdpre_'+c.id+'_en\')">'+escText(c.body_en||'')+'</textarea>',
+            '<div class="md-preview" id="mdpre_'+c.id+'_en">'+mdToHtml(c.body_en||'')+'</div>',
+          '</div>',
+        '</div>',
+        // 标签
         '<div class="field" style="margin-bottom:14px"><div class="label">标签</div>',tagEditor(ckey),'</div>',
       '</div>',
     '</div>'
   ].join('');
 }
 
+// P0: 内容排序
+async function moveContent(id, dir) {
+  var items=cache.content||[];
+  var idx=items.findIndex(function(c){return c.id===id;});
+  if(idx<0)return;
+  var j=idx+dir;
+  if(j<0||j>=items.length)return;
+  // 交换 sort_order
+  var so1=items[idx].sort_order, so2=items[j].sort_order;
+  items[idx].sort_order=so2; items[j].sort_order=so1;
+  // 写入数据库
+  await sb.from('content').update({sort_order:so2}).eq('id',items[idx].id);
+  await sb.from('content').update({sort_order:so1}).eq('id',items[j].id);
+  await renderContent();
+}
+
 async function saveContent() {
-  var items = cache.content||[];
-  var updates = items.map(function(c) {
-    function g(f) { var el=document.getElementById('cf_'+c.id+'_'+f); return el?el.value:(c[f]||''); }
-    function cb(f) { var el=document.getElementById('cf_'+c.id+'_'+f); return el?el.checked:!!c[f]; }
+  var items=cache.content||[];
+  var updates=items.map(function(c) {
+    function g(f){var el=document.getElementById('cf_'+c.id+'_'+f);return el?el.value:(c[f]||'');}
+    function cb(f){var el=document.getElementById('cf_'+c.id+'_'+f);return el?el.checked:!!c[f];}
+    var co=document.getElementById('cf_'+c.id+'_carousel');
     return { id:c.id, sort_order:c.sort_order, type:g('type'), emoji:g('emoji'),
       title_zh:g('title_zh'), title_en:g('title_en'), summary_zh:g('summary_zh'),
       author:g('author'), duration_zh:g('duration_zh'), duration_en:g('duration_en'),
       tags:(tagState['c_'+c.id]||[]).slice(), cover_url:g('cover_url'), audio_url:g('audio_url'),
-      podcast_link:g('podcast_link'), active:cb('active'), featured:cb('featured') };
+      podcast_link:g('podcast_link'), active:cb('active'), featured:cb('featured'),
+      body_zh:g('body_zh'), body_en:g('body_en'),
+      carousel_order:co?parseInt(co.value)||0:0
+    };
   });
-  var { error } = await sb.from('content').upsert(updates);
-  if (error) { alert('保存失败: '+error.message); return; }
+  var {error}=await sb.from('content').upsert(updates);
+  if(error){alert('保存失败: '+error.message);return;}
   showMsg('contentMsg'); await renderContent(); updateStats();
 }
 
 function openAddContent() {
-  ['nc_emoji','nc_title_zh','nc_title_en','nc_summary_zh','nc_author','nc_duration_zh'].forEach(function(id){ var el=document.getElementById(id); if(el)el.value=''; });
-  document.getElementById('nc_type').value = 'article';
-  document.getElementById('modalContent').style.display = 'flex';
+  ['nc_emoji','nc_title_zh','nc_title_en','nc_summary_zh','nc_author','nc_duration_zh'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('nc_type').value='article';
+  document.getElementById('modalContent').style.display='flex';
 }
-function closeAddContent() { document.getElementById('modalContent').style.display='none'; }
-
+function closeAddContent(){document.getElementById('modalContent').style.display='none';}
 async function confirmAddContent() {
-  function v(id) { return (document.getElementById(id)||{value:''}).value; }
-  var maxOrder = (cache.content||[]).reduce(function(m,c){ return Math.max(m,c.sort_order||0); },0);
-  var { error } = await sb.from('content').insert({
+  function v(id){return(document.getElementById(id)||{value:''}).value;}
+  var mx=(cache.content||[]).reduce(function(m,c){return Math.max(m,c.sort_order||0);},0);
+  var {error}=await sb.from('content').insert({
     id:'c'+Date.now(), type:v('nc_type'), emoji:v('nc_emoji')||'📄',
     title_zh:v('nc_title_zh'), title_en:v('nc_title_en'), summary_zh:v('nc_summary_zh'),
     author:v('nc_author'), duration_zh:v('nc_duration_zh'), duration_en:'',
-    tags:[], cover_url:'', audio_url:'', podcast_link:'', featured:false, active:true, sort_order:maxOrder+1
+    tags:[], cover_url:'', audio_url:'', podcast_link:'', featured:false, active:true,
+    sort_order:mx+1, body_zh:'', body_en:'', carousel_order:0
   });
-  if (error) { alert('添加失败: '+error.message); return; }
+  if(error){alert('添加失败: '+error.message);return;}
   closeAddContent(); await renderContent(); updateStats(); showMsg('contentMsg');
 }
 async function deleteContent(id) {
@@ -787,35 +991,28 @@ async function deleteContent(id) {
 // ══════════════════════════════════════════════════════════
 // TICKER
 // ══════════════════════════════════════════════════════════
-var tickerData = [];
-
+var tickerData=[];
 async function renderTicker() {
-  var items = await fetchTicker();
-  tickerData = items.map(function(t){ return {id:t.id, label:t.label, sort_order:t.sort_order}; });
+  var items=await fetchTicker();
+  tickerData=items.map(function(t){return{id:t.id,label:t.label,sort_order:t.sort_order};});
   rebuildTickerUI();
 }
 function rebuildTickerUI() {
-  var n = tickerData.length;
-  document.getElementById('tickerList').innerHTML = tickerData.map(function(tag,i) {
+  var n=tickerData.length;
+  document.getElementById('tickerList').innerHTML=tickerData.map(function(tag,i) {
     return '<div class="ticker-row"><span class="ticker-name">'+esc(tag.label)+'</span><div class="ticker-btns">'+
       '<button class="ticker-btn" onclick="moveTickerItem('+i+',-1)"'+(i===0?' disabled':'')+'>▲</button>'+
       '<button class="ticker-btn" onclick="moveTickerItem('+i+',1)"'+(i===n-1?' disabled':'')+'>▼</button>'+
       '<button class="ticker-btn del" onclick="delTickerItem('+i+')">×</button></div></div>';
   }).join('');
 }
-function moveTickerItem(i,dir) { var j=i+dir; if(j<0||j>=tickerData.length)return; var t=tickerData[i]; tickerData[i]=tickerData[j]; tickerData[j]=t; rebuildTickerUI(); }
-function delTickerItem(i) { tickerData.splice(i,1); rebuildTickerUI(); }
-function addTickerTag() {
-  var el=document.getElementById('tickerNewInput'); var v=el.value.trim();
-  if(!v||tickerData.find(function(t){return t.label===v;})){ el.value=''; return; }
-  tickerData.push({id:null,label:v,sort_order:tickerData.length+1}); el.value=''; rebuildTickerUI();
-}
-
+function moveTickerItem(i,d){var j=i+d;if(j<0||j>=tickerData.length)return;var t=tickerData[i];tickerData[i]=tickerData[j];tickerData[j]=t;rebuildTickerUI();}
+function delTickerItem(i){tickerData.splice(i,1);rebuildTickerUI();}
+function addTickerTag(){var el=document.getElementById('tickerNewInput');var v=el.value.trim();if(!v||tickerData.find(function(t){return t.label===v;})){el.value='';return;}tickerData.push({id:null,label:v,sort_order:tickerData.length+1});el.value='';rebuildTickerUI();}
 async function saveTicker() {
-  // 删除旧数据，重新插入（ticker 数据量小，简单方案）
   await sb.from('ticker').delete().gte('id',0);
-  var inserts = tickerData.map(function(t,i){ return {label:t.label, sort_order:i+1}; });
-  if (inserts.length>0) { var {error}=await sb.from('ticker').insert(inserts); if(error){alert('保存失败: '+error.message);return;} }
+  var ins=tickerData.map(function(t,i){return{label:t.label,sort_order:i+1};});
+  if(ins.length>0){var{error}=await sb.from('ticker').insert(ins);if(error){alert('保存失败: '+error.message);return;}}
   showMsg('tickerMsg'); await renderTicker(); updateStats();
 }
 
@@ -823,69 +1020,38 @@ async function saveTicker() {
 // SETTINGS
 // ══════════════════════════════════════════════════════════
 async function changePw() {
-  var nw = document.getElementById('newPw').value;
-  var cf = document.getElementById('confirmPw').value;
-  var msg = document.getElementById('pwMsg');
-  msg.style.display = 'block';
-  if (nw.length<6)  { msg.style.color='#ef4444'; msg.textContent='❌ 新密码至少6位'; return; }
-  if (nw !== cf)    { msg.style.color='#ef4444'; msg.textContent='❌ 两次输入不一致'; return; }
-  var { error } = await sb.auth.updateUser({ password: nw });
-  if (error) { msg.style.color='#ef4444'; msg.textContent='❌ '+error.message; return; }
-  msg.style.color='#4ade80'; msg.textContent='✅ 密码已更新';
-  document.getElementById('newPw').value=''; document.getElementById('confirmPw').value='';
+  var nw=document.getElementById('newPw').value, cf=document.getElementById('confirmPw').value, msg=document.getElementById('pwMsg');
+  msg.style.display='block';
+  if(nw.length<6){msg.style.color='#ef4444';msg.textContent='❌ 新密码至少6位';return;}
+  if(nw!==cf){msg.style.color='#ef4444';msg.textContent='❌ 两次输入不一致';return;}
+  var {error}=await sb.auth.updateUser({password:nw});
+  if(error){msg.style.color='#ef4444';msg.textContent='❌ '+error.message;return;}
+  msg.style.color='#4ade80';msg.textContent='✅ 密码已更新';
+  document.getElementById('newPw').value='';document.getElementById('confirmPw').value='';
 }
-
 function updateStats() {
-  var h=document.getElementById('st-healers'), c=document.getElementById('st-content'), t=document.getElementById('st-ticker');
-  if(h)h.textContent=(cache.healers||[]).length;
-  if(c)c.textContent=(cache.content||[]).length;
-  if(t)t.textContent=tickerData.length;
+  var h=document.getElementById('st-healers'),c=document.getElementById('st-content'),t=document.getElementById('st-ticker');
+  if(h)h.textContent=(cache.healers||[]).length;if(c)c.textContent=(cache.content||[]).length;if(t)t.textContent=tickerData.length;
 }
 
 // ══════════════════════════════════════════════════════════
-// IMAGE / AUDIO HELPERS（仍使用 Cloudinary）
+// IMAGE / AUDIO HELPERS
 // ══════════════════════════════════════════════════════════
-function previewImg(id,type,url,fallbackEmoji) {
-  var box=document.getElementById(type==='healer'?'hprev_'+id:'cprev_'+id); if(!box)return;
-  var ov='<div class="img-clear" onclick="event.stopPropagation();clearImg(\''+id+'\',\''+type+'\',\''+fallbackEmoji+'\')">🗑</div><div class="img-upload-hint">📷</div>';
-  if(url){ box.classList.remove('no-img'); box.innerHTML='<img src="'+url+'" onerror="this.parentNode.classList.add(\'no-img\');this.innerHTML=\''+fallbackEmoji+ov+'\'">'+ov; }
-  else { box.classList.add('no-img'); box.innerHTML=fallbackEmoji+ov; }
-}
-function clearImg(id,type,fallbackEmoji) { var el=document.getElementById(type==='healer'?'hf_'+id+'_avatar_url':'cf_'+id+'_cover_url'); if(el)el.value=''; previewImg(id,type,'',fallbackEmoji); }
-function uploadImg(event,id,type,fallbackEmoji) {
-  var file=event.target.files[0]; if(!file)return;
-  var el=document.getElementById(type==='healer'?'hf_'+id+'_avatar_url':'cf_'+id+'_cover_url');
-  var box=document.getElementById(type==='healer'?'hprev_'+id:'cprev_'+id);
-  if(box)box.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">上传中…</div>';
-  var fd=new FormData(); fd.append('file',file); fd.append('upload_preset','awakensphere');
-  fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/image/upload',{method:'POST',body:fd})
-  .then(function(r){return r.json();}).then(function(d){
-    if(d.secure_url){if(el)el.value=d.secure_url;previewImg(id,type,d.secure_url,fallbackEmoji);}
-    else{alert('上传失败');previewImg(id,type,el?el.value:'',fallbackEmoji);}
-  }).catch(function(e){alert('上传出错：'+e.message);previewImg(id,type,el?el.value:'',fallbackEmoji);});
-}
-function toggleAudioSection(id) { var s=document.getElementById('cf_'+id+'_type'),sec=document.getElementById('caudio_'+id); if(s&&sec)sec.style.display=(s.value==='article')?'none':''; }
-function previewAudio(id,url) { var w=document.getElementById('caudiowrap_'+id); if(w)w.innerHTML=url?'<audio controls src="'+url+'"></audio>':''; }
-function uploadAudio(event,id) {
-  var file=event.target.files[0]; if(!file)return;
-  var el=document.getElementById('cf_'+id+'_audio_url'), w=document.getElementById('caudiowrap_'+id);
-  if(w)w.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">上传中…</div>';
-  var fd=new FormData(); fd.append('file',file); fd.append('upload_preset','awakensphere');
-  fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/auto/upload',{method:'POST',body:fd})
-  .then(function(r){return r.json();}).then(function(d){
-    if(d.secure_url){if(el)el.value=d.secure_url;previewAudio(id,d.secure_url);}
-    else{alert('上传失败');if(w)w.innerHTML='';}
-  }).catch(function(e){alert('上传出错：'+e.message);if(w)w.innerHTML='';});
-}
+function previewImg(id,type,url,fe){var box=document.getElementById(type==='healer'?'hprev_'+id:'cprev_'+id);if(!box)return;var ov='<div class="img-clear" onclick="event.stopPropagation();clearImg(\''+id+'\',\''+type+'\',\''+fe+'\')">🗑</div><div class="img-upload-hint">📷</div>';if(url){box.classList.remove('no-img');box.innerHTML='<img src="'+url+'">'+ov;}else{box.classList.add('no-img');box.innerHTML=fe+ov;}}
+function clearImg(id,type,fe){var el=document.getElementById(type==='healer'?'hf_'+id+'_avatar_url':'cf_'+id+'_cover_url');if(el)el.value='';previewImg(id,type,'',fe);}
+function uploadImg(event,id,type,fe){var file=event.target.files[0];if(!file)return;var el=document.getElementById(type==='healer'?'hf_'+id+'_avatar_url':'cf_'+id+'_cover_url');var box=document.getElementById(type==='healer'?'hprev_'+id:'cprev_'+id);if(box)box.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">上传中…</div>';var fd=new FormData();fd.append('file',file);fd.append('upload_preset','awakensphere');fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/image/upload',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){if(d.secure_url){if(el)el.value=d.secure_url;previewImg(id,type,d.secure_url,fe);}else{alert('上传失败');previewImg(id,type,el?el.value:'',fe);}}).catch(function(e){alert('上传出错：'+e.message);previewImg(id,type,el?el.value:'',fe);});}
+function toggleAudioSection(id){var s=document.getElementById('cf_'+id+'_type'),sec=document.getElementById('caudio_'+id);if(s&&sec)sec.style.display=(s.value==='article')?'none':'';}
+function previewAudio(id,url){var w=document.getElementById('caudiowrap_'+id);if(w)w.innerHTML=url?'<audio controls src="'+url+'"></audio>':'';}
+function uploadAudio(event,id){var file=event.target.files[0];if(!file)return;var el=document.getElementById('cf_'+id+'_audio_url'),w=document.getElementById('caudiowrap_'+id);if(w)w.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">上传中…</div>';var fd=new FormData();fd.append('file',file);fd.append('upload_preset','awakensphere');fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/auto/upload',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){if(d.secure_url){if(el)el.value=d.secure_url;previewAudio(id,d.secure_url);}else{alert('上传失败');if(w)w.innerHTML='';}}).catch(function(e){alert('上传出错：'+e.message);if(w)w.innerHTML='';});}
 
 // ══════════════════════════════════════════════════════════
-// BOOT — 检查现有 session 自动登录
+// BOOT
 // ══════════════════════════════════════════════════════════
 (async function boot() {
-  var { data: { session } } = await sb.auth.getSession();
+  var { data:{session} } = await sb.auth.getSession();
   if (session) {
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('dashboard').style.display   = 'block';
+    document.getElementById('loginScreen').style.display='none';
+    document.getElementById('dashboard').style.display='block';
     await initDashboard();
   }
 })();
