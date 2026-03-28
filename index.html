@@ -1310,9 +1310,9 @@ footer { background:#1E1C18; padding:52px 44px 32px; }
   <div class="newsletter">
     <h2 data-zh="与疗愈同行" data-en="Stay Curious, Stay Healing.">与疗愈同行</h2>
     <p data-zh="每周精选疗愈洞见，直达你的邮箱" data-en="Weekly healing insights, delivered to your inbox">每周精选疗愈洞见，直达你的邮箱</p>
-    <div class="nl-form">
-      <input type="email" placeholder="your@email.com">
-      <button data-zh="订阅" data-en="Subscribe">订阅</button>
+    <div class="nl-form" id="nlForm">
+      <input type="email" placeholder="your@email.com" id="nlEmail">
+      <button data-zh="订阅" data-en="Subscribe" onclick="submitNewsletter()">订阅</button><div id="nlMsg" style="display:none;font-size:12px;margin-top:8px;"></div>
     </div>
   </div>
 
@@ -2039,294 +2039,195 @@ applyLang();
 
 
 /* ══════════════════════════════════════
-   SUPABASE 数据加载 + P0 前台渲染
+   SUPABASE 数据加载 + P1 前台功能
    ══════════════════════════════════════ */
+const SUPABASE_URL='https://qsmoyzilsolkcwovkpoe.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzbW95emlsc29sa2N3b3ZrcG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzI5NzQsImV4cCI6MjA5MDI0ODk3NH0.TzeMlevcOgmEs9vBFlJ0M0DuvvisjQL1Sux5OA-qp0E';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+var sbCache={healers:null,content:null};
 
-const SUPABASE_URL  = 'https://qsmoyzilsolkcwovkpoe.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFzbW95emlsc29sa2N3b3ZrcG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ2NzI5NzQsImV4cCI6MjA5MDI0ODk3NH0.TzeMlevcOgmEs9vBFlJ0M0DuvvisjQL1Sux5OA-qp0E';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-// 缓存
-var sbCache = { healers: null, content: null };
-
-// ── Markdown → HTML 渲染器 ──────────────────────────────
-function mdRender(md) {
-  if (!md) return '';
-  var h = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  h = h.replace(/^### (.+)$/gm, '<h3 style="font-family:var(--fh);font-size:20px;font-weight:700;color:var(--text);margin:28px 0 10px;">$1</h3>');
-  h = h.replace(/^## (.+)$/gm, '<h3 style="font-family:var(--fh);font-size:22px;font-weight:700;color:var(--text);margin:32px 0 12px;">$1</h3>');
-  h = h.replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text);">$1</strong>');
-  h = h.replace(/^&gt; (.+)$/gm, '<blockquote style="border-left:3px solid var(--green);padding:14px 20px;background:rgba(53,132,93,.06);border-radius:0 6px 6px 0;margin:24px 0;font-style:italic;color:var(--dark);font-size:16px;line-height:1.75;">$1</blockquote>');
-  h = h.replace(/^\d+\. (.+)$/gm, '<li style="font-size:16px;line-height:1.8;margin-bottom:6px;">$1</li>');
-  h = h.replace(/^- (.+)$/gm, '<li style="font-size:16px;line-height:1.8;margin-bottom:6px;">$1</li>');
-  h = h.replace(/(<li[^>]*>.*<\/li>\n?)+/g, function(m) { return '<ol style="padding-left:24px;margin:16px 0;">' + m + '</ol>'; });
-  h = h.replace(/\n\n/g, '</p><p style="font-size:16px;line-height:1.88;margin-bottom:20px;color:#3A3A3A;">');
-  h = '<p style="font-size:16px;line-height:1.88;margin-bottom:20px;color:#3A3A3A;">' + h + '</p>';
-  // 清理嵌套
-  h = h.replace(/<p[^>]*><h3/g, '<h3').replace(/<\/h3><\/p>/g, '</h3>');
-  h = h.replace(/<p[^>]*><blockquote/g, '<blockquote').replace(/<\/blockquote><\/p>/g, '</blockquote>');
-  h = h.replace(/<p[^>]*><ol/g, '<ol').replace(/<\/ol><\/p>/g, '</ol>');
+// ── Markdown → HTML ──────────────────────────────────────
+function mdRender(md){
+  if(!md)return'';var h=md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  h=h.replace(/^### (.+)$/gm,'<h3 style="font-family:var(--fh);font-size:20px;font-weight:700;color:var(--text);margin:28px 0 10px;">$1</h3>');
+  h=h.replace(/^## (.+)$/gm,'<h3 style="font-family:var(--fh);font-size:22px;font-weight:700;color:var(--text);margin:32px 0 12px;">$1</h3>');
+  h=h.replace(/\*\*(.+?)\*\*/g,'<strong style="color:var(--text);">$1</strong>');
+  h=h.replace(/^&gt; (.+)$/gm,'<blockquote style="border-left:3px solid var(--green);padding:14px 20px;background:rgba(53,132,93,.06);border-radius:0 6px 6px 0;margin:24px 0;font-style:italic;color:var(--dark);font-size:16px;line-height:1.75;">$1</blockquote>');
+  h=h.replace(/^\d+\. (.+)$/gm,'<li style="font-size:16px;line-height:1.8;margin-bottom:6px;">$1</li>');
+  h=h.replace(/^- (.+)$/gm,'<li style="font-size:16px;line-height:1.8;margin-bottom:6px;">$1</li>');
+  h=h.replace(/(<li[^>]*>.*<\/li>\n?)+/g,function(m){return'<ol style="padding-left:24px;margin:16px 0;">'+m+'</ol>';});
+  h=h.replace(/\n\n/g,'</p><p style="font-size:16px;line-height:1.88;margin-bottom:20px;color:#3A3A3A;">');
+  h='<p style="font-size:16px;line-height:1.88;margin-bottom:20px;color:#3A3A3A;">'+h+'</p>';
+  h=h.replace(/<p[^>]*><h3/g,'<h3').replace(/<\/h3><\/p>/g,'</h3>');
+  h=h.replace(/<p[^>]*><blockquote/g,'<blockquote').replace(/<\/blockquote><\/p>/g,'</blockquote>');
+  h=h.replace(/<p[^>]*><ol/g,'<ol').replace(/<\/ol><\/p>/g,'</ol>');
   return h;
 }
 
-// ── 首页数据加载 ─────────────────────────────────────────
-async function loadSiteData() {
-  try {
-    var [healersRes, homepageRes, contentRes, tickerRes] = await Promise.all([
-      sb.from('healers').select('*').eq('active', true).order('sort_order'),
-      sb.from('homepage').select('*').eq('id', 1).single(),
-      sb.from('content').select('*').eq('active', true).order('sort_order'),
+// ── 数据加载 ─────────────────────────────────────────────
+async function loadSiteData(){
+  try{
+    var[healersRes,homepageRes,contentRes,tickerRes]=await Promise.all([
+      sb.from('healers').select('*').eq('active',true).order('sort_order'),
+      sb.from('homepage').select('*').eq('id',1).single(),
+      sb.from('content').select('*').eq('active',true).order('sort_order'),
       sb.from('ticker').select('*').order('sort_order')
     ]);
-
-    if (homepageRes.data) applyHomepageData(homepageRes.data);
-
-    if (healersRes.data) {
-      sbCache.healers = healersRes.data;
-      healersRes.data.forEach(function(h) {
-        HEALERS[h.id] = {
-          name: h.name_zh, title: h.title_en || h.title_zh,
-          sub: h.sub_en || h.sub_zh, emoji: h.emoji, bg: h.bg,
-          price: h.price, loc: h.location_zh,
-          bookZh: '预约 ' + (h.name_en || h.name_zh).split(' ')[0],
-          bookEn: 'Book ' + (h.name_en || h.name_zh).split(' ')[0],
-          day: h.book_day, month: h.book_month
-        };
+    if(homepageRes.data)applyHomepageData(homepageRes.data);
+    if(healersRes.data){
+      sbCache.healers=healersRes.data;
+      healersRes.data.forEach(function(h){
+        HEALERS[h.id]={name:h.name_zh,title:h.title_en||h.title_zh,sub:h.sub_en||h.sub_zh,emoji:h.emoji,bg:h.bg,price:h.price,loc:h.location_zh,bookZh:'预约 '+(h.name_en||h.name_zh).split(' ')[0],bookEn:'Book '+(h.name_en||h.name_zh).split(' ')[0],day:h.book_day,month:h.book_month};
       });
     }
+    if(contentRes.data)sbCache.content=contentRes.data;
+    if(tickerRes.data&&tickerRes.data.length>0)applyTickerData(tickerRes.data);
+    if(typeof applyLang==='function')applyLang();
+  }catch(e){console.warn('Supabase 加载失败:',e);}
+}
 
-    if (contentRes.data) {
-      sbCache.content = contentRes.data;
+function applyHomepageData(hp){
+  var el;
+  if((el=document.querySelector('.hero-h1'))&&hp.hero_title_zh){el.setAttribute('data-zh',hp.hero_title_zh);el.textContent=hp.hero_title_zh;}
+  if((el=document.querySelector('.hero-h1-zh'))&&hp.hero_sub_en)el.textContent=hp.hero_sub_en;
+  if((el=document.querySelector('.hero-desc'))&&hp.hero_desc_zh){el.setAttribute('data-zh',hp.hero_desc_zh);if(hp.hero_desc_en)el.setAttribute('data-en',hp.hero_desc_en);el.textContent=hp.hero_desc_zh;}
+  var sn=document.querySelectorAll('.stat-num');
+  if(sn[0]&&hp.stat_content)sn[0].textContent=hp.stat_content;
+  if(sn[1]&&hp.stat_healers)sn[1].textContent=hp.stat_healers;
+  if(sn[2]&&hp.stat_domains)sn[2].textContent=hp.stat_domains;
+  if((el=document.querySelector('.founder-quote-text'))&&hp.founder_quote_zh){el.setAttribute('data-zh',hp.founder_quote_zh);if(hp.founder_quote_en)el.setAttribute('data-en',hp.founder_quote_en);el.textContent=hp.founder_quote_zh;}
+  if((el=document.querySelector('.founder-quote-big'))&&hp.founder_quote_zh){el.setAttribute('data-zh',hp.founder_quote_zh);if(hp.founder_quote_en)el.setAttribute('data-en',hp.founder_quote_en);el.textContent=hp.founder_quote_zh;}
+}
+function applyTickerData(items){var inner=document.querySelector('.ticker-inner');if(!inner)return;var html='';for(var r=0;r<2;r++)items.forEach(function(t){html+='<span class="ticker-item">'+t.label+'</span>';});inner.innerHTML=html;}
+
+// ── P0: Profile 完整渲染 ─────────────────────────────────
+async function loadProfileFromSupabase(id){
+  var p=HEALERS[id]||HEALERS.zoe||{};
+  document.getElementById('profileName').textContent=p.name||'';
+  document.getElementById('profileTitle').textContent=p.title||'';
+  document.getElementById('profileSubtitle').textContent=p.sub||'';
+  var ph=document.getElementById('profilePhoto');
+  if(ph){ph.className='profile-photo '+(p.bg||'hc1');ph.textContent=p.emoji||'🌿';ph.style.fontSize='110px';}
+
+  var healer=null;
+  if(sbCache.healers)healer=sbCache.healers.find(function(h){return h.id===id;});
+  if(!healer){var{data}=await sb.from('healers').select('*').eq('id',id).single();healer=data;}
+  if(!healer)return;
+
+  document.getElementById('profileName').textContent=healer.name_zh;
+  document.getElementById('profileTitle').textContent=healer.title_en||healer.title_zh;
+  document.getElementById('profileSubtitle').textContent=healer.sub_en||healer.sub_zh;
+  if(healer.avatar_url&&ph)ph.innerHTML='<img src="'+healer.avatar_url+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=\''+(healer.emoji||'🌿')+'\'">';
+
+  document.getElementById('schedPrice').textContent=healer.price||'';
+  document.getElementById('schedLoc').textContent=healer.location_zh||'';
+  var b=document.getElementById('bookBtn'),fn=(healer.name_en||healer.name_zh).split(' ')[0];
+  if(b){b.setAttribute('data-zh','预约 '+fn);b.setAttribute('data-en','Book '+fn);b.textContent=currentLang==='en'?'Book '+fn:'预约 '+fn;}
+
+  // 长 Bio
+  var bioZh=document.getElementById('profileBioZh'),bioEn=document.getElementById('profileBioEn');
+  if(bioZh&&healer.long_bio_zh)bioZh.innerHTML=healer.long_bio_zh.split('\n').filter(function(p){return p.trim();}).map(function(p){return'<p>'+p+'</p>';}).join('');
+  else if(bioZh&&healer.bio_zh)bioZh.innerHTML='<p>'+healer.bio_zh+'</p>';
+  if(bioEn&&healer.long_bio_en)bioEn.innerHTML=healer.long_bio_en.split('\n').filter(function(p){return p.trim();}).map(function(p){return'<p>'+p+'</p>';}).join('');
+  else if(bioEn&&healer.bio_en)bioEn.innerHTML='<p>'+healer.bio_en+'</p>';
+
+  // 活动日程
+  var events=healer.events||[];
+  if(events.length>0){var evt=events[0];document.getElementById('schedDay').textContent=evt.date?evt.date.split('-')[2]:'';document.getElementById('schedMonth').textContent=evt.date?(['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(evt.date.split('-')[1])]||''):'';var sn=document.getElementById('schedName');if(sn)sn.textContent=currentLang==='en'?(evt.title_en||evt.title_zh):evt.title_zh;}
+
+  // 服务列表
+  var services=healer.services||[];var svcGrid=document.querySelector('#view-profile .services-grid');
+  if(svcGrid&&services.length>0){var icons=['🤲','🌸','📅','✨','🧘','💆'];svcGrid.innerHTML=services.map(function(s,i){return'<div class="service-card"><div class="service-img si'+(i%3+1)+'">'+icons[i%icons.length]+'</div><div class="service-body"><div class="service-name">'+(currentLang==='en'?(s.name_en||s.name_zh):s.name_zh)+'</div><div class="service-detail">'+(s.duration||'')+(s.price?' · '+s.price:'')+'</div></div></div>';}).join('');}
+
+  // 品牌产品
+  var products=healer.products||[];var brandSection=document.querySelector('#view-profile .divider-row');
+  if(brandSection){if(products.length>0){brandSection.style.display='';var bg=brandSection.querySelector('.brand-grid');if(bg){var bgs=['linear-gradient(135deg,#E8DFCE,#C4B090)','linear-gradient(135deg,#C8D8C0,#80A870)','linear-gradient(135deg,#D8C8A8,#A08840)','linear-gradient(135deg,#C8D8CC,#70A880)'];bg.innerHTML=products.map(function(p,i){return'<div class="brand-item"><div class="brand-img" style="background:'+bgs[i%bgs.length]+';">🧴</div><div class="brand-name">'+p.name_zh+'</div><div class="brand-sub-text">'+(p.price||'')+'</div></div>';}).join('');}}else{brandSection.style.display='none';}}
+}
+var _origLoadProfile=loadProfile;
+loadProfile=function(id){_origLoadProfile(id);loadProfileFromSupabase(id);};
+
+// ── P1: 内容详情页渲染（含音频/视频播放器）──────────────
+async function loadContentDetail(contentId){
+  var item=null;
+  if(sbCache.content)item=sbCache.content.find(function(c){return c.id===contentId;});
+  if(!item){var{data}=await sb.from('content').select('*').eq('id',contentId).single();item=data;}
+  if(!item)return;
+
+  var tz=document.getElementById('detailTitleZh'),te=document.getElementById('detailTitleEn');
+  if(tz)tz.textContent=item.title_zh||'';
+  if(te)te.textContent=item.title_en||item.title_zh||'';
+
+  var az=document.getElementById('articleZh'),ae=document.getElementById('articleEn');
+
+  // 正文渲染
+  if(az&&item.body_zh)az.innerHTML=mdRender(item.body_zh);
+  if(ae&&item.body_en)ae.innerHTML=mdRender(item.body_en);
+  else if(ae&&!item.body_en)ae.innerHTML='<p style="color:var(--muted);font-style:italic;">English version coming soon.</p>';
+
+  // P1: 播客/冥想 音频播放器
+  if(item.type==='podcast'||item.type==='meditation'){
+    var playerHtml='';
+    if(item.audio_url){
+      playerHtml+='<div style="background:var(--dark);border-radius:var(--br-card);padding:20px;margin-bottom:24px;"><div style="font-family:var(--fb);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--orange);margin-bottom:10px;">'+(item.type==='podcast'?'🎧 播客音频':'🧘 冥想引导')+'</div><audio controls src="'+item.audio_url+'" style="width:100%;border-radius:8px;"></audio></div>';
     }
-
-    if (tickerRes.data && tickerRes.data.length > 0) applyTickerData(tickerRes.data);
-    if (typeof applyLang === 'function') applyLang();
-  } catch(e) {
-    console.warn('Supabase 加载失败，使用硬编码数据:', e);
-  }
-}
-
-function applyHomepageData(hp) {
-  var heroH1 = document.querySelector('.hero-h1');
-  if (heroH1 && hp.hero_title_zh) { heroH1.setAttribute('data-zh', hp.hero_title_zh); heroH1.textContent = hp.hero_title_zh; }
-  var heroSub = document.querySelector('.hero-h1-zh');
-  if (heroSub && hp.hero_sub_en) heroSub.textContent = hp.hero_sub_en;
-  var heroDesc = document.querySelector('.hero-desc');
-  if (heroDesc && hp.hero_desc_zh) { heroDesc.setAttribute('data-zh', hp.hero_desc_zh); if (hp.hero_desc_en) heroDesc.setAttribute('data-en', hp.hero_desc_en); heroDesc.textContent = hp.hero_desc_zh; }
-  var statNums = document.querySelectorAll('.stat-num');
-  if (statNums[0] && hp.stat_content) statNums[0].textContent = hp.stat_content;
-  if (statNums[1] && hp.stat_healers) statNums[1].textContent = hp.stat_healers;
-  if (statNums[2] && hp.stat_domains) statNums[2].textContent = hp.stat_domains;
-  var fq = document.querySelector('.founder-quote-text');
-  if (fq && hp.founder_quote_zh) { fq.setAttribute('data-zh', hp.founder_quote_zh); if (hp.founder_quote_en) fq.setAttribute('data-en', hp.founder_quote_en); fq.textContent = hp.founder_quote_zh; }
-  var fb = document.querySelector('.founder-quote-big');
-  if (fb && hp.founder_quote_zh) { fb.setAttribute('data-zh', hp.founder_quote_zh); if (hp.founder_quote_en) fb.setAttribute('data-en', hp.founder_quote_en); fb.textContent = hp.founder_quote_zh; }
-}
-
-function applyTickerData(items) {
-  var inner = document.querySelector('.ticker-inner');
-  if (!inner) return;
-  var html = '';
-  for (var r = 0; r < 2; r++) { items.forEach(function(t) { html += '<span class="ticker-item">' + t.label + '</span>'; }); }
-  inner.innerHTML = html;
-}
-
-// ══════════════════════════════════════════════════════════
-// P0: 疗愈师 Profile 完整渲染
-// ══════════════════════════════════════════════════════════
-async function loadProfileFromSupabase(id) {
-  // 先用 HEALERS 缓存快速填充基本信息
-  var p = HEALERS[id] || HEALERS.zoe || {};
-  document.getElementById('profileName').textContent = p.name || '';
-  document.getElementById('profileTitle').textContent = p.title || '';
-  document.getElementById('profileSubtitle').textContent = p.sub || '';
-  var ph = document.getElementById('profilePhoto');
-  if (ph) { ph.className = 'profile-photo ' + (p.bg||'hc1'); ph.textContent = p.emoji||'🌿'; ph.style.fontSize = '110px'; }
-
-  // 从 Supabase 获取完整数据
-  var healer = null;
-  if (sbCache.healers) {
-    healer = sbCache.healers.find(function(h) { return h.id === id; });
-  }
-  if (!healer) {
-    var { data } = await sb.from('healers').select('*').eq('id', id).single();
-    healer = data;
-  }
-  if (!healer) return;
-
-  // 基本信息
-  document.getElementById('profileName').textContent = healer.name_zh;
-  document.getElementById('profileTitle').textContent = healer.title_en || healer.title_zh;
-  document.getElementById('profileSubtitle').textContent = healer.sub_en || healer.sub_zh;
-
-  // 头像
-  if (healer.avatar_url && ph) {
-    ph.innerHTML = '<img src="' + healer.avatar_url + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=\'' + (healer.emoji||'🌿') + '\'">';
-  }
-
-  // 预约信息
-  document.getElementById('schedPrice').textContent = healer.price || '';
-  document.getElementById('schedLoc').textContent = healer.location_zh || '';
-  var b = document.getElementById('bookBtn');
-  var firstName = (healer.name_en || healer.name_zh).split(' ')[0];
-  if (b) { b.setAttribute('data-zh', '预约 ' + firstName); b.setAttribute('data-en', 'Book ' + firstName); b.textContent = currentLang === 'en' ? 'Book ' + firstName : '预约 ' + firstName; }
-
-  // P0: 长 Bio
-  var bioZh = document.getElementById('profileBioZh');
-  var bioEn = document.getElementById('profileBioEn');
-  if (bioZh && healer.long_bio_zh) {
-    bioZh.innerHTML = healer.long_bio_zh.split('\n').filter(function(p){return p.trim();}).map(function(p){return '<p>'+p+'</p>';}).join('');
-  } else if (bioZh && healer.bio_zh) {
-    bioZh.innerHTML = '<p>' + healer.bio_zh + '</p>';
-  }
-  if (bioEn && healer.long_bio_en) {
-    bioEn.innerHTML = healer.long_bio_en.split('\n').filter(function(p){return p.trim();}).map(function(p){return '<p>'+p+'</p>';}).join('');
-  } else if (bioEn && healer.bio_en) {
-    bioEn.innerHTML = '<p>' + healer.bio_en + '</p>';
-  }
-
-  // P0: 活动日程
-  var events = healer.events || [];
-  if (events.length > 0) {
-    var evt = events[0];
-    document.getElementById('schedDay').textContent = evt.date ? evt.date.split('-')[2] : '';
-    document.getElementById('schedMonth').textContent = evt.date ? (['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(evt.date.split('-')[1])] || '') : '';
-    var sn = document.getElementById('schedName');
-    if (sn) sn.textContent = currentLang === 'en' ? (evt.title_en || evt.title_zh) : evt.title_zh;
-  }
-
-  // P0: 服务列表
-  var services = healer.services || [];
-  var svcGrid = document.querySelector('#view-profile .services-grid');
-  if (svcGrid && services.length > 0) {
-    var bgStyles = ['si1','si2','si3','si4'];
-    var icons = ['🤲','🌸','📅','✨','🧘','💆'];
-    svcGrid.innerHTML = services.map(function(s, i) {
-      return '<div class="service-card"><div class="service-img ' + (bgStyles[i % bgStyles.length]) + '">' + (icons[i % icons.length]) + '</div>' +
-        '<div class="service-body"><div class="service-name">' + (currentLang === 'en' ? (s.name_en||s.name_zh) : s.name_zh) + '</div>' +
-        '<div class="service-detail">' + (s.duration||'') + (s.price ? ' · ' + s.price : '') + '</div></div></div>';
-    }).join('');
-  }
-
-  // P0: 品牌产品
-  var products = healer.products || [];
-  var brandSection = document.querySelector('#view-profile .divider-row');
-  if (brandSection) {
-    if (products.length > 0) {
-      brandSection.style.display = '';
-      var brandGrid = brandSection.querySelector('.brand-grid');
-      if (brandGrid) {
-        var brandBgs = ['linear-gradient(135deg,#E8DFCE,#C4B090)','linear-gradient(135deg,#C8D8C0,#80A870)','linear-gradient(135deg,#D8C8A8,#A08840)','linear-gradient(135deg,#C8D8CC,#70A880)'];
-        brandGrid.innerHTML = products.map(function(p, i) {
-          return '<div class="brand-item"><div class="brand-img" style="background:' + brandBgs[i % brandBgs.length] + ';">🧴</div>' +
-            '<div class="brand-name">' + p.name_zh + '</div>' +
-            '<div class="brand-sub-text">' + (p.price||'') + '</div></div>';
-        }).join('');
-      }
-    } else {
-      brandSection.style.display = 'none';
+    if(item.podcast_link){
+      playerHtml+='<div style="margin-bottom:24px;"><a href="'+item.podcast_link+'" target="_blank" style="display:inline-flex;align-items:center;gap:8px;font-family:var(--fb);font-size:13px;font-weight:600;color:var(--green);text-decoration:none;padding:10px 18px;border:2px solid var(--green);border-radius:var(--br-btn);">🔗 <span data-zh="在外部平台收听" data-en="Listen on Platform">'+(currentLang==='en'?'Listen on Platform':'在外部平台收听')+'</span></a></div>';
     }
-  }
-}
-
-// 重写原始 loadProfile 以调用 Supabase 版本
-var _origLoadProfile = loadProfile;
-loadProfile = function(id) {
-  _origLoadProfile(id); // 先快速填基本信息
-  loadProfileFromSupabase(id); // 异步加载完整数据
-};
-
-// ══════════════════════════════════════════════════════════
-// P0: 内容详情页渲染
-// ══════════════════════════════════════════════════════════
-async function loadContentDetail(contentId) {
-  var item = null;
-  if (sbCache.content) {
-    item = sbCache.content.find(function(c) { return c.id === contentId; });
-  }
-  if (!item) {
-    var { data } = await sb.from('content').select('*').eq('id', contentId).single();
-    item = data;
-  }
-  if (!item) return;
-
-  // 标题
-  var tz = document.getElementById('detailTitleZh');
-  var te = document.getElementById('detailTitleEn');
-  if (tz) tz.textContent = item.title_zh || '';
-  if (te) te.textContent = item.title_en || item.title_zh || '';
-
-  // 正文
-  var az = document.getElementById('articleZh');
-  var ae = document.getElementById('articleEn');
-  if (az && item.body_zh) {
-    az.innerHTML = mdRender(item.body_zh);
-  }
-  if (ae && item.body_en) {
-    ae.innerHTML = mdRender(item.body_en);
-  } else if (ae && !item.body_en && item.body_zh) {
-    // 没有英文正文时隐藏英文版
-    ae.innerHTML = '<p style="color:var(--muted);font-style:italic;">English version coming soon.</p>';
+    // 把播放器插到正文前面
+    if(playerHtml&&az){az.insertAdjacentHTML('afterbegin',playerHtml);}
   }
 
   // 语言切换
-  if (az) az.style.display = currentLang === 'zh' ? '' : 'none';
-  if (ae) ae.style.display = currentLang === 'en' ? '' : 'none';
-  if (tz) tz.style.display = currentLang === 'zh' ? '' : 'none';
-  if (te) te.style.display = currentLang === 'en' ? '' : 'none';
+  if(az)az.style.display=currentLang==='zh'?'':'none';
+  if(ae)ae.style.display=currentLang==='en'?'':'none';
+  if(tz)tz.style.display=currentLang==='zh'?'':'none';
+  if(te)te.style.display=currentLang==='en'?'':'none';
 }
 
-// 重写 showView 以支持内容详情加载
-var _origShowView = showView;
-showView = function(name, data) {
-  _origShowView(name, data);
-  if (name === 'content-detail' && data) {
-    loadContentDetail(data);
+var _origShowView=showView;
+showView=function(name,data){_origShowView(name,data);if(name==='content-detail'&&data)loadContentDetail(data);};
+
+function bindContentClicks(){
+  if(!sbCache.content)return;
+  var cards=document.querySelectorAll('#view-home .cards-grid .card');
+  var activeContent=sbCache.content.filter(function(c){return c.active;});
+  cards.forEach(function(card,i){if(activeContent[i])card.onclick=function(){showView('content-detail',activeContent[i].id);};});
+  var slideTitles=document.querySelectorAll('.slide-title');
+  var carouselContent=sbCache.content.filter(function(c){return c.carousel_order&&c.carousel_order>0;}).sort(function(a,b){return a.carousel_order-b.carousel_order;});
+  slideTitles.forEach(function(title,i){if(carouselContent[i])title.onclick=function(){showView('content-detail',carouselContent[i].id);};});
+}
+
+// ── P1: Newsletter 订阅 ─────────────────────────────────
+async function submitNewsletter(){
+  var emailEl=document.getElementById('nlEmail');
+  var msgEl=document.getElementById('nlMsg');
+  if(!emailEl||!msgEl)return;
+  var email=emailEl.value.trim();
+  if(!email||!email.includes('@')){msgEl.style.display='block';msgEl.style.color='var(--red)';msgEl.textContent=currentLang==='en'?'Please enter a valid email':'请输入有效的邮箱地址';return;}
+  msgEl.style.display='block';msgEl.style.color='var(--muted)';msgEl.textContent=currentLang==='en'?'Subscribing...':'正在订阅...';
+  var{error}=await sb.from('subscribers').insert({email:email,source:'newsletter'});
+  if(error){
+    if(error.code==='23505'){msgEl.style.color='var(--orange)';msgEl.textContent=currentLang==='en'?'Already subscribed!':'你已经订阅过了！';}
+    else{msgEl.style.color='var(--red)';msgEl.textContent=currentLang==='en'?'Failed, please try again':'订阅失败，请重试';}
+    return;
   }
+  msgEl.style.color='var(--green)';msgEl.textContent=currentLang==='en'?'Subscribed successfully! ✓':'订阅成功！✓';emailEl.value='';
+}
+
+// ── P1: 问卷数据保存到 Supabase ─────────────────────────
+var _origRenderResults=renderResults;
+renderResults=function(){
+  _origRenderResults();
+  // 保存问卷结果
+  var feeling=surveyAns.feeling||'';
+  sb.from('survey_responses').insert({answers:surveyAns,result_type:feeling}).then(function(){console.log('问卷数据已保存');}).catch(function(e){console.warn('问卷保存失败:',e);});
 };
 
-// 给首页内容卡片和轮播添加点击传参
-function bindContentClicks() {
-  if (!sbCache.content) return;
-  // 首页卡片：按顺序绑定
-  var cards = document.querySelectorAll('#view-home .cards-grid .card');
-  var activeContent = sbCache.content.filter(function(c) { return c.active; });
-  cards.forEach(function(card, i) {
-    if (activeContent[i]) {
-      card.onclick = function() { showView('content-detail', activeContent[i].id); };
-    }
-  });
-  // 轮播标题点击
-  var slideTitles = document.querySelectorAll('.slide-title');
-  var carouselContent = sbCache.content.filter(function(c) { return c.carousel_order && c.carousel_order > 0; }).sort(function(a,b) { return a.carousel_order - b.carousel_order; });
-  slideTitles.forEach(function(title, i) {
-    if (carouselContent[i]) {
-      title.onclick = function() { showView('content-detail', carouselContent[i].id); };
-    }
-  });
-}
-
 // ── Admin redirect ───────────────────────────────────────
-(function() {
-  function checkAdminHash() {
-    if (window.location.hash === '#admin') window.location.href = 'admin.html';
-  }
-  window.addEventListener('hashchange', checkAdminHash);
-  setTimeout(checkAdminHash, 100);
-})();
+(function(){function c(){if(window.location.hash==='#admin')window.location.href='admin.html';}window.addEventListener('hashchange',c);setTimeout(c,100);})();
 
 // ── Boot ─────────────────────────────────────────────────
-(function() {
-  async function boot() {
-    await loadSiteData();
-    bindContentClicks();
-  }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    setTimeout(boot, 100);
-  }
-})();
+(function(){async function boot(){await loadSiteData();bindContentClicks();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else setTimeout(boot,100);})();
 
 </script>
 
