@@ -143,6 +143,22 @@ body { font-family:'Cabin',sans-serif; background:#0f1117; color:#fff; min-heigh
 .btn-danger { background:#ef4444; color:#fff; border:none; border-radius:8px; padding:10px 24px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
 .btn-danger:hover { background:#dc2626; }
 
+/* Image editor */
+.img-edit-row { display:flex; align-items:flex-start; gap:14px; margin-bottom:4px; }
+.img-preview-box { width:80px; height:80px; border-radius:10px; flex-shrink:0; border:1px solid #374151; overflow:hidden; display:flex; align-items:center; justify-content:center; background:#111827; font-size:36px; cursor:pointer; position:relative; transition:border-color .2s; }
+.img-preview-box:hover { border-color:#35845D; }
+.img-preview-box img { width:100%; height:100%; object-fit:cover; display:block; }
+.img-preview-box .img-clear { display:none; position:absolute; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; font-size:18px; cursor:pointer; }
+.img-preview-box:hover .img-clear { display:flex; }
+.img-controls { flex:1; display:flex; flex-direction:column; gap:8px; }
+.img-url-inp { background:#111827; border:1px solid #374151; border-radius:8px; color:#fff; font-size:13px; padding:8px 12px; outline:none; font-family:inherit; width:100%; transition:border-color .2s; }
+.img-url-inp:focus { border-color:#35845D; }
+.img-upload-label { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,.05); border:1px solid #374151; color:#9ca3af; border-radius:7px; padding:7px 14px; font-size:12px; cursor:pointer; transition:all .15s; width:fit-content; }
+.img-upload-label:hover { border-color:#35845D; color:#fff; }
+.img-upload-label input[type=file] { display:none; }
+.img-hint { font-size:11px; color:#4b5563; line-height:1.5; }
+.img-hint a { color:#35845D; }
+
 code { background:#111827; padding:2px 6px; border-radius:4px; color:#4ade80; font-size:13px; }
 p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
 </style>
@@ -423,13 +439,13 @@ const LI_KEY      = 'as_admin_logged';
 const BG_CLASSES = ['hc1','hc2','hc3','hc4','hc5','hc6','hc7','hc8'];
 
 const DEFAULT_HEALERS = [
-  { id:'zoe',    emoji:'🌸', bg:'hc1', name_zh:'赵子珊 Zoe Zhao',    name_en:'Zoe Zhao',       title_zh:'Esalen® 按摩疗愈师',       title_en:'Esalen® Massage Practitioner',        sub_zh:'芳香脉轮治疗师',               sub_en:'Aroma Chakra Therapist',           bio_zh:'来自武汉，现居巴厘岛/新西兰，2022年完成Esalen认证。',     bio_en:'From Wuhan, Esalen-certified practitioner.',            price:'¥200',    location_zh:'武汉',   location_en:'Wuhan',      avail_zh:'线上可约', avail_en:'Online available', tags:['Esalen 按摩','芳香疗法','脉轮'],       book_day:'22', book_month:'June',  active:true },
-  { id:'carrie', emoji:'🌙', bg:'hc2', name_zh:'杨凯莉 Carrie Yang',  name_en:'Carrie Yang',    title_zh:'疗愈空间创建者',             title_en:'Healing Space Creator',               sub_zh:'课程开发者 & AwakenSphere 创始人', sub_en:'Course Developer & Founder',       bio_zh:'从事身心疗愈工作多年，创立AwakenSphere平台。',           bio_en:'Founder of AwakenSphere healing platform.',             price:'$111',    location_zh:'巴厘岛', location_en:'Bali',       avail_zh:'线上可约', avail_en:'Online available', tags:['身体疗愈','冥想','身心觉察'],           book_day:'22', book_month:'April', active:true },
-  { id:'lin',    emoji:'🍃', bg:'hc3', name_zh:'林山 Lin Shan',        name_en:'Lin Shan',       title_zh:'动态艺术家',                 title_en:'Movement Artist',                     sub_zh:'正念引导者 & 工作坊导师',         sub_en:'Mindfulness Guide & Workshop Facilitator', bio_zh:'以身体动作为媒介，结合觉察情绪的独特实践方式。',     bio_en:'Uses movement as a healing medium.',                    price:'SGD 150', location_zh:'新加坡', location_en:'Singapore',  avail_zh:'线上可约', avail_en:'Online available', tags:['动态冥想','正念','工作坊'],             book_day:'15', book_month:'May',   active:true },
-  { id:'mei',    emoji:'🎵', bg:'hc4', name_zh:'陈美玲 Mei Chen',      name_en:'Mei Chen',       title_zh:'声音疗愈师',                 title_en:'Sound Healing Practitioner',          sub_zh:'水晶颂钵演奏者',                 sub_en:'Crystal Bowl Practitioner',        bio_zh:'专注声音疗愈十年，结合颂钵、水晶进行个人及团体疗愈。', bio_en:'Decade of sound healing with singing bowls and crystals.', price:'¥300', location_zh:'香港', location_en:'Hong Kong', avail_zh:'线上可约', avail_en:'Online available', tags:['声音疗愈','水晶颂钵'],                 book_day:'10', book_month:'May',   active:true },
-  { id:'aria',   emoji:'🌻', bg:'hc5', name_zh:'周雅慧 Aria Zhou',     name_en:'Aria Zhou',      title_zh:'内在小孩工作者',             title_en:'Inner Child Practitioner',            sub_zh:'表达性艺术治疗师',               sub_en:'Expressive Arts Therapist',        bio_zh:'通过绘画、写作帮助人们与内在小孩重建连接，释放深层创伤。', bio_en:'Reconnects people with their inner child through art.',  price:'NT$3000', location_zh:'台北', location_en:'Taipei',  avail_zh:'面谈为主', avail_en:'In-person',        tags:['内在小孩','艺术治疗','情绪释放'],       book_day:'20', book_month:'May',   active:true },
-  { id:'wei',    emoji:'🪷', bg:'hc6', name_zh:'刘薇 Wei Liu',          name_en:'Wei Liu',        title_zh:'创伤知情身体工作者',         title_en:'Trauma-Informed Bodyworker',          sub_zh:'合作伙伴体验导师',               sub_en:'Partner Experience Facilitator',   bio_zh:'整合Somatic Experiencing与传统中医，专注慢性压力和创伤。',  bio_en:'Integrates SE with TCM for chronic stress and trauma.',  price:'¥400',    location_zh:'上海', location_en:'Shanghai', avail_zh:'线上可约', avail_en:'Online available', tags:['创伤疗愈','SE','中医'],                 book_day:'18', book_month:'May',   active:true },
-  { id:'ming',   emoji:'🌊', bg:'hc7', name_zh:'张明远 MingYuan',       name_en:'MingYuan Zhang', title_zh:'正念冥想导师',               title_en:'Mindfulness Meditation Teacher',      sub_zh:'静修营举办者',                   sub_en:'Retreat Facilitator',              bio_zh:'在巴厘岛主持正念课程和周末静修营。',                   bio_en:'Leads mindfulness courses and weekend retreats in Bali.', price:'$80', location_zh:'巴厘岛', location_en:'Bali', avail_zh:'线上可约', avail_en:'Online available', tags:['正念','冥想','静修营','MBSR'],          book_day:'25', book_month:'May',   active:true },
+  { id:'zoe',    emoji:'🌸', bg:'hc1', name_zh:'赵子珊 Zoe Zhao',    name_en:'Zoe Zhao',       title_zh:'Esalen® 按摩疗愈师',       title_en:'Esalen® Massage Practitioner',        sub_zh:'芳香脉轮治疗师',               sub_en:'Aroma Chakra Therapist',           bio_zh:'来自武汉，现居巴厘岛/新西兰，2022年完成Esalen认证。',     bio_en:'From Wuhan, Esalen-certified practitioner.',            price:'¥200',    location_zh:'武汉',   location_en:'Wuhan',      avail_zh:'线上可约', avail_en:'Online available', tags:['Esalen 按摩','芳香疗法','脉轮'],       book_day:'22', book_month:'June',  avatar_url:'', active:true },
+  { id:'carrie', emoji:'🌙', bg:'hc2', name_zh:'杨凯莉 Carrie Yang',  name_en:'Carrie Yang',    title_zh:'疗愈空间创建者',             title_en:'Healing Space Creator',               sub_zh:'课程开发者 & AwakenSphere 创始人', sub_en:'Course Developer & Founder',       bio_zh:'从事身心疗愈工作多年，创立AwakenSphere平台。',           bio_en:'Founder of AwakenSphere healing platform.',             price:'$111',    location_zh:'巴厘岛', location_en:'Bali',       avail_zh:'线上可约', avail_en:'Online available', tags:['身体疗愈','冥想','身心觉察'],           book_day:'22', book_month:'April', avatar_url:'', active:true },
+  { id:'lin',    emoji:'🍃', bg:'hc3', name_zh:'林山 Lin Shan',        name_en:'Lin Shan',       title_zh:'动态艺术家',                 title_en:'Movement Artist',                     sub_zh:'正念引导者 & 工作坊导师',         sub_en:'Mindfulness Guide & Workshop Facilitator', bio_zh:'以身体动作为媒介，结合觉察情绪的独特实践方式。',     bio_en:'Uses movement as a healing medium.',                    price:'SGD 150', location_zh:'新加坡', location_en:'Singapore',  avail_zh:'线上可约', avail_en:'Online available', tags:['动态冥想','正念','工作坊'],             book_day:'15', book_month:'May',   avatar_url:'', active:true },
+  { id:'mei',    emoji:'🎵', bg:'hc4', name_zh:'陈美玲 Mei Chen',      name_en:'Mei Chen',       title_zh:'声音疗愈师',                 title_en:'Sound Healing Practitioner',          sub_zh:'水晶颂钵演奏者',                 sub_en:'Crystal Bowl Practitioner',        bio_zh:'专注声音疗愈十年，结合颂钵、水晶进行个人及团体疗愈。', bio_en:'Decade of sound healing with singing bowls and crystals.', price:'¥300', location_zh:'香港', location_en:'Hong Kong', avail_zh:'线上可约', avail_en:'Online available', tags:['声音疗愈','水晶颂钵'],                 book_day:'10', book_month:'May',   avatar_url:'', active:true },
+  { id:'aria',   emoji:'🌻', bg:'hc5', name_zh:'周雅慧 Aria Zhou',     name_en:'Aria Zhou',      title_zh:'内在小孩工作者',             title_en:'Inner Child Practitioner',            sub_zh:'表达性艺术治疗师',               sub_en:'Expressive Arts Therapist',        bio_zh:'通过绘画、写作帮助人们与内在小孩重建连接，释放深层创伤。', bio_en:'Reconnects people with their inner child through art.',  price:'NT$3000', location_zh:'台北', location_en:'Taipei',  avail_zh:'面谈为主', avail_en:'In-person',        tags:['内在小孩','艺术治疗','情绪释放'],       book_day:'20', book_month:'May',   avatar_url:'', active:true },
+  { id:'wei',    emoji:'🪷', bg:'hc6', name_zh:'刘薇 Wei Liu',          name_en:'Wei Liu',        title_zh:'创伤知情身体工作者',         title_en:'Trauma-Informed Bodyworker',          sub_zh:'合作伙伴体验导师',               sub_en:'Partner Experience Facilitator',   bio_zh:'整合Somatic Experiencing与传统中医，专注慢性压力和创伤。',  bio_en:'Integrates SE with TCM for chronic stress and trauma.',  price:'¥400',    location_zh:'上海', location_en:'Shanghai', avail_zh:'线上可约', avail_en:'Online available', tags:['创伤疗愈','SE','中医'],                 book_day:'18', book_month:'May',   avatar_url:'', active:true },
+  { id:'ming',   emoji:'🌊', bg:'hc7', name_zh:'张明远 MingYuan',       name_en:'MingYuan Zhang', title_zh:'正念冥想导师',               title_en:'Mindfulness Meditation Teacher',      sub_zh:'静修营举办者',                   sub_en:'Retreat Facilitator',              bio_zh:'在巴厘岛主持正念课程和周末静修营。',                   bio_en:'Leads mindfulness courses and weekend retreats in Bali.', price:'$80', location_zh:'巴厘岛', location_en:'Bali', avail_zh:'线上可约', avail_en:'Online available', tags:['正念','冥想','静修营','MBSR'],          book_day:'25', book_month:'May',   avatar_url:'', active:true },
 ];
 
 const DEFAULT_HOMEPAGE = {
@@ -443,12 +459,12 @@ const DEFAULT_HOMEPAGE = {
 };
 
 const DEFAULT_CONTENT = [
-  { id:'c1', type:'article',    emoji:'🌊', title_zh:'当身体开始说话：如何倾听内在的智慧信号',   title_en:'When the Body Speaks: Listening to Inner Wisdom',       summary_zh:'身体是我们最诚实的老师，每一个症状都是它在对话。',   author:'Jack Kornfield', duration_zh:'8 分钟',  duration_en:'8 min',  tags:['身体疗愈','正念'],      featured:true,  active:true },
-  { id:'c2', type:'meditation', emoji:'🧘', title_zh:'身体扫描冥想：从头到脚释放紧绷',           title_en:'Body Scan: Release Tension Head to Toe',                summary_zh:'跟随引导，逐步放松全身肌肉，回到当下。',             author:'Tara Brach',     duration_zh:'20 分钟', duration_en:'20 min', tags:['冥想','正念'],           featured:true,  active:true },
-  { id:'c3', type:'podcast',    emoji:'🎧', title_zh:'与焦虑和平共处：一个前金融人的疗愈旅程',   title_en:"Making Peace with Anxiety: A Healer's Journey",         summary_zh:'Carrie 分享从高压职场到踏上疗愈之路的真实故事。',   author:'Carrie Yang',    duration_zh:'38 分钟', duration_en:'38 min', tags:['情绪疗愈','创伤'],      featured:true,  active:true },
-  { id:'c4', type:'article',    emoji:'🌿', title_zh:'Esalen 的智慧：用触碰重新连接身体',        title_en:"Esalen's Wisdom: Reconnecting Through Touch",           summary_zh:'探索 Esalen 按摩背后的哲学与疗愈原理。',             author:'赵子珊 Zoe',     duration_zh:'12 分钟', duration_en:'12 min', tags:['Esalen 按摩','身体疗愈'], featured:false, active:true },
-  { id:'c5', type:'meditation', emoji:'🌙', title_zh:'入睡冥想：释放今日的重量',                 title_en:'Sleep Meditation: Release the Weight of the Day',       summary_zh:'睡前 15 分钟，让身体和心灵真正得到休息。',           author:'张明远',         duration_zh:'15 分钟', duration_en:'15 min', tags:['冥想','睡眠'],           featured:false, active:true },
-  { id:'c6', type:'podcast',    emoji:'🎵', title_zh:'声音如何疗愈：颂钵与神经系统的对话',       title_en:'How Sound Heals: Singing Bowls and the Nervous System', summary_zh:'声音疗愈师陈美玲解析声音对身心的深层影响。',         author:'陈美玲 Mei',     duration_zh:'45 分钟', duration_en:'45 min', tags:['声音疗愈','神经系统'],  featured:false, active:true },
+  { id:'c1', type:'article',    emoji:'🌊', title_zh:'当身体开始说话：如何倾听内在的智慧信号',   title_en:'When the Body Speaks: Listening to Inner Wisdom',       summary_zh:'身体是我们最诚实的老师，每一个症状都是它在对话。',   author:'Jack Kornfield', duration_zh:'8 分钟',  duration_en:'8 min',  tags:['身体疗愈','正念'],      featured:true,  cover_url:'', active:true },
+  { id:'c2', type:'meditation', emoji:'🧘', title_zh:'身体扫描冥想：从头到脚释放紧绷',           title_en:'Body Scan: Release Tension Head to Toe',                summary_zh:'跟随引导，逐步放松全身肌肉，回到当下。',             author:'Tara Brach',     duration_zh:'20 分钟', duration_en:'20 min', tags:['冥想','正念'],           featured:true,  cover_url:'', active:true },
+  { id:'c3', type:'podcast',    emoji:'🎧', title_zh:'与焦虑和平共处：一个前金融人的疗愈旅程',   title_en:"Making Peace with Anxiety: A Healer's Journey",         summary_zh:'Carrie 分享从高压职场到踏上疗愈之路的真实故事。',   author:'Carrie Yang',    duration_zh:'38 分钟', duration_en:'38 min', tags:['情绪疗愈','创伤'],      featured:true,  cover_url:'', active:true },
+  { id:'c4', type:'article',    emoji:'🌿', title_zh:'Esalen 的智慧：用触碰重新连接身体',        title_en:"Esalen's Wisdom: Reconnecting Through Touch",           summary_zh:'探索 Esalen 按摩背后的哲学与疗愈原理。',             author:'赵子珊 Zoe',     duration_zh:'12 分钟', duration_en:'12 min', tags:['Esalen 按摩','身体疗愈'], featured:false, cover_url:'', active:true },
+  { id:'c5', type:'meditation', emoji:'🌙', title_zh:'入睡冥想：释放今日的重量',                 title_en:'Sleep Meditation: Release the Weight of the Day',       summary_zh:'睡前 15 分钟，让身体和心灵真正得到休息。',           author:'张明远',         duration_zh:'15 分钟', duration_en:'15 min', tags:['冥想','睡眠'],           featured:false, cover_url:'', active:true },
+  { id:'c6', type:'podcast',    emoji:'🎵', title_zh:'声音如何疗愈：颂钵与神经系统的对话',       title_en:'How Sound Heals: Singing Bowls and the Nervous System', summary_zh:'声音疗愈师陈美玲解析声音对身心的深层影响。',         author:'陈美玲 Mei',     duration_zh:'45 分钟', duration_en:'45 min', tags:['声音疗愈','神经系统'],  featured:false, cover_url:'', active:true },
 ];
 
 const DEFAULT_TICKER = ['正念冥想','身体疗愈','情绪释放','灵性成长','芳香疗法','声音治疗','内在小孩','创伤疗愈','冥想引导','茶道疗愈'];
@@ -596,6 +612,22 @@ function healerCard(h) {
           '</div>',
         '</div>',
 
+        // Avatar image
+        '<div class="field" style="margin-bottom:14px">',
+          '<div class="label">头像图片 <small>（有图片时优先显示，覆盖 Emoji）</small></div>',
+          '<div class="img-edit-row">',
+            '<div class="img-preview-box" id="hprev_' + h.id + '">',
+              (h.avatar_url ? '<img src="' + esc(h.avatar_url) + '" onerror="this.parentNode.textContent=\'' + esc(h.emoji||'🌿') + '\'">' : esc(h.emoji||'🌿')),
+              '<div class="img-clear" onclick="clearImg(\'' + h.id + '\',\'healer\',\'' + esc(h.emoji||'🌿') + '\')">🗑</div>',
+            '</div>',
+            '<div class="img-controls">',
+              '<input class="img-url-inp" id="hf_' + h.id + '_avatar_url" value="' + esc(h.avatar_url||'') + '" placeholder="粘贴图片 URL（https://…）" oninput="previewImg(\'' + h.id + '\',\'healer\',this.value,\'' + esc(h.emoji||'🌿') + '\')">',
+              '<label class="img-upload-label">📷 从本地上传<input type="file" accept="image/*" onchange="uploadImg(event,\'' + h.id + '\',\'healer\',\'' + esc(h.emoji||'🌿') + '\')"></label>',
+              '<div class="img-hint">建议 < 300 KB · 或用 <a href="https://imgur.com" target="_blank">Imgur</a> 上传后粘贴链接</div>',
+            '</div>',
+          '</div>',
+        '</div>',
+
         // Names
         '<div class="field-row">',
           field('中文名字', 'hf_' + h.id + '_name_zh', h.name_zh),
@@ -663,6 +695,7 @@ function saveHealers() {
     h.avail_zh    = g('avail_zh');  h.avail_en    = g('avail_en');
     h.book_day    = g('book_day');  h.book_month  = g('book_month');
     h.tags        = (tagState[h.id] || []).slice();
+    h.avatar_url  = g('avatar_url');
     h.active      = cb('active');
   });
   localStorage.setItem(HEALERS_KEY, JSON.stringify(healers));
@@ -812,6 +845,22 @@ function contentCard(c) {
           '<label class="toggle-wrap"><input type="checkbox" ' + featuredChk + ' id="cf_' + c.id + '_featured"><div class="toggle-track"></div><span class="toggle-lbl">本周推荐</span></label>',
         '</div>',
 
+        // Cover image
+        '<div class="field" style="margin-bottom:14px">',
+          '<div class="label">封面图片 <small>（有图片时优先显示，覆盖 Emoji）</small></div>',
+          '<div class="img-edit-row">',
+            '<div class="img-preview-box" id="cprev_' + c.id + '">',
+              (c.cover_url ? '<img src="' + esc(c.cover_url) + '" onerror="this.parentNode.textContent=\'' + esc(c.emoji||'📄') + '\'">' : esc(c.emoji||'📄')),
+              '<div class="img-clear" onclick="clearImg(\'' + c.id + '\',\'content\',\'' + esc(c.emoji||'📄') + '\')">🗑</div>',
+            '</div>',
+            '<div class="img-controls">',
+              '<input class="img-url-inp" id="cf_' + c.id + '_cover_url" value="' + esc(c.cover_url||'') + '" placeholder="粘贴图片 URL（https://…）" oninput="previewImg(\'' + c.id + '\',\'content\',this.value,\'' + esc(c.emoji||'📄') + '\')">',
+              '<label class="img-upload-label">📷 从本地上传<input type="file" accept="image/*" onchange="uploadImg(event,\'' + c.id + '\',\'content\',\'' + esc(c.emoji||'📄') + '\')"></label>',
+              '<div class="img-hint">建议 < 300 KB · 或用 <a href="https://imgur.com" target="_blank">Imgur</a> 上传后粘贴链接</div>',
+            '</div>',
+          '</div>',
+        '</div>',
+
         // Titles
         '<div class="field-row"><div class="field full"><div class="label">标题（中文）</div><input id="cf_' + c.id + '_title_zh" value="' + esc(c.title_zh||'') + '"></div></div>',
         '<div class="field-row"><div class="field full"><div class="label">标题（英文）</div><input id="cf_' + c.id + '_title_en" value="' + esc(c.title_en||'') + '"></div></div>',
@@ -846,6 +895,7 @@ function saveContent() {
     c.author      = g('author');
     c.duration_zh = g('duration_zh'); c.duration_en = g('duration_en');
     c.tags        = (tagState['c_' + c.id] || []).slice();
+    c.cover_url   = g('cover_url');
     c.active      = cb('active');    c.featured    = cb('featured');
   });
   localStorage.setItem(CONTENT_KEY, JSON.stringify(items));
@@ -949,6 +999,45 @@ function updateStats() {
   if (h) h.textContent = getHealers().length;
   if (c) c.textContent = getContent().length;
   if (t) t.textContent = getTicker().length;
+}
+
+// ── Image helpers ────────────────────────────────────────────
+function previewImg(id, type, url, fallbackEmoji) {
+  var box = document.getElementById(type === 'healer' ? 'hprev_' + id : 'cprev_' + id);
+  if (!box) return;
+  if (url) {
+    box.innerHTML = '<img src="' + url + '" onerror="this.parentNode.innerHTML=\'' + fallbackEmoji + '\'">' +
+      '<div class="img-clear" onclick="clearImg(\'' + id + '\',\'' + type + '\',\'' + fallbackEmoji + '\')">🗑</div>';
+  } else {
+    box.innerHTML = fallbackEmoji +
+      '<div class="img-clear" onclick="clearImg(\'' + id + '\',\'' + type + '\',\'' + fallbackEmoji + '\')">🗑</div>';
+  }
+}
+
+function clearImg(id, type, fallbackEmoji) {
+  var inputId = type === 'healer' ? 'hf_' + id + '_avatar_url' : 'cf_' + id + '_cover_url';
+  var el = document.getElementById(inputId);
+  if (el) el.value = '';
+  previewImg(id, type, '', fallbackEmoji);
+}
+
+function uploadImg(event, id, type, fallbackEmoji) {
+  var file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 400 * 1024) {
+    alert('图片超过 400 KB，建议先压缩（推荐 squoosh.app）或改用外部 URL');
+    event.target.value = '';
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var b64 = e.target.result;
+    var inputId = type === 'healer' ? 'hf_' + id + '_avatar_url' : 'cf_' + id + '_cover_url';
+    var el = document.getElementById(inputId);
+    if (el) el.value = b64;
+    previewImg(id, type, b64, fallbackEmoji);
+  };
+  reader.readAsDataURL(file);
 }
 
 // ── Boot ─────────────────────────────────────────────────────
