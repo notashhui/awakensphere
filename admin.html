@@ -256,6 +256,7 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
       <div class="nav-item" onclick="goPage('stats',this)">📊 数据统计</div>
       <div class="nav-item" onclick="goPage('subscribers',this)">📧 订阅管理</div>
       <div class="nav-item" onclick="goPage('survey',this)">📋 问卷数据</div>
+      <div class="nav-item" onclick="goPage('surveyedit',this)">✏️ 问卷编辑</div>
       <div class="nav-item" onclick="goPage('media',this)">🖼️ 媒体库</div>
       <div class="nav-item" onclick="goPage('audit',this)">📝 操作日志</div>
       <div class="nav-item" onclick="goPage('settings',this)">⚙️ 设置</div>
@@ -449,10 +450,22 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
       <!-- 🖼️ 媒体库 -->
       <div class="page" id="page-media">
         <div class="page-title">🖼️ 媒体库</div>
-        <div class="page-sub">管理所有已上传的图片和音频文件</div>
+        <div class="page-sub">管理所有已上传的图片、音频和视频文件</div>
         <button class="add-btn" onclick="document.getElementById('mediaFileInput').click()">＋ 上传文件</button>
-        <input type="file" id="mediaFileInput" accept="image/*,audio/*" multiple style="display:none" onchange="uploadMediaFiles(event)">
+        <input type="file" id="mediaFileInput" accept="image/*,audio/*,video/*" multiple style="display:none" onchange="uploadMediaFiles(event)">
         <div id="mediaList"><div class="empty-state">加载中…</div></div>
+      </div>
+
+      <!-- ✏️ 问卷编辑 -->
+      <div class="page" id="page-surveyedit">
+        <div class="page-title">✏️ 问卷编辑</div>
+        <div class="page-sub">编辑 Know Yourself 问卷题目和选项</div>
+        <button class="add-btn" onclick="addSurveyQuestion()">＋ 新增题目</button>
+        <div id="surveyEditList"><div class="empty-state">加载中…</div></div>
+        <div class="save-bar">
+          <span class="save-msg" id="surveyEditMsg">✅ 已保存</span>
+          <button class="btn-save" onclick="saveSurveyQuestions()">💾 保存问卷</button>
+        </div>
       </div>
 
       <!-- 📝 操作日志 -->
@@ -625,6 +638,7 @@ function goPage(name,el){
     if(name==='survey')loadSurveyData();
     if(name==='media')loadMedia();
     if(name==='audit')loadAuditLog();
+    if(name==='surveyedit')loadSurveyQuestions();
   }
 }
 
@@ -651,9 +665,9 @@ function refreshTagEditor(k){var te=document.getElementById('te_'+k);if(!te)retu
 
 // ── JSONB 编辑器（服务/活动/产品）─────────────────────────
 function getJson(k){return jsonState[k]||[];}function setJson(k,a){jsonState[k]=a;}
-function renderServicesList(hid){var k='svc_'+hid,items=getJson(k);return'<div class="label">💆 服务列表</div><div id="jl_'+k+'">'+items.map(function(s,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('服务名称（中文）','j_'+k+'_'+i+'_name_zh',s.name_zh)+field('服务名称（英文）','j_'+k+'_'+i+'_name_en',s.name_en)+'</div><div class="field-row"><div class="field full"><div class="label">描述</div><input id="j_'+k+'_'+i+'_desc" value="'+esc(s.description_zh)+'"></div></div><div class="field-row">'+field('价格','j_'+k+'_'+i+'_price',s.price)+field('时长','j_'+k+'_'+i+'_duration',s.duration)+'</div></div>';}).join('')+'</div><button class="json-add" onclick="addService(\''+hid+'\')">＋ 添加服务</button>';}
+function renderServicesList(hid){var k='svc_'+hid,items=getJson(k);return'<div class="label">💆 服务列表</div><div id="jl_'+k+'">'+items.map(function(s,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('服务名称（中文）','j_'+k+'_'+i+'_name_zh',s.name_zh)+field('服务名称（英文）','j_'+k+'_'+i+'_name_en',s.name_en)+'</div><div class="field-row"><div class="field full"><div class="label">描述</div><input id="j_'+k+'_'+i+'_desc" value="'+esc(s.description_zh)+'"></div></div><div class="field-row">'+field('价格','j_'+k+'_'+i+'_price',s.price)+field('时长','j_'+k+'_'+i+'_duration',s.duration)+'</div><div class="field-row"><div class="field full"><div class="label">服务图片</div><div style="display:flex;gap:10px;align-items:center;"><input class="img-url-inp" id="j_'+k+'_'+i+'_image" value="'+esc(s.image_url||'')+'" placeholder="粘贴图片 URL 或上传" style="flex:1;"><label class="img-upload-label" style="flex-shrink:0;">📷 上传<input type="file" accept="image/*" style="display:none" onchange="uploadSvcImg(event,\''+k+'\','+i+')"></label></div>'+(s.image_url?'<img src="'+esc(s.image_url)+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:6px;border:1px solid #374151;">':'')+'</div></div></div>';}).join('')+'</div><button class="json-add" onclick="addService(\''+hid+'\')">＋ 添加服务</button>';}
 function addService(hid){var k='svc_'+hid;getJson(k).push({name_zh:'',name_en:'',description_zh:'',price:'',duration:''});refreshJsonSection(k,hid,'services');}
-function collectServices(hid){var k='svc_'+hid;return getJson(k).map(function(s,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{name_zh:g('name_zh'),name_en:g('name_en'),description_zh:g('desc'),price:g('price'),duration:g('duration')};});}
+function collectServices(hid){var k='svc_'+hid;return getJson(k).map(function(s,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{name_zh:g('name_zh'),name_en:g('name_en'),description_zh:g('desc'),price:g('price'),duration:g('duration'),image_url:g('image')};});}
 function renderEventsList(hid){var k='evt_'+hid,items=getJson(k);return'<div class="label">📅 活动日程</div><div id="jl_'+k+'">'+items.map(function(e,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('活动名称（中文）','j_'+k+'_'+i+'_title_zh',e.title_zh)+field('活动名称（英文）','j_'+k+'_'+i+'_title_en',e.title_en)+'</div><div class="field-row">'+field('日期','j_'+k+'_'+i+'_date',e.date)+field('时间','j_'+k+'_'+i+'_time',e.time)+'</div><div class="field-row">'+field('地点','j_'+k+'_'+i+'_loc',e.location_zh)+field('描述','j_'+k+'_'+i+'_desc',e.description_zh)+'</div></div>';}).join('')+'</div><button class="json-add" onclick="addEvent(\''+hid+'\')">＋ 添加活动</button>';}
 function addEvent(hid){var k='evt_'+hid;getJson(k).push({title_zh:'',title_en:'',date:'',time:'',location_zh:'',description_zh:''});refreshJsonSection(k,hid,'events');}
 function collectEvents(hid){var k='evt_'+hid;return getJson(k).map(function(e,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{title_zh:g('title_zh'),title_en:g('title_en'),date:g('date'),time:g('time'),location_zh:g('loc'),description_zh:g('desc')};});}
@@ -878,28 +892,119 @@ async function loadMedia(){
   if(!data||data.length===0){document.getElementById('mediaList').innerHTML='<div class="empty-state">暂无媒体文件，点击上方按钮上传</div>';return;}
   var html='<div class="media-grid">';
   data.forEach(function(m){
-    var thumb=m.type==='image'?'<img class="media-thumb" src="'+esc(m.url)+'" onerror="this.style.display=\'none\'">':'<div class="media-thumb" style="display:flex;align-items:center;justify-content:center;background:#111827;font-size:32px;">'+(m.type==='audio'?'🎵':'🎬')+'</div>';
-    html+='<div class="media-item" onclick="copyMediaUrl(\''+esc(m.url)+'\')">'+thumb+'<div class="media-info"><div class="media-name">'+esc(m.filename||'unnamed')+'</div><div class="media-meta">'+m.type+' · '+fmtDate(m.created_at)+'</div><div style="margin-top:4px"><button class="delete-btn" onclick="event.stopPropagation();deleteMedia('+m.id+')" style="font-size:10px;padding:2px 6px;">删除</button></div></div></div>';
+    var dimInfo=m.width&&m.height?' · '+m.width+'×'+m.height:'';
+    var sizeInfo=m.size_bytes>0?' · '+(m.size_bytes>1048576?(m.size_bytes/1048576).toFixed(1)+'MB':Math.round(m.size_bytes/1024)+'KB'):'';
+    var thumb;
+    if(m.type==='image')thumb='<img class="media-thumb" src="'+esc(m.url)+'" onerror="this.style.display=\'none\'">';
+    else if(m.type==='video')thumb='<div class="media-thumb" style="display:flex;align-items:center;justify-content:center;background:#111827;font-size:32px;position:relative;"><video src="'+esc(m.url)+'" style="width:100%;height:100%;object-fit:cover;" muted></video><span style="position:absolute;font-size:28px;">🎬</span></div>';
+    else thumb='<div class="media-thumb" style="display:flex;align-items:center;justify-content:center;background:#111827;font-size:32px;">🎵</div>';
+    html+='<div class="media-item" onclick="copyMediaUrl(\''+esc(m.url)+'\')">'+thumb+'<div class="media-info"><div class="media-name">'+esc(m.filename||'unnamed')+'</div><div class="media-meta">'+m.type+sizeInfo+dimInfo+' · '+fmtDate(m.created_at)+'</div><div style="margin-top:4px"><button class="delete-btn" onclick="event.stopPropagation();deleteMedia('+m.id+')" style="font-size:10px;padding:2px 6px;">删除</button></div></div></div>';
   });
   html+='</div>';document.getElementById('mediaList').innerHTML=html;
 }
-function copyMediaUrl(url){navigator.clipboard.writeText(url).then(function(){alert('已复制 URL: '+url);});}
+function copyMediaUrl(url){navigator.clipboard.writeText(url).then(function(){alert('已复制 URL');});}
 async function deleteMedia(id){await sb.from('media_library').delete().eq('id',id);loadMedia();}
 async function uploadMediaFiles(event){
   var files=event.target.files;if(!files.length)return;
   for(var i=0;i<files.length;i++){
     var file=files[i];var fd=new FormData();fd.append('file',file);fd.append('upload_preset','awakensphere');
-    var endpoint=file.type.startsWith('audio')?'https://api.cloudinary.com/v1_1/dvufhc3ee/auto/upload':'https://api.cloudinary.com/v1_1/dvufhc3ee/image/upload';
+    var isAudio=file.type.startsWith('audio'),isVideo=file.type.startsWith('video');
+    var endpoint=(isAudio||isVideo)?'https://api.cloudinary.com/v1_1/dvufhc3ee/auto/upload':'https://api.cloudinary.com/v1_1/dvufhc3ee/image/upload';
     try{
       var res=await fetch(endpoint,{method:'POST',body:fd});var d=await res.json();
       if(d.secure_url){
-        var type=file.type.startsWith('audio')?'audio':file.type.startsWith('video')?'video':'image';
-        await sb.from('media_library').insert({url:d.secure_url,filename:file.name,type:type,size_bytes:d.bytes||0});
-        await logAudit('upload','media','',file.name);
+        var type=isAudio?'audio':isVideo?'video':'image';
+        var insertObj={url:d.secure_url,filename:file.name,type:type,size_bytes:d.bytes||0};
+        // 获取图片尺寸
+        if(type==='image'){
+          try{var dims=await getImageDimensions(d.secure_url);insertObj.width=dims.w;insertObj.height=dims.h;}catch(e){}
+        }else if(type==='video'&&d.width&&d.height){insertObj.width=d.width;insertObj.height=d.height;}
+        await sb.from('media_library').insert(insertObj);
+        await logAudit('upload','media','',file.name+(insertObj.width?' ('+insertObj.width+'×'+insertObj.height+')':''));
       }
     }catch(e){alert('上传失败: '+e.message);}
   }
   event.target.value='';loadMedia();
+}
+function getImageDimensions(url){return new Promise(function(resolve,reject){var img=new Image();img.onload=function(){resolve({w:img.naturalWidth,h:img.naturalHeight});};img.onerror=reject;img.src=url;});}
+
+// ── 服务图片上传 ─────────────────────────────────────────
+function uploadSvcImg(event,key,idx){
+  var file=event.target.files[0];if(!file)return;
+  var el=document.getElementById('j_'+key+'_'+idx+'_image');
+  var fd=new FormData();fd.append('file',file);fd.append('upload_preset','awakensphere');
+  fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/image/upload',{method:'POST',body:fd})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.secure_url){
+      if(el)el.value=d.secure_url;
+      // 更新 jsonState 中的 image_url
+      var arr=getJson(key);if(arr[idx])arr[idx].image_url=d.secure_url;
+      // 同时入媒体库
+      sb.from('media_library').insert({url:d.secure_url,filename:file.name,type:'image',size_bytes:d.bytes||0});
+    }else{alert('上传失败');}
+  }).catch(function(e){alert('上传出错：'+e.message);});
+}
+
+// ══════════════════════════════════════════════════════════
+// P1b: 问卷编辑器
+// ══════════════════════════════════════════════════════════
+var surveyQCache=[];
+async function loadSurveyQuestions(){
+  var{data}=await sb.from('survey_questions').select('*').order('sort_order');
+  surveyQCache=data||[];
+  renderSurveyEditor();
+}
+function renderSurveyEditor(){
+  if(!surveyQCache.length){document.getElementById('surveyEditList').innerHTML='<div class="empty-state">暂无题目，点击上方按钮添加</div>';return;}
+  document.getElementById('surveyEditList').innerHTML=surveyQCache.map(function(q,qi){
+    var opts=(q.options||[]);
+    return'<div class="card"><div class="card-header"><div class="card-title">Q'+(qi+1)+': '+esc(q.q_zh||'新题目')+'</div><div class="card-actions"><div class="sort-btns"><button class="sort-btn" onclick="moveSurveyQ('+qi+',-1)"'+(qi===0?' disabled':'')+'>▲</button><button class="sort-btn" onclick="moveSurveyQ('+qi+',1)"'+(qi===surveyQCache.length-1?' disabled':'')+'>▼</button></div><button class="collapse-btn" onclick="toggleCard(\'sq_'+qi+'\')">收起 ▲</button><button class="delete-btn" onclick="delSurveyQ('+qi+')">删除</button></div></div>'+
+    '<div class="card-body" id="cb_sq_'+qi+'">'+
+    '<div class="field-row"><div class="field"><div class="label">ID</div><input id="sq_'+qi+'_id" value="'+esc(q.id)+'" readonly style="opacity:.5;"></div><div class="field"><div class="label">类型</div><select id="sq_'+qi+'_type"><option value="single"'+(q.type==='single'?' selected':'')+'>单选</option><option value="multi"'+(q.type==='multi'?' selected':'')+'>多选</option></select></div></div>'+
+    '<div class="field-row"><div class="field" style="justify-content:flex-end"><label class="toggle-wrap"><input type="checkbox" '+(q.grid?'checked':'')+' id="sq_'+qi+'_grid"><div class="toggle-track"></div><span class="toggle-lbl">2列网格布局</span></label></div><div class="field" style="justify-content:flex-end"><label class="toggle-wrap"><input type="checkbox" '+(q.active!==false?'checked':'')+' id="sq_'+qi+'_active"><div class="toggle-track"></div><span class="toggle-lbl">启用</span></label></div></div>'+
+    '<div class="field-row">'+field('题目（中文）','sq_'+qi+'_q_zh',q.q_zh)+field('题目（英文）','sq_'+qi+'_q_en',q.q_en)+'</div>'+
+    '<div class="field-row">'+field('副标题（中文）','sq_'+qi+'_sub_zh',q.sub_zh)+field('副标题（英文）','sq_'+qi+'_sub_en',q.sub_en)+'</div>'+
+    '<div class="label" style="margin:14px 0 8px;">选项列表</div>'+
+    '<div id="sqopts_'+qi+'">'+opts.map(function(o,oi){
+      return'<div class="json-item" style="padding:10px;"><button class="json-item-del" onclick="delSurveyOpt('+qi+','+oi+')">×</button><div class="field-row" style="margin-bottom:6px;">'+field('Emoji','sqo_'+qi+'_'+oi+'_icon',o.icon)+field('值(val)','sqo_'+qi+'_'+oi+'_val',o.val)+'</div><div class="field-row" style="margin-bottom:0;">'+field('中文','sqo_'+qi+'_'+oi+'_zh',o.zh)+field('英文','sqo_'+qi+'_'+oi+'_en',o.en)+'</div></div>';
+    }).join('')+'</div>'+
+    '<button class="json-add" onclick="addSurveyOpt('+qi+')" style="margin-top:6px;">＋ 添加选项</button>'+
+    '</div></div>';
+  }).join('');
+}
+function addSurveyQuestion(){
+  var newId='q_'+Date.now();
+  surveyQCache.push({id:newId,sort_order:surveyQCache.length+1,type:'single',grid:false,q_zh:'新题目',q_en:'New Question',sub_zh:'',sub_en:'',options:[],active:true});
+  renderSurveyEditor();
+}
+function delSurveyQ(qi){collectSurveyFromDOM();surveyQCache.splice(qi,1);renderSurveyEditor();}
+function moveSurveyQ(qi,dir){collectSurveyFromDOM();var j=qi+dir;if(j<0||j>=surveyQCache.length)return;var t=surveyQCache[qi];surveyQCache[qi]=surveyQCache[j];surveyQCache[j]=t;renderSurveyEditor();}
+function addSurveyOpt(qi){collectSurveyFromDOM();surveyQCache[qi].options.push({icon:'❓',zh:'新选项',en:'New option',val:'new_'+Date.now()});renderSurveyEditor();}
+function delSurveyOpt(qi,oi){collectSurveyFromDOM();surveyQCache[qi].options.splice(oi,1);renderSurveyEditor();}
+
+function collectSurveyFromDOM(){
+  surveyQCache.forEach(function(q,qi){
+    function g(f){var el=document.getElementById('sq_'+qi+'_'+f);return el?el.value:q[f]||'';}
+    function cb(f){var el=document.getElementById('sq_'+qi+'_'+f);return el?el.checked:!!q[f];}
+    q.q_zh=g('q_zh');q.q_en=g('q_en');q.sub_zh=g('sub_zh');q.sub_en=g('sub_en');
+    q.type=g('type');q.grid=cb('grid');q.active=cb('active');
+    q.options=(q.options||[]).map(function(o,oi){
+      function go(f){var el=document.getElementById('sqo_'+qi+'_'+oi+'_'+f);return el?el.value:o[f]||'';}
+      return{icon:go('icon'),zh:go('zh'),en:go('en'),val:go('val')};
+    });
+  });
+}
+
+async function saveSurveyQuestions(){
+  collectSurveyFromDOM();
+  // 删除所有旧记录，重新插入
+  await sb.from('survey_questions').delete().neq('id','___never___');
+  var inserts=surveyQCache.map(function(q,i){
+    return{id:q.id,sort_order:i+1,type:q.type,grid:q.grid,q_zh:q.q_zh,q_en:q.q_en,sub_zh:q.sub_zh,sub_en:q.sub_en,options:q.options,active:q.active};
+  });
+  if(inserts.length>0){var{error}=await sb.from('survey_questions').insert(inserts);if(error){alert('保存失败: '+error.message);return;}}
+  await logAudit('update','survey_questions','all','更新问卷题目');
+  showMsg('surveyEditMsg');
 }
 
 // ══════════════════════════════════════════════════════════

@@ -1717,7 +1717,7 @@ function showView(name, data) {
   document.getElementById('pageNote').textContent = notes[name] || '';
 
   if (name === 'profile' && data)  loadProfile(data);
-  if (name === 'survey')  { currentQ = 0; surveyAns = {}; renderQ(0); }
+  if (name === 'survey')  { currentQ = 0; surveyAns = {}; loadSurveyFromSupabase(); }
   if (name === 'results') renderResults();
   if (name === 'content-detail') {
     document.getElementById('articleZh').style.display = currentLang==='zh' ? '' : 'none';
@@ -2135,9 +2135,11 @@ async function loadProfileFromSupabase(id){
   var events=healer.events||[];
   if(events.length>0){var evt=events[0];document.getElementById('schedDay').textContent=evt.date?evt.date.split('-')[2]:'';document.getElementById('schedMonth').textContent=evt.date?(['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(evt.date.split('-')[1])]||''):'';var sn=document.getElementById('schedName');if(sn)sn.textContent=currentLang==='en'?(evt.title_en||evt.title_zh):evt.title_zh;}
 
-  // 服务列表
+  // 服务列表（含图片）
   var services=healer.services||[];var svcGrid=document.querySelector('#view-profile .services-grid');
-  if(svcGrid&&services.length>0){var icons=['🤲','🌸','📅','✨','🧘','💆'];svcGrid.innerHTML=services.map(function(s,i){return'<div class="service-card"><div class="service-img si'+(i%3+1)+'">'+icons[i%icons.length]+'</div><div class="service-body"><div class="service-name">'+(currentLang==='en'?(s.name_en||s.name_zh):s.name_zh)+'</div><div class="service-detail">'+(s.duration||'')+(s.price?' · '+s.price:'')+'</div></div></div>';}).join('');}
+  if(svcGrid&&services.length>0){var icons=['🤲','🌸','📅','✨','🧘','💆'];svcGrid.innerHTML=services.map(function(s,i){
+    var imgHtml=s.image_url?'<img src="'+s.image_url+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.textContent=\''+icons[i%icons.length]+'\'">':icons[i%icons.length];
+    return'<div class="service-card"><div class="service-img si'+(i%3+1)+'">'+imgHtml+'</div><div class="service-body"><div class="service-name">'+(currentLang==='en'?(s.name_en||s.name_zh):s.name_zh)+'</div><div class="service-detail">'+(s.duration||'')+(s.price?' · '+s.price:'')+'</div></div></div>';}).join('');}
 
   // 品牌产品
   var products=healer.products||[];var brandSection=document.querySelector('#view-profile .divider-row');
@@ -2222,6 +2224,28 @@ renderResults=function(){
   var feeling=surveyAns.feeling||'';
   sb.from('survey_responses').insert({answers:surveyAns,result_type:feeling}).then(function(){console.log('问卷数据已保存');}).catch(function(e){console.warn('问卷保存失败:',e);});
 };
+
+// ── P1b: 问卷从 Supabase 加载 ────────────────────────────
+async function loadSurveyFromSupabase(){
+  try{
+    var{data}=await sb.from('survey_questions').select('*').eq('active',true).order('sort_order');
+    if(data&&data.length>0){
+      // 用 Supabase 数据覆盖硬编码的 Qs 数组
+      Qs.length=0;
+      data.forEach(function(q){
+        Qs.push({
+          id:q.id,
+          zh:{q:q.q_zh,sub:q.sub_zh},
+          en:{q:q.q_en||q.q_zh,sub:q.sub_en||q.sub_zh},
+          type:q.type||'single',
+          grid:q.grid||false,
+          opts:(q.options||[]).map(function(o){return{icon:o.icon,zh:o.zh,en:o.en,val:o.val};})
+        });
+      });
+    }
+  }catch(e){console.warn('问卷加载失败，使用默认题目:',e);}
+  renderQ(0);
+}
 
 // ── Admin redirect ───────────────────────────────────────
 (function(){function c(){if(window.location.hash==='#admin')window.location.href='admin.html';}window.addEventListener('hashchange',c);setTimeout(c,100);})();
