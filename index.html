@@ -127,79 +127,80 @@ body { font-family:var(--fb); background:var(--bg); color:var(--text); line-heig
    VIEW: HOME
    ══════════════════════════════════════ */
 
-/* ── HERO — integrates original site's wave aesthetic ── */
-.hero {
-  background:var(--bg);
-  position:relative; overflow:hidden;
-  padding:64px 0 0;
-}
-.hero-inner {
-  max-width:1100px; margin:0 auto; padding:0 44px;
-  display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center;
-  padding-bottom:60px;
-}
-.hero-left {}
-.hero-eyebrow {
-  font-family:var(--fb); font-size:11px; font-weight:700;
-  letter-spacing:.12em; text-transform:uppercase; color:var(--green);
-  margin-bottom:14px; display:flex; align-items:center; gap:10px;
-}
-.hero-eyebrow::before { content:''; width:24px; height:1px; background:var(--green); }
-.hero-h1 { font-family:var(--fh); font-size:52px; font-weight:700; color:var(--text); line-height:1.1; margin-bottom:16px; }
-.hero-h1-zh { font-family:var(--fz); font-size:20px; color:var(--muted); margin-bottom:20px; letter-spacing:.08em; font-weight:300; }
-.hero-desc { font-family:var(--fz); font-size:14px; color:var(--muted); line-height:1.85; max-width:440px; margin-bottom:32px; letter-spacing:.03em; }
-.hero-btns { display:flex; gap:12px; flex-wrap:wrap; }
-.hero-stats { display:flex; gap:36px; margin-top:44px; padding-top:36px; border-top:1px solid rgba(0,0,0,.08); }
-.stat-num { font-family:var(--fh); font-size:34px; font-weight:700; color:var(--text); line-height:1; }
-.stat-label { font-family:var(--fz); font-size:11px; color:var(--muted); margin-top:3px; letter-spacing:.05em; }
+/* ── NEW HERO — 视频 + 大标题 ── */
+.hero-new { background:#E8DDD0; padding:0; }
+.hero-new-inner { display:grid; grid-template-columns:1fr 1fr; min-height:80vh; }
+.hero-new-left { display:flex; flex-direction:column; justify-content:center; padding:80px 60px 80px 80px; max-width:600px; margin-left:auto; }
+.hero-new-title { font-family:var(--fh); font-size:44px; font-weight:700; line-height:1.2; color:var(--text); }
+.hero-new-title .green { color:#35845D; }
+.hero-new-divider { width:65%; height:2px; background:var(--text); margin:32px 0; }
+.hero-new-brand-name { font-family:var(--fb); font-size:16px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.hero-new-brand-tag { font-family:var(--fb); font-size:15px; color:var(--muted); }
+.hero-new-right { overflow:hidden; }
+.hero-new-right video { width:100%; height:100%; object-fit:cover; display:block; }
 
-/* Hero right — founder quote card (from original site) */
-.hero-right { position:relative; }
-.hero-visual {
-  width:100%; aspect-ratio:4/5; border-radius:20px; overflow:hidden;
-  background:linear-gradient(135deg,#5A4030 0%,#8B6040 45%,#C49060 100%);
-  display:flex; align-items:center; justify-content:center; font-size:100px;
-  position:relative;
-}
-.hero-visual::after {
-  content:''; position:absolute; inset:0;
-  background:linear-gradient(to top, rgba(30,20,10,.75) 0%, transparent 55%);
-}
-.hero-founder-quote {
-  position:absolute; bottom:0; left:0; right:0; padding:28px 28px 24px;
-  z-index:2;
-}
-.founder-quote-text {
-  font-family:var(--fh); font-size:15px; font-weight:700; color:white;
-  line-height:1.5; margin-bottom:10px;
-}
-.founder-quote-cite {
-  font-family:var(--fb); font-size:11px; color:rgba(255,255,255,.55);
-  letter-spacing:.04em;
-}
-.hero-float-card {
-  position:absolute; top:20px; right:-16px;
-  background:white; border-radius:var(--br-card);
-  padding:14px 18px; min-width:160px;
-  box-shadow:0 12px 36px rgba(0,0,0,.12);
-}
-.float-icon { font-size:22px; margin-bottom:6px; }
-.float-label { font-family:var(--fh); font-size:12px; font-weight:700; color:var(--text); margin-bottom:2px; }
-.float-sub { font-family:var(--fb); font-size:11px; color:var(--muted); }
+/* ── 内容区（暖色调背景） ── */
+.content-section-warm { background:#F5F0E8; padding:64px 0; }
+.content-section-warm .sec-head { text-align:left; margin-bottom:24px; }
+.content-section-warm .sec-head h2 { color:var(--text); font-size:32px; }
+.content-section-warm .sec-head p { color:var(--muted); }
 
-/* Wave divider — matches original site */
-.wave-divider { display:block; width:100%; line-height:0; }
+/* ── 2 列纯文字内容卡 ── */
+#contentGrid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.content-card-new { background:white; border:1px solid #E0E0E0; border-radius:12px; padding:24px; cursor:pointer; transition:all .2s; }
+.content-card-new:hover { border-color:rgba(53,132,93,.3); box-shadow:0 4px 16px rgba(0,0,0,.06); }
+.ccn-top { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.ccn-emoji { font-size:20px; }
+.ccn-badges { display:flex; gap:5px; flex-wrap:wrap; }
+.ccn-badge { font-family:var(--fb); font-size:10px; font-weight:600; padding:3px 8px; border-radius:var(--br-tag); background:rgba(53,132,93,.08); color:var(--green); }
+.ccn-badge.featured { background:rgba(238,160,26,.12); color:var(--orange); }
+.ccn-title { font-family:var(--fh); font-size:18px; font-weight:700; color:var(--text); line-height:1.4; margin-bottom:8px; }
+.ccn-excerpt { font-family:var(--fb); font-size:14px; color:var(--muted); line-height:1.7; margin-bottom:14px; }
+.ccn-foot { display:flex; align-items:center; justify-content:space-between; padding-top:12px; border-top:1px solid rgba(0,0,0,.06); }
+.ccn-author { font-family:var(--fb); font-size:12px; color:#AAA; display:flex; align-items:center; gap:6px; }
+.ccn-action { font-family:var(--fb); font-size:12px; font-weight:700; text-decoration:none; }
 
-/* ── CONTENT TICKER (marquee) ── */
-.ticker { background:var(--dark); padding:13px 0; overflow:hidden; }
-.ticker-inner { display:flex; white-space:nowrap; animation:ticker 24s linear infinite; }
-.ticker-item {
-  font-family:var(--fb); font-size:12px; letter-spacing:.09em;
-  color:rgba(255,255,255,.6); padding:0 32px;
-  display:flex; align-items:center; gap:14px;
-}
-.ticker-item::after { content:'◆'; color:var(--orange); font-size:7px; }
-@keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+/* ── HEALER SHOWCASE（3列引言+照片） ── */
+.healer-showcase { padding:64px 0; background:var(--bg); }
+.healer-showcase-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px; }
+.healer-showcase-title { font-family:var(--fh); font-size:36px; font-weight:700; color:var(--text); }
+.healer-showcase-line { height:2px; background:var(--text); margin-bottom:48px; }
+.healer-showcase-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:32px; }
+.healer-showcase-quote { font-family:var(--fb); font-size:14px; color:var(--text); line-height:1.7; margin-bottom:20px; min-height:80px; font-style:italic; }
+.healer-showcase-photo { width:100%; aspect-ratio:3/4; border-radius:4px; overflow:hidden; margin-bottom:12px; cursor:pointer; }
+.healer-showcase-photo:hover { opacity:.92; }
+.healer-showcase-name { font-family:var(--fh); font-size:18px; font-weight:700; color:var(--text); }
+
+/* ── 播客/访谈区（暖色调） ── */
+.podcast-section-new { background:#F5F0E8; padding:64px 0; }
+.podcast-feature-card { max-width:700px; }
+.pfc-tag { font-family:var(--fb); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--orange); margin-bottom:16px; }
+.pfc-play { width:56px; height:56px; border-radius:50%; background:var(--green); border:none; color:white; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; margin-bottom:20px; transition:opacity .15s; }
+.pfc-play:hover { opacity:.85; }
+.pfc-label { font-family:var(--fb); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+.pfc-title { font-family:var(--fh); font-size:28px; font-weight:700; color:var(--text); line-height:1.35; margin-bottom:12px; }
+.pfc-text { font-family:var(--fb); font-size:14px; color:var(--muted); line-height:1.78; margin-bottom:20px; }
+.pfc-guest { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+.pfc-guest-av { width:40px; height:40px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; background:linear-gradient(135deg,#E8DDD0,#C4B090); }
+.pfc-guest-name { font-family:var(--fh); font-size:14px; font-weight:700; color:var(--text); }
+.pfc-guest-role { font-family:var(--fb); font-size:11px; color:var(--muted); }
+.pfc-link { font-family:var(--fb); font-size:13px; font-weight:700; color:var(--green); text-decoration:none; }
+.pfc-link:hover { text-decoration:underline; }
+
+/* ── 底部最新内容（3列简洁卡） ── */
+.bottom-content { padding:64px 0; background:var(--bg); }
+#bottomContentGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.bottom-card { background:white; border:1px solid #E0E0E0; border-radius:12px; padding:20px; cursor:pointer; transition:all .2s; }
+.bottom-card:hover { border-color:rgba(53,132,93,.3); box-shadow:0 4px 16px rgba(0,0,0,.06); }
+
+/* ── 创始人引言（暖色调） ── */
+.founder-section-new { background:#F5F0E8; padding:72px 44px; text-align:center; }
+.founder-quote-new { font-family:var(--fz); font-size:24px; font-weight:400; color:var(--text); line-height:1.7; max-width:700px; margin:0 auto 16px; letter-spacing:.02em; }
+.founder-credit-new { font-family:var(--fb); font-size:13px; color:var(--muted); letter-spacing:.04em; }
+
+/* ── 隐藏旧元素 ── */
+.wave-divider { display:none; }
+.ticker { display:none; }
 
 /* ── CAROUSEL ── */
 .carousel-wrap { position:relative; margin-bottom:32px; }
@@ -870,120 +871,35 @@ footer { background:#1E1C18; padding:52px 44px 32px; }
      ══════════════════════════════════════ -->
 <div id="view-home" class="view active">
 
-  <!-- ── HERO ──
-       WP: hero eyebrow, h1, subtitle, desc, stat numbers = ACF fields
-       WP: founder photo = featured image; quote text = ACF text field -->
-  <div class="hero">
-    <div class="hero-inner">
-      <div class="hero-left">
-        <div class="hero-eyebrow"
-          data-zh="全球华语疗愈内容平台"
-          data-en="Global Chinese-Language Healing Platform">全球华语疗愈内容平台</div>
-
-        <h1 class="hero-h1"
-          data-zh="疗愈，从内而生"
-          data-en="Healing Begins Within">疗愈，从内而生</h1>
-
-        <div class="hero-h1-zh"
-          data-zh="The true healer is within you."
-          data-en="The true healer is within you.">The true healer is within you.</div>
-
-        <p class="hero-desc"
-          data-zh="精选全球顶级疗愈内容，连接认证疗愈师，用中文探索身心灵最前沿的洞见与实践。"
-          data-en="Curated healing wisdom from around the world — connecting you with certified healers and the latest in mind-body-spirit practice.">
-          精选全球顶级疗愈内容，连接认证疗愈师，用中文探索身心灵最前沿的洞见与实践。</p>
-
-        <div class="hero-btns">
-          <button class="btn-red" onclick="showView('healers')"
-            data-zh="探索疗愈师" data-en="Meet the Healers">探索疗愈师</button>
-          <button class="btn-outline-green" onclick="showView('survey')"
-            data-zh="了解自己 →" data-en="Know Yourself →">了解自己 →</button>
-        </div>
-
-        <!-- WP: these 3 stat numbers = ACF number fields -->
-        <div class="hero-stats">
-          <div><div class="stat-num">200+</div><div class="stat-label"
-            data-zh="精选内容" data-en="Curated Articles">精选内容</div></div>
-          <div><div class="stat-num">30+</div><div class="stat-label"
-            data-zh="认证疗愈师" data-en="Certified Healers">认证疗愈师</div></div>
-          <div><div class="stat-num">12</div><div class="stat-label"
-            data-zh="疗愈领域" data-en="Healing Modalities">疗愈领域</div></div>
+  <!-- ── NEW HERO — 视频 + 大标题 ── -->
+  <div class="hero-new">
+    <div class="hero-new-inner">
+      <div class="hero-new-left">
+        <h1 class="hero-new-title">
+          On the Journey of<br>
+          <span class="green">Healing</span>,<br>
+          Awaken the Sphere of<br>
+          Your <span class="green">Whole Self</span>.
+        </h1>
+        <div class="hero-new-divider"></div>
+        <div class="hero-new-brand">
+          <div class="hero-new-brand-name">AwakenSphere</div>
+          <div class="hero-new-brand-tag"
+            data-zh="Where healing becomes awakening."
+            data-en="Where healing becomes awakening.">Where healing becomes awakening.</div>
         </div>
       </div>
-
-      <div class="hero-right">
-        <!-- WP: replace emoji with actual photo via featured image -->
-        <div class="hero-visual hc1">
-          🌿
-          <div class="hero-founder-quote">
-            <!-- WP: ACF text field "hero_quote" -->
-            <div class="founder-quote-text"
-              data-zh="「真正的疗愈，不是修复破碎，而是重新记起自己本来的完整。」"
-              data-en="&ldquo;True healing is not fixing what's broken — it's remembering your original wholeness.&rdquo;">
-              「真正的疗愈，不是修复破碎，而是重新记起自己本来的完整。」</div>
-            <div class="founder-quote-cite">— Carrie Yang，AwakenSphere 创始人</div>
-          </div>
-        </div>
-
-        <!-- WP: ACF fields "float_card_icon", "float_card_title", "float_card_sub" -->
-        <div class="hero-float-card">
-          <div class="float-icon">🎧</div>
-          <div class="float-label"
-            data-zh="今日推荐" data-en="Today's Pick">今日推荐</div>
-          <div class="float-sub"
-            data-zh="身体的智慧 · 32分钟" data-en="Body Wisdom · 32 min">身体的智慧 · 32分钟</div>
-        </div>
+      <div class="hero-new-right">
+        <video autoplay muted loop playsinline poster="hero-poster.jpg">
+          <source src="hero-video.mp4" type="video/mp4">
+        </video>
       </div>
     </div>
   </div>
 
-  <!-- Wave into dark section — same as original site -->
-  <svg class="wave-divider" viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M0,48 C360,0 1080,48 1440,0 L1440,48 L0,48 Z" fill="#444444"/>
-  </svg>
-
-  <!-- ── TICKER ── -->
-  <div class="ticker">
-    <div class="ticker-inner">
-      <span class="ticker-item">正念冥想</span><span class="ticker-item">身体疗愈</span>
-      <span class="ticker-item">情绪释放</span><span class="ticker-item">灵性成长</span>
-      <span class="ticker-item">芳香疗法</span><span class="ticker-item">声音治疗</span>
-      <span class="ticker-item">内在小孩</span><span class="ticker-item">创伤疗愈</span>
-      <span class="ticker-item">冥想引导</span><span class="ticker-item">茶道疗愈</span>
-      <span class="ticker-item">正念冥想</span><span class="ticker-item">身体疗愈</span>
-      <span class="ticker-item">情绪释放</span><span class="ticker-item">灵性成长</span>
-      <span class="ticker-item">芳香疗法</span><span class="ticker-item">声音治疗</span>
-      <span class="ticker-item">内在小孩</span><span class="ticker-item">创伤疗愈</span>
-      <span class="ticker-item">冥想引导</span><span class="ticker-item">茶道疗愈</span>
-    </div>
-  </div>
-
-  <!-- ── CONTENT MODULE ──
-       WP: each carousel slide = WordPress 文章 (custom post type: as_content)
-       WP: each card = same custom post type, ordered by date -->
+  <!-- ── 轮播区 ── -->
   <div class="section" style="background:var(--dark);">
     <div class="container">
-
-      <div class="sec-head">
-        <h2 style="color:white;" data-zh="探索与学习" data-en="Explore & Learn">探索与学习</h2>
-        <p style="color:rgba(255,255,255,.35);"
-          data-zh="精选全球疗愈内容 · 中文呈现"
-          data-en="Curated healing wisdom · In your language">精选全球疗愈内容 · 中文呈现</p>
-      </div>
-
-      <!-- Filter — WP: taxonomy terms auto-generate these buttons -->
-      <div class="filter-row">
-        <button class="filter-btn active" data-zh="全部" data-en="All">全部</button>
-        <button class="filter-btn" data-zh="🧘 正念冥想" data-en="🧘 Mindfulness">🧘 正念冥想</button>
-        <button class="filter-btn" data-zh="🌿 身体疗愈" data-en="🌿 Somatic">🌿 身体疗愈</button>
-        <button class="filter-btn" data-zh="💫 灵性成长" data-en="💫 Spirituality">💫 灵性成长</button>
-        <button class="filter-btn" data-zh="🎵 声音治疗" data-en="🎵 Sound Healing">🎵 声音治疗</button>
-        <button class="filter-btn" data-zh="🌸 情绪疗愈" data-en="🌸 Emotional">🌸 情绪疗愈</button>
-        <button class="filter-btn" data-zh="🎬 视频" data-en="🎬 Video">🎬 视频</button>
-        <button class="filter-btn" data-zh="🎧 播客" data-en="🎧 Podcast">🎧 播客</button>
-      </div>
-
-      <!-- CAROUSEL — WP: 4 sticky/featured posts -->
       <div class="carousel-wrap">
         <div class="carousel-overflow">
           <div class="carousel-track" id="cTrack">
@@ -991,83 +907,81 @@ footer { background:#1E1C18; padding:52px 44px 32px; }
           </div>
         </div>
         <div class="carousel-nav">
-          <div class="carousel-dots" id="cDots">
-            <!-- 由 renderCarousel() 动态填充 -->
-          </div>
+          <div class="carousel-dots" id="cDots"></div>
           <div class="carousel-arrows">
             <button class="carr" onclick="prevSlide()">←</button>
             <button class="carr" onclick="nextSlide()">→</button>
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      <!-- Latest content grid — WP: auto-queried from as_content post type -->
+  <!-- ── 探索与学习（内容区 — 暖色调） ── -->
+  <div class="content-section-warm">
+    <div class="container">
       <div class="row-head">
-        <h3 class="light" data-zh="最新内容" data-en="Latest Content">最新内容</h3>
-        <button class="see-all orange" data-zh="查看全部 →" data-en="View All →">查看全部 →</button>
+        <h3 style="font-size:32px;" data-zh="探索与学习" data-en="Explore & Learn">探索与学习</h3>
+        <button class="see-all" data-zh="查看全部 →" data-en="View All →">查看全部 →</button>
       </div>
-      <div class="cards-grid" id="contentGrid">
+      <p style="font-family:var(--fz);font-size:13px;color:var(--muted);margin-bottom:24px;"
+        data-zh="精选全球疗愈内容 · 中文呈现"
+        data-en="Curated healing wisdom · In your language">精选全球疗愈内容 · 中文呈现</p>
+      <div id="contentGrid">
         <!-- 由 renderContentGrid() 动态填充 -->
-      </div>
-      <div class="load-row">
-        <button class="btn-outline-green" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.7);" onmouseover="this.style.background='var(--green)';this.style.color='white';" onmouseout="this.style.background='transparent';this.style.color='rgba(255,255,255,.7)';"
-          data-zh="加载更多内容" data-en="Load More">加载更多内容</button>
       </div>
     </div>
   </div>
 
-  <svg class="wave-divider" viewBox="0 0 1440 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="background:var(--dark)">
-    <path d="M0,0 C360,48 1080,0 1440,48 L1440,0 L0,0 Z" fill="var(--bg)"/>
-  </svg>
-
-  <!-- ── HEALERS STRIP ── WP: shows latest 6 from Healer custom post type -->
-  <div class="section" style="background:var(--bg);">
+  <!-- ── Meet Your Healers（3列引言+照片） ── -->
+  <div class="healer-showcase">
     <div class="container">
-      <div class="row-head">
-        <h3 data-zh="认识我们的疗愈师" data-en="Meet Our Healers">认识我们的疗愈师</h3>
+      <div class="healer-showcase-header">
+        <div class="healer-showcase-title" data-zh="认识我们的疗愈师" data-en="Meet Your Healers">Meet Your Healers</div>
         <button class="see-all" onclick="showView('healers')"
           data-zh="查看全部 →" data-en="View All →">查看全部 →</button>
       </div>
-      <div class="healer-strip" id="healerStrip">
-        <!-- 由 renderHealerStrip() 动态填充 -->
+      <div class="healer-showcase-line"></div>
+      <div class="healer-showcase-grid" id="healerShowcase">
+        <!-- 由 renderHealerShowcase() 动态填充 -->
       </div>
     </div>
   </div>
 
-  <!-- ── PODCAST SECTION ── -->
-  <svg class="wave-divider" viewBox="0 0 1440 48" fill="none" style="background:var(--bg)">
-    <path d="M0,48 C360,0 1080,48 1440,0 L1440,48 L0,48 Z" fill="var(--dark)"/>
-  </svg>
-  <div class="pod-section">
+  <!-- ── 播客/访谈区（暖色调） ── -->
+  <div class="podcast-section-new">
     <div class="container">
-      <div class="sec-head">
-        <h2 style="color:white;">The Healer's Voice</h2>
-        <p data-zh="疗愈师的声音 · 原创播客" data-en="Original podcast series · In conversation with healers">疗愈师的声音 · 原创播客</p>
+      <div class="row-head" style="margin-bottom:32px;">
+        <h3 style="font-size:28px;">The Healer's Voice</h3>
+        <button class="see-all" data-zh="全部集数 →" data-en="All Episodes →">全部集数 →</button>
       </div>
-      <div class="row-head">
-        <h3 class="light" data-zh="最新集数" data-en="Latest Episodes">最新集数</h3>
-        <button class="see-all orange" data-zh="全部集数 →" data-en="All Episodes →">全部集数 →</button>
-      </div>
-      <div class="pod-list" id="podList">
-        <!-- 由 renderPodcastSection() 动态填充 -->
-      </div>
-      <div class="interview-grid" id="interviewGrid">
+      <div id="podcastFeature">
         <!-- 由 renderPodcastSection() 动态填充 -->
       </div>
     </div>
   </div>
-  <svg class="wave-divider" viewBox="0 0 1440 48" fill="none" style="background:var(--dark)">
-    <path d="M0,0 C360,48 1080,0 1440,48 L1440,0 L0,0 Z" fill="var(--blue)"/>
-  </svg>
 
-  <!-- ── FOUNDER STORY (from original site) ── WP: ACF text field -->
-  <div class="founder-section">
-    <div class="founder-quote-big"
+  <!-- ── 底部最新内容（3列） ── -->
+  <div class="bottom-content">
+    <div class="container">
+      <div class="row-head">
+        <h3 data-zh="最新内容" data-en="Latest Content">最新内容</h3>
+        <button class="see-all" data-zh="查看全部 →" data-en="View All →">查看全部 →</button>
+      </div>
+      <div id="bottomContentGrid">
+        <!-- 由 renderBottomContent() 动态填充 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 创始人引言 ── -->
+  <div class="founder-section-new">
+    <div class="founder-quote-new"
       data-zh="「我来自金融世界，那里只有不断往前冲，直到身体罢工。在寻找疗愈的旅途中，我学到了这一点：真正的疗愈始于内在。」"
       data-en="&ldquo;I came from the financial world, where I pushed until my body gave out. In my search for healing, I learned this: true healing begins within.&rdquo;">
       「我来自金融世界，那里只有不断往前冲，直到身体罢工。在寻找疗愈的旅途中，我学到了这一点：真正的疗愈始于内在。」
     </div>
-    <div class="founder-credit">
+    <div class="founder-credit-new">
       — <span data-zh="Carrie Yang，AwakenSphere 创始人" data-en="Carrie Yang, Founder of AwakenSphere">Carrie Yang，AwakenSphere 创始人</span>
     </div>
   </div>
@@ -1787,95 +1701,96 @@ function renderCarousel(){
   dots.innerHTML=dotHtml;
 }
 
-// 2. 最新内容卡片
+// 2. 探索与学习 — 2 列纯文字卡片
 function renderContentGrid(){
-  var items=(sbCache.content||[]).filter(function(c){return c.active&&!c.carousel_order;}).slice(0,6);
-  if(items.length===0)items=(sbCache.content||[]).filter(function(c){return c.active;}).slice(0,6);
+  var items=(sbCache.content||[]).filter(function(c){return c.active;}).slice(0,4);
   var grid=document.getElementById('contentGrid');
   if(!grid||items.length===0)return;
-  var ciClasses=['ci1','ci2','ci3','ci4','ci5','ci6'];
-  var ctClasses=['ct-red','ct-orange','ct-blue','ct-pink','ct-green','ct-dark'];
-  var typeMap={article:{zh:'📖 文章',en:'📖 Article',linkZh:'阅读 →',linkEn:'Read →',icon:'📖'},podcast:{zh:'🎧 播客',en:'🎧 Podcast',linkZh:'收听 →',linkEn:'Listen →',icon:'🎧'},meditation:{zh:'🎵 引导冥想',en:'🎵 Guided',linkZh:'收听 →',linkEn:'Listen →',icon:'🎵'},video:{zh:'🎬 视频',en:'🎬 Video',linkZh:'观看 →',linkEn:'Watch →',icon:'🎬'}};
+  var actionColors=['var(--red)','var(--orange)','var(--blue)','var(--green)','var(--pink)','var(--text)'];
+  var typeMap={article:{zh:'文章',en:'Article',linkZh:'阅读全文',linkEn:'Read Article',emoji:'📖'},podcast:{zh:'播客',en:'Podcast',linkZh:'收听节目',linkEn:'Listen',emoji:'🎧'},meditation:{zh:'引导冥想',en:'Guided',linkZh:'开始冥想',linkEn:'Start',emoji:'🎵'},video:{zh:'视频',en:'Video',linkZh:'观看',linkEn:'Watch',emoji:'🎬'}};
   var html='';
   items.forEach(function(c,i){
     var tp=typeMap[c.type]||typeMap.article;
-    var emoji=c.type==='podcast'?'🌿':c.type==='meditation'?'🌙':c.type==='video'?'💫':'🌿';
-    html+='<div class="card" onclick="showView(\'content-detail\',\''+esc(c.id)+'\')">'
-      +'<div class="card-img '+ciClasses[i%ciClasses.length]+'">'+emoji+'<span class="img-tag" data-zh="'+esc(tp.zh)+'" data-en="'+esc(tp.en)+'">'+esc(tp.zh)+'</span></div>'
-      +'<div class="card-body">'
-      +'<a class="card-title '+ctClasses[i%ctClasses.length]+'" data-zh="'+esc(c.title_zh)+'" data-en="'+esc(c.title_en||c.title_zh)+'">'+esc(c.title_zh)+'</a>'
-      +'<p class="card-excerpt" data-zh="'+esc(c.summary_zh||'')+'" data-en="'+esc(c.summary_en||c.summary_zh||'')+'">'+esc(c.summary_zh||'')+'</p>'
-      +'<div class="card-foot"><span>'+esc(tp.icon)+' '+esc(c.author||'')+' · <span data-zh="'+esc(c.duration_zh||'')+'" data-en="'+esc(c.duration_en||c.duration_zh||'')+'">'+esc(c.duration_zh||'')+'</span></span>'
-      +'<a class="read-link" data-zh="'+esc(tp.linkZh)+'" data-en="'+esc(tp.linkEn)+'">'+esc(tp.linkZh)+'</a></div>'
-      +'</div></div>';
+    html+='<div class="content-card-new" onclick="showView(\'content-detail\',\''+esc(c.id)+'\')">'
+      +'<div class="ccn-top"><span class="ccn-emoji">'+tp.emoji+'</span><div class="ccn-badges">';
+    if(c.featured)html+='<span class="ccn-badge featured" data-zh="编辑精选" data-en="Editor\'s Pick">编辑精选</span>';
+    html+='<span class="ccn-badge" data-zh="'+esc(tp.zh)+'" data-en="'+esc(tp.en)+'">'+esc(tp.zh)+'</span></div></div>'
+      +'<div class="ccn-title" data-zh="'+esc(c.title_zh)+'" data-en="'+esc(c.title_en||c.title_zh)+'">'+esc(c.title_zh)+'</div>'
+      +'<div class="ccn-excerpt" data-zh="'+esc(c.summary_zh||'')+'" data-en="'+esc(c.summary_en||c.summary_zh||'')+'">'+esc(c.summary_zh||'')+'</div>'
+      +'<div class="ccn-foot"><span class="ccn-author">'+esc(tp.emoji)+' '+esc(c.author||'')+' · <span data-zh="'+esc(c.duration_zh||'')+'" data-en="'+esc(c.duration_en||c.duration_zh||'')+'">'+esc(c.duration_zh||'')+'</span></span>'
+      +'<a class="ccn-action" style="color:'+actionColors[i%actionColors.length]+'" data-zh="'+esc(tp.linkZh)+'" data-en="'+esc(tp.linkEn)+'">'+esc(tp.linkZh)+'</a></div>'
+      +'</div>';
   });
   grid.innerHTML=html;
 }
 
-// 3. 疗愈师横条（首页）
-function renderHealerStrip(){
-  var items=(sbCache.healers||[]).slice(0,6);
-  var strip=document.getElementById('healerStrip');
-  if(!strip||items.length===0)return;
-  var hmpClasses=['hmp1','hmp2','hmp3','hmp4','hmp5','hmp6'];
+// 3. Meet Your Healers — 3 列引言+照片+名字
+function renderHealerShowcase(){
+  var healers=(sbCache.healers||[]).slice(0,3);
+  var container=document.getElementById('healerShowcase');
+  if(!container||healers.length===0)return;
   var html='';
-  items.forEach(function(h,i){
-    var photoInner=h.avatar_url?'<img src="'+esc(h.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.parentNode.textContent=\''+(h.emoji||'🌿')+'\'">':esc(h.emoji||'🌿');
-    html+='<div class="healer-mini" onclick="showView(\'profile\',\''+esc(h.id)+'\')">'
-      +'<div class="hm-photo '+hmpClasses[i%hmpClasses.length]+'">'+photoInner+'</div>'
-      +'<div class="hm-info"><div class="hm-name">'+esc(h.name_en||h.name_zh)+'</div>'
-      +'<div class="hm-spec" data-zh="'+esc(h.title_zh)+'" data-en="'+esc(h.title_en||h.title_zh)+'">'+esc(h.title_zh)+'</div></div></div>';
+  healers.forEach(function(h){
+    var quote=h.bio_en||h.bio_zh||'';
+    var photoHtml=h.avatar_url
+      ?'<img src="'+esc(h.avatar_url)+'" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentNode.innerHTML=\'<div style=\\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,#E8DDD0,#C4B090);\\\'>'+esc(h.emoji||'🌿')+'</div>\'">'
+      :'<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(135deg,#E8DDD0,#C4B090);">'+esc(h.emoji||'🌿')+'</div>';
+    html+='<div class="healer-showcase-col">'
+      +'<div class="healer-showcase-quote">"'+esc(quote)+'"</div>'
+      +'<div class="healer-showcase-photo" onclick="showView(\'profile\',\''+esc(h.id)+'\')">'+photoHtml+'</div>'
+      +'<div class="healer-showcase-name">'+esc(h.name_en||h.name_zh)+'</div>'
+      +'</div>';
   });
-  strip.innerHTML=html;
+  container.innerHTML=html;
 }
+// 兼容旧调用
+function renderHealerStrip(){ renderHealerShowcase(); }
 
-// 4. 播客区块（pod-list + interview-grid）
+// 4. 播客区块 — 单个大卡片
 function renderPodcastSection(){
   var podcasts=(sbCache.content||[]).filter(function(c){return c.type==='podcast'&&c.active;}).slice(0,4);
-  var podList=document.getElementById('podList');
-  var ivGrid=document.getElementById('interviewGrid');
-  if(!podList)return;
-  var paClasses=['pa1','pa2','pa3','pa4'];
-  var emojis=['🌻','🌿','🍵','✨'];
-  if(podcasts.length>0){
-    var html='';
-    podcasts.forEach(function(p,i){
-      var epNum=p.episode_num||'';
-      var epLabel=epNum?'EP. '+epNum:'';
-      if(i===0&&epNum)epLabel+=' · <span data-zh="最新" data-en="LATEST">最新</span>';
-      html+='<div class="pod-item" onclick="showView(\'content-detail\',\''+esc(p.id)+'\')">'
-        +'<div class="pod-art '+paClasses[i%paClasses.length]+'">'+emojis[i%emojis.length]+'</div>'
-        +'<div class="pod-info">'
-        +'<div class="pod-ep">'+epLabel+'</div>'
-        +'<div class="pod-title" data-zh="'+esc(p.title_zh)+'" data-en="'+esc(p.title_en||p.title_zh)+'">'+esc(p.title_zh)+'</div>'
-        +'<div class="pod-meta"><span>'+esc(p.author||'')+'</span><span>· <span data-zh="'+esc(p.duration_zh||'')+'" data-en="'+esc(p.duration_en||p.duration_zh||'')+'">'+esc(p.duration_zh||'')+'</span></span></div>'
-        +'</div><button class="play-btn">▶</button></div>';
-    });
-    podList.innerHTML=html;
-  }
-  // 访谈区：取第一个 podcast 作为 featured
-  if(ivGrid&&podcasts.length>0){
-    var ft=podcasts[0];
-    var epTag=ft.episode_num?'最新访谈 · EP.'+ft.episode_num:'最新访谈';
-    var epTagEn=ft.episode_num?'Latest · EP.'+ft.episode_num:'Latest Interview';
-    // 查找对应疗愈师
-    var healer=null;
-    if(ft.author&&sbCache.healers)healer=sbCache.healers.find(function(h){return(h.name_en&&ft.author.indexOf(h.name_en.split(' ')[0])>=0)||(h.name_zh&&ft.author.indexOf(h.name_zh)>=0);});
-    var guestName=healer?healer.name_zh+' '+healer.name_en:esc(ft.author||'');
-    var guestRole=healer?(healer.title_zh||''):(ft.author||'');
-    var guestEmoji=healer?(healer.emoji||'🌸'):'🌸';
-    ivGrid.innerHTML='<div class="iv-video" onclick="showView(\'content-detail\',\''+esc(ft.id)+'\')">'
-      +'<div class="ep-tag" data-zh="'+esc(epTag)+'" data-en="'+esc(epTagEn)+'">'+esc(epTag)+'</div>'
-      +'<div class="play-big">▶</div></div>'
-      +'<div class="iv-copy">'
-      +'<div class="iv-label" data-zh="疗愈师深度访谈" data-en="HEALER IN DEPTH">疗愈师深度访谈</div>'
-      +'<div class="iv-title" data-zh="'+esc(ft.title_zh)+'" data-en="'+esc(ft.title_en||ft.title_zh)+'">'+esc(ft.title_zh)+'</div>'
-      +'<div class="iv-text" data-zh="'+esc(ft.summary_zh||'')+'" data-en="'+esc(ft.summary_en||ft.summary_zh||'')+'">'+esc(ft.summary_zh||'')+'</div>'
-      +'<div class="guest-row"><div class="guest-av" style="background:linear-gradient(135deg,#C0A880,#806040);">'+guestEmoji+'</div>'
-      +'<div><div class="guest-name">'+guestName+'</div>'
-      +'<div class="guest-role" data-zh="'+esc(guestRole)+'" data-en="'+esc(healer?healer.title_en||healer.title_zh:guestRole)+'">'+esc(guestRole)+'</div></div></div>'
-      +'<button class="btn-green" onclick="showView(\'content-detail\',\''+esc(ft.id)+'\')" data-zh="收听完整访谈" data-en="Listen to Full Interview">收听完整访谈</button></div>';
-  }
+  var feature=document.getElementById('podcastFeature');
+  if(!feature||podcasts.length===0)return;
+  var ft=podcasts[0];
+  var epTag=ft.episode_num?'最新访谈 · EP.'+ft.episode_num:'最新访谈';
+  var epTagEn=ft.episode_num?'Latest · EP.'+ft.episode_num:'Latest Interview';
+  // 查找对应疗愈师
+  var healer=null;
+  if(ft.author&&sbCache.healers)healer=sbCache.healers.find(function(h){return(h.name_en&&ft.author.indexOf(h.name_en.split(' ')[0])>=0)||(h.name_zh&&ft.author.indexOf(h.name_zh)>=0);});
+  var guestName=healer?(healer.name_zh+' '+(healer.name_en||'')):esc(ft.author||'');
+  var guestRole=healer?(healer.title_zh||''):esc(ft.author||'');
+  var guestEmoji=healer?(healer.emoji||'🌸'):'🌸';
+  feature.innerHTML='<div class="podcast-feature-card">'
+    +'<div class="pfc-tag" data-zh="'+esc(epTag)+'" data-en="'+esc(epTagEn)+'">'+esc(epTag)+'</div>'
+    +'<button class="pfc-play" onclick="showView(\'content-detail\',\''+esc(ft.id)+'\')">▶</button>'
+    +'<div class="pfc-label" data-zh="疗愈师深度访谈" data-en="HEALER IN DEPTH">疗愈师深度访谈</div>'
+    +'<div class="pfc-title" data-zh="'+esc(ft.title_zh)+'" data-en="'+esc(ft.title_en||ft.title_zh)+'">'+esc(ft.title_zh)+'</div>'
+    +'<div class="pfc-text" data-zh="'+esc(ft.summary_zh||'')+'" data-en="'+esc(ft.summary_en||ft.summary_zh||'')+'">'+esc(ft.summary_zh||'')+'</div>'
+    +'<div class="pfc-guest"><div class="pfc-guest-av">'+guestEmoji+'</div>'
+    +'<div><div class="pfc-guest-name">'+guestName+'</div>'
+    +'<div class="pfc-guest-role" data-zh="'+esc(guestRole)+'" data-en="'+esc(healer?healer.title_en||healer.title_zh:guestRole)+'">'+esc(guestRole)+'</div></div></div>'
+    +'<a class="pfc-link" onclick="showView(\'content-detail\',\''+esc(ft.id)+'\')" data-zh="收听完整访谈 →" data-en="Listen to Full Interview →">收听完整访谈 →</a>'
+    +'</div>';
+}
+
+// 4b. 底部最新内容 — 3 列简洁卡
+function renderBottomContent(){
+  var items=(sbCache.content||[]).filter(function(c){return c.active;}).slice(0,3);
+  var grid=document.getElementById('bottomContentGrid');
+  if(!grid||items.length===0)return;
+  var typeMap={article:{zh:'文章',en:'Article',linkZh:'阅读 →',linkEn:'Read →',emoji:'📖'},podcast:{zh:'播客',en:'Podcast',linkZh:'收听 →',linkEn:'Listen →',emoji:'🎧'},meditation:{zh:'冥想',en:'Guided',linkZh:'收听 →',linkEn:'Listen →',emoji:'🎵'},video:{zh:'视频',en:'Video',linkZh:'观看 →',linkEn:'Watch →',emoji:'🎬'}};
+  var html='';
+  items.forEach(function(c){
+    var tp=typeMap[c.type]||typeMap.article;
+    html+='<div class="bottom-card" onclick="showView(\'content-detail\',\''+esc(c.id)+'\')">'
+      +'<div class="ccn-top"><span class="ccn-emoji">'+tp.emoji+'</span><div class="ccn-badges">'
+      +'<span class="ccn-badge" data-zh="'+esc(tp.zh)+'" data-en="'+esc(tp.en)+'">'+esc(tp.zh)+'</span></div></div>'
+      +'<div class="ccn-title" style="font-size:16px;" data-zh="'+esc(c.title_zh)+'" data-en="'+esc(c.title_en||c.title_zh)+'">'+esc(c.title_zh)+'</div>'
+      +'<div class="ccn-foot" style="margin-top:12px;"><span class="ccn-author">'+esc(c.author||'')+' · <span data-zh="'+esc(c.duration_zh||'')+'" data-en="'+esc(c.duration_en||c.duration_zh||'')+'">'+esc(c.duration_zh||'')+'</span></span>'
+      +'<a class="ccn-action" style="color:var(--green);" data-zh="'+esc(tp.linkZh)+'" data-en="'+esc(tp.linkEn)+'">'+esc(tp.linkZh)+'</a></div>'
+      +'</div>';
+  });
+  grid.innerHTML=html;
 }
 
 // 5. 疗愈师目录页网格
@@ -1930,11 +1845,12 @@ async function loadSiteData(){
     }
     if(contentRes.data)sbCache.content=contentRes.data;
     if(tickerRes.data&&tickerRes.data.length>0)applyTickerData(tickerRes.data);
-    // 动态渲染 5 个区块
+    // 动态渲染首页区块
     renderCarousel();
     renderContentGrid();
     renderHealerStrip();
     renderPodcastSection();
+    renderBottomContent();
     renderHealersGrid();
     if(typeof applyLang==='function')applyLang();
   }catch(e){console.warn('Supabase 加载失败:',e);}
@@ -1949,8 +1865,7 @@ function applyHomepageData(hp){
   if(sn[0]&&hp.stat_content)sn[0].textContent=hp.stat_content;
   if(sn[1]&&hp.stat_healers)sn[1].textContent=hp.stat_healers;
   if(sn[2]&&hp.stat_domains)sn[2].textContent=hp.stat_domains;
-  if((el=document.querySelector('.founder-quote-text'))&&hp.founder_quote_zh){el.setAttribute('data-zh',hp.founder_quote_zh);if(hp.founder_quote_en)el.setAttribute('data-en',hp.founder_quote_en);el.textContent=hp.founder_quote_zh;}
-  if((el=document.querySelector('.founder-quote-big'))&&hp.founder_quote_zh){el.setAttribute('data-zh',hp.founder_quote_zh);if(hp.founder_quote_en)el.setAttribute('data-en',hp.founder_quote_en);el.textContent=hp.founder_quote_zh;}
+  if((el=document.querySelector('.founder-quote-new'))&&hp.founder_quote_zh){el.setAttribute('data-zh',hp.founder_quote_zh);if(hp.founder_quote_en)el.setAttribute('data-en',hp.founder_quote_en);el.textContent=hp.founder_quote_zh;}
 }
 function applyTickerData(items){var inner=document.querySelector('.ticker-inner');if(!inner)return;var html='';for(var r=0;r<2;r++)items.forEach(function(t){html+='<span class="ticker-item">'+t.label+'</span>';});inner.innerHTML=html;}
 
