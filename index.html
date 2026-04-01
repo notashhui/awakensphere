@@ -137,10 +137,103 @@ body { font-family:var(--fb); background:var(--bg); color:var(--text); line-heig
 .hero-divider-line { width:120px; height:2px; background:var(--text); margin:32px 0; }
 .hero-brand-name { font-family:var(--fb); font-size:16px; font-weight:700; color:var(--text); margin-bottom:4px; }
 .hero-brand-tagline { font-family:var(--fb); font-size:15px; color:var(--muted); }
+/* ── 响应式：768px 以下 ── */
 @media(max-width:768px){
-  .hero-fullscreen { height:auto; min-height:80vh; padding:80px 0 60px; }
+  /* Header */
+  .site-header { padding:10px 16px; flex-wrap:wrap; gap:8px; }
+  .header-logo { flex:1; min-width:0; }
+  .header-logo-name { font-size:14px; }
+  .header-logo-tag { font-size:9px; }
+  .header-nav { gap:6px; }
+  .lang-switch { margin-right:4px; }
+  .lang-switch button { font-size:11px; padding:4px 8px; }
+  .btn-red { font-size:11px; padding:7px 12px; }
+  .btn-outline-green { font-size:11px; padding:6px 12px; }
+  /* Hero */
+  .hero-fullscreen { height:auto; min-height:85vh; }
+  .hero-content { padding:0 24px; }
   .hero-title-main { font-size:32px; }
-  .hero-overlay { background:rgba(232,221,208,.78); }
+  .hero-divider-line { width:80px; margin:24px 0; }
+  .hero-brand-name { font-size:14px; }
+  .hero-brand-tagline { font-size:13px; }
+  .hero-overlay { background:linear-gradient(to bottom,rgba(232,221,208,.75) 0%,rgba(232,221,208,.6) 50%,rgba(232,221,208,.3) 100%); }
+  /* 通用容器 */
+  .container { padding:0 20px; }
+  .section { padding:40px 0; }
+  .section-sm { padding:24px 0; }
+  .sec-head h2 { font-size:26px; }
+  .row-head h3 { font-size:18px; }
+  /* 轮播 */
+  .carousel-slide { grid-template-columns:1fr; min-height:auto; }
+  .slide-visual { height:180px; }
+  .slide-body { padding:20px; }
+  .slide-title { font-size:17px; }
+  .slide-excerpt { font-size:12px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  /* 内容卡片 2列→1列 */
+  #contentGrid { grid-template-columns:1fr; }
+  .content-card-new { padding:18px; }
+  .cc-title { font-size:16px; }
+  /* 筛选按钮横向滚动 */
+  .filter-row { flex-wrap:nowrap; overflow-x:auto; justify-content:flex-start; padding-bottom:8px; -webkit-overflow-scrolling:touch; }
+  .filter-btn { white-space:nowrap; flex-shrink:0; }
+  /* 疗愈师 Showcase 3列→1列 */
+  .healer-showcase-grid { grid-template-columns:1fr; gap:32px; }
+  .healer-showcase-title { font-size:26px; }
+  .healer-showcase-quote { min-height:auto; }
+  /* 播客 */
+  .podcast-section-new { padding:40px 0; }
+  .pf-title { font-size:22px; }
+  /* 底部内容 3列→1列 */
+  #bottomContentGrid { grid-template-columns:1fr; }
+  /* 创始人引言 */
+  .founder-section-new { padding:40px 24px; }
+  .founder-quote-new { font-size:18px; }
+  /* Newsletter */
+  .newsletter h2 { font-size:22px; }
+  .nl-form { flex-direction:column; }
+  .nl-form input { width:100%; }
+  .nl-form button { width:100%; }
+  /* Footer 4列→2列 */
+  .footer-grid { grid-template-columns:1fr 1fr; gap:28px; }
+  /* 疗愈师目录 */
+  .healers-grid { grid-template-columns:1fr; }
+  .healers-controls { flex-direction:column; gap:12px; }
+  .filter-chips { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  .chip { white-space:nowrap; flex-shrink:0; }
+  /* Profile 页 */
+  .profile-hero { flex-direction:column-reverse; text-align:center; }
+  .profile-photo { width:200px; height:200px; margin:0 auto 20px; }
+  .profile-name { font-size:26px; }
+  .services-grid { grid-template-columns:1fr; }
+  .brand-grid { grid-template-columns:repeat(2,1fr); }
+  .contact-row { justify-content:center; }
+  .sched-widget { width:100%; }
+  /* Content detail */
+  #view-content-detail .cards-grid { grid-template-columns:1fr; }
+  /* Results */
+  .rec-healers { grid-template-columns:1fr; }
+  .rec-cards { grid-template-columns:1fr; }
+  .results-hero h2 { font-size:24px; }
+}
+
+/* ── 响应式：480px 以下 ── */
+@media(max-width:480px){
+  .site-header { padding:8px 12px; }
+  .header-nav { gap:4px; }
+  .btn-red { font-size:10px; padding:6px 10px; }
+  .btn-outline-green { font-size:10px; padding:5px 10px; }
+  .lang-switch { display:none; }
+  .hero-fullscreen { min-height:75vh; }
+  .hero-content { padding:0 16px; }
+  .hero-title-main { font-size:26px; }
+  .container { padding:0 16px; }
+  .founder-section-new { padding:32px 16px; }
+  .founder-quote-new { font-size:16px; }
+  footer { padding:36px 20px 24px; }
+  .footer-grid { grid-template-columns:1fr; gap:24px; }
+  .q-text { font-size:18px; }
+  .answers.grid-2 { grid-template-columns:1fr; }
+  .q-card { padding:24px 20px; }
 }
 
 /* ── 内容区（暖色调背景） ── */
