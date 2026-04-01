@@ -297,6 +297,29 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
           <div class="field-row">
             <div class="field full"><div class="label">描述（英文）</div><textarea id="hp_hero_desc_en"></textarea></div>
           </div>
+          <div style="height:16px"></div>
+          <div class="card-title">🎬 Hero 视频</div>
+          <div style="height:12px"></div>
+          <div class="field-row">
+            <div class="field full">
+              <div class="label">视频 URL <small>（Cloudinary 直链）</small></div>
+              <input class="img-url-inp" id="hp_hero_video_url" placeholder="粘贴视频 URL 或上传" style="margin-bottom:8px">
+              <div style="display:flex;gap:10px;align-items:center;">
+                <label class="img-upload-label" style="cursor:pointer;color:#35845D;font-size:13px;font-weight:600;">
+                  🎬 上传视频
+                  <input type="file" id="heroVideoFile" accept="video/*" style="display:none" onchange="uploadHeroVideo(event)">
+                </label>
+                <span id="heroVideoStatus" style="font-size:12px;color:#6b7280;"></span>
+              </div>
+              <div id="heroVideoPreview" style="margin-top:10px;"></div>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field full">
+              <div class="label">视频封面（Poster）URL</div>
+              <input class="img-url-inp" id="hp_hero_poster_url" placeholder="视频加载前的封面图片 URL">
+            </div>
+          </div>
         </div>
 
         <div class="card">
@@ -741,10 +764,14 @@ async function loadHomepage(){
   var hp=await fetchHomepage();function set(id,v){var el=document.getElementById(id);if(el)el.value=v||'';}
   set('hp_hero_title_zh',hp.hero_title_zh);set('hp_hero_sub_en',hp.hero_sub_en);set('hp_hero_desc_zh',hp.hero_desc_zh);set('hp_hero_desc_en',hp.hero_desc_en);set('hp_stat_content',hp.stat_content);set('hp_stat_healers',hp.stat_healers);set('hp_stat_domains',hp.stat_domains);set('hp_founder_quote_zh',hp.founder_quote_zh);set('hp_founder_quote_en',hp.founder_quote_en);set('hp_founder_name_zh',hp.founder_name_zh);
   set('hp_meta_title',hp.meta_title);set('hp_meta_desc',hp.meta_description);set('hp_og_image',hp.og_image);
+  set('hp_hero_video_url',hp.hero_video_url);set('hp_hero_poster_url',hp.hero_poster_url);
+  // 视频预览
+  var vurl=hp.hero_video_url;var preview=document.getElementById('heroVideoPreview');
+  if(preview&&vurl){preview.innerHTML='<video controls src="'+vurl+'" style="max-width:300px;border-radius:8px;"></video>';}
 }
 async function saveHomepage(){
   function g(id){var el=document.getElementById(id);return el?el.value:'';}
-  var{error}=await sb.from('homepage').upsert({id:1,hero_title_zh:g('hp_hero_title_zh'),hero_sub_en:g('hp_hero_sub_en'),hero_desc_zh:g('hp_hero_desc_zh'),hero_desc_en:g('hp_hero_desc_en'),stat_content:g('hp_stat_content'),stat_healers:g('hp_stat_healers'),stat_domains:g('hp_stat_domains'),founder_quote_zh:g('hp_founder_quote_zh'),founder_quote_en:g('hp_founder_quote_en'),founder_name_zh:g('hp_founder_name_zh'),meta_title:g('hp_meta_title'),meta_description:g('hp_meta_desc'),og_image:g('hp_og_image')});
+  var{error}=await sb.from('homepage').upsert({id:1,hero_title_zh:g('hp_hero_title_zh'),hero_sub_en:g('hp_hero_sub_en'),hero_desc_zh:g('hp_hero_desc_zh'),hero_desc_en:g('hp_hero_desc_en'),stat_content:g('hp_stat_content'),stat_healers:g('hp_stat_healers'),stat_domains:g('hp_stat_domains'),founder_quote_zh:g('hp_founder_quote_zh'),founder_quote_en:g('hp_founder_quote_en'),founder_name_zh:g('hp_founder_name_zh'),meta_title:g('hp_meta_title'),meta_description:g('hp_meta_desc'),og_image:g('hp_og_image'),hero_video_url:g('hp_hero_video_url'),hero_poster_url:g('hp_hero_poster_url')});
   if(error){alert('保存失败: '+error.message);return;}
   await logAudit('update','homepage','1','更新首页内容');
   showMsg('homepageMsg');
@@ -1033,6 +1060,23 @@ function uploadImg(event,id,type,fe){var file=event.target.files[0];if(!file)ret
 function toggleAudioSection(id){var s=document.getElementById('cf_'+id+'_type'),sec=document.getElementById('caudio_'+id);if(s&&sec)sec.style.display=(s.value==='article')?'none':'';}
 function previewAudio(id,url){var w=document.getElementById('caudiowrap_'+id);if(w)w.innerHTML=url?'<audio controls src="'+url+'"></audio>':'';}
 function uploadAudio(event,id){var file=event.target.files[0];if(!file)return;var el=document.getElementById('cf_'+id+'_audio_url'),w=document.getElementById('caudiowrap_'+id);if(w)w.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">上传中…</div>';var fd=new FormData();fd.append('file',file);fd.append('upload_preset','awakensphere');fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/auto/upload',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){if(d.secure_url){if(el)el.value=d.secure_url;previewAudio(id,d.secure_url);sb.from('media_library').insert({url:d.secure_url,filename:file.name,type:'audio',size_bytes:d.bytes||0});}else{alert('上传失败');if(w)w.innerHTML='';}}).catch(function(e){alert('上传出错：'+e.message);if(w)w.innerHTML='';});}
+
+// 上传 Hero 视频到 Cloudinary
+function uploadHeroVideo(event){
+  var file=event.target.files[0];if(!file)return;
+  var status=document.getElementById('heroVideoStatus');
+  if(status)status.textContent='上传中…（'+(file.size/1048576).toFixed(1)+'MB）';
+  var fd=new FormData();fd.append('file',file);fd.append('upload_preset','awakensphere');
+  fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/auto/upload',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){
+    if(d.secure_url){
+      document.getElementById('hp_hero_video_url').value=d.secure_url;
+      if(status)status.textContent='✅ 上传成功';
+      var preview=document.getElementById('heroVideoPreview');
+      if(preview)preview.innerHTML='<video controls src="'+d.secure_url+'" style="max-width:300px;border-radius:8px;margin-top:8px;"></video>';
+      sb.from('media_library').insert({url:d.secure_url,filename:file.name,type:'video',size_bytes:d.bytes||0});
+    }else{if(status)status.textContent='❌ 上传失败';}
+  }).catch(function(e){if(status)status.textContent='❌ '+e.message;});
+}
 
 // ══════════════════════════════════════════════════════════
 // BOOT

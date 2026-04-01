@@ -127,17 +127,21 @@ body { font-family:var(--fb); background:var(--bg); color:var(--text); line-heig
    VIEW: HOME
    ══════════════════════════════════════ */
 
-/* ── NEW HERO — 视频 + 大标题 ── */
-.hero-new { background:#E8DDD0; padding:0; }
-.hero-new-inner { display:grid; grid-template-columns:1fr 1fr; min-height:80vh; }
-.hero-new-left { display:flex; flex-direction:column; justify-content:center; padding:80px 60px 80px 80px; max-width:600px; margin-left:auto; }
-.hero-new-title { font-family:var(--fh); font-size:44px; font-weight:700; line-height:1.2; color:var(--text); }
-.hero-new-title .green { color:#35845D; }
-.hero-new-divider { width:65%; height:2px; background:var(--text); margin:32px 0; }
-.hero-new-brand-name { font-family:var(--fb); font-size:16px; font-weight:700; color:var(--text); margin-bottom:4px; }
-.hero-new-brand-tag { font-family:var(--fb); font-size:15px; color:var(--muted); }
-.hero-new-right { overflow:hidden; }
-.hero-new-right video { width:100%; height:100%; object-fit:cover; display:block; }
+/* ── HERO 全屏视频覆盖 ── */
+.hero-fullscreen { position:relative; width:100%; height:100vh; min-height:600px; overflow:hidden; display:flex; align-items:center; }
+.hero-bg-video { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:0; }
+.hero-overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:linear-gradient(to right,rgba(232,221,208,.85) 0%,rgba(232,221,208,.65) 40%,rgba(232,221,208,.15) 70%,transparent 100%); z-index:1; }
+.hero-content { position:relative; z-index:2; max-width:1100px; margin:0 auto; padding:0 44px; width:100%; }
+.hero-title-main { font-family:var(--fh); font-size:48px; font-weight:700; line-height:1.18; color:var(--text); max-width:550px; }
+.hero-green { color:#35845D; }
+.hero-divider-line { width:120px; height:2px; background:var(--text); margin:32px 0; }
+.hero-brand-name { font-family:var(--fb); font-size:16px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.hero-brand-tagline { font-family:var(--fb); font-size:15px; color:var(--muted); }
+@media(max-width:768px){
+  .hero-fullscreen { height:auto; min-height:80vh; padding:80px 0 60px; }
+  .hero-title-main { font-size:32px; }
+  .hero-overlay { background:rgba(232,221,208,.78); }
+}
 
 /* ── 内容区（暖色调背景） ── */
 .content-section-warm { background:#F5F0E8; padding:64px 0; }
@@ -871,28 +875,25 @@ footer { background:#1E1C18; padding:52px 44px 32px; }
      ══════════════════════════════════════ -->
 <div id="view-home" class="view active">
 
-  <!-- ── NEW HERO — 视频 + 大标题 ── -->
-  <div class="hero-new">
-    <div class="hero-new-inner">
-      <div class="hero-new-left">
-        <h1 class="hero-new-title">
-          On the Journey of<br>
-          <span class="green">Healing</span>,<br>
-          Awaken the Sphere of<br>
-          Your <span class="green">Whole Self</span>.
-        </h1>
-        <div class="hero-new-divider"></div>
-        <div class="hero-new-brand">
-          <div class="hero-new-brand-name">AwakenSphere</div>
-          <div class="hero-new-brand-tag"
-            data-zh="Where healing becomes awakening."
-            data-en="Where healing becomes awakening.">Where healing becomes awakening.</div>
-        </div>
-      </div>
-      <div class="hero-new-right">
-        <video autoplay muted loop playsinline poster="hero-poster.jpg">
-          <source src="hero-video.mp4" type="video/mp4">
-        </video>
+  <!-- ── HERO 全屏视频覆盖 ── -->
+  <div class="hero-fullscreen">
+    <video class="hero-bg-video" autoplay muted loop playsinline poster="hero-poster.jpg" id="heroBgVideo">
+      <source src="hero-video.mp4" type="video/mp4">
+    </video>
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1 class="hero-title-main">
+        On the Journey of<br>
+        <span class="hero-green">Healing</span>,<br>
+        Awaken the Sphere of<br>
+        Your <span class="hero-green">Whole Self</span>.
+      </h1>
+      <div class="hero-divider-line"></div>
+      <div class="hero-brand-block">
+        <div class="hero-brand-name">AwakenSphere</div>
+        <div class="hero-brand-tagline"
+          data-zh="Where healing becomes awakening."
+          data-en="Where healing becomes awakening.">Where healing becomes awakening.</div>
       </div>
     </div>
   </div>
@@ -1866,6 +1867,15 @@ function applyHomepageData(hp){
   if(sn[1]&&hp.stat_healers)sn[1].textContent=hp.stat_healers;
   if(sn[2]&&hp.stat_domains)sn[2].textContent=hp.stat_domains;
   if((el=document.querySelector('.founder-quote-new'))&&hp.founder_quote_zh){el.setAttribute('data-zh',hp.founder_quote_zh);if(hp.founder_quote_en)el.setAttribute('data-en',hp.founder_quote_en);el.textContent=hp.founder_quote_zh;}
+  // 动态替换 hero 视频
+  if(hp.hero_video_url){
+    var vid=document.getElementById('heroBgVideo');
+    if(vid){
+      var source=vid.querySelector('source');
+      if(source&&source.getAttribute('src')!==hp.hero_video_url){source.setAttribute('src',hp.hero_video_url);vid.load();}
+      if(hp.hero_poster_url)vid.poster=hp.hero_poster_url;
+    }
+  }
 }
 function applyTickerData(items){var inner=document.querySelector('.ticker-inner');if(!inner)return;var html='';for(var r=0;r<2;r++)items.forEach(function(t){html+='<span class="ticker-item">'+t.label+'</span>';});inner.innerHTML=html;}
 
