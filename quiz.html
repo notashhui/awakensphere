@@ -9,6 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <!-- Supabase JS SDK（前台匿名读数据 + 写 survey_responses） -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- html2canvas: 把结果截图为 PNG 让用户"保存到相册" -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 /* ═══════════════════════════════════════════════════
    DESIGN SYSTEM — Editorial / Breathing / Magazine
@@ -2419,7 +2421,7 @@ function renderResult() {
           <button class="qz-end-ghost" id="qzRetake">
             <span data-lang="zh">重新测一次</span><span data-lang="en">Retake</span>
           </button>
-          <button class="qz-end-ghost">
+          <button class="qz-end-ghost" id="qzSaveImage">
             <span data-lang="zh">保存到相册</span><span data-lang="en">Save to album</span>
           </button>
         </div>
@@ -2443,6 +2445,63 @@ function renderResult() {
     state.step = 'intro';
     state._saved = false;
     showScreen('intro');
+  });
+
+  // 保存到相册：html2canvas 截图 → PNG 下载（桌面直接下载，移动端优先走 Web Share）
+  const saveBtn = document.getElementById('qzSaveImage');
+  if (saveBtn) saveBtn.addEventListener('click', function(){
+    if (typeof html2canvas !== 'function') {
+      alert(document.documentElement.lang === 'en' ? 'Image tool loading, please try again…' : '图片工具加载中，请稍后再试');
+      return;
+    }
+    const target = document.querySelector('.qz-result');
+    if (!target) return;
+    const origHTML = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.textContent = document.documentElement.lang === 'en' ? 'Generating…' : '生成中…';
+
+    html2canvas(target, {
+      backgroundColor: '#F5EFE6',
+      scale: 2,
+      useCORS: true,
+      logging: false
+    }).then(function(canvas){
+      canvas.toBlob(function(blob){
+        const fileName = 'awakensphere-calibration-' + Date.now() + '.png';
+        const file = new File([blob], fileName, { type: 'image/png' });
+
+        // 移动端：优先用 Web Share（系统分享菜单里有"保存到相册"选项）
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          navigator.share({
+            files: [file],
+            title: 'AwakenSphere · Inner Calibration',
+            text: document.documentElement.lang === 'en' ? 'My inner element result' : '我的内在元素测试结果'
+          }).catch(function(){ /* 用户取消就算了 */ })
+            .finally(function(){ restoreBtn(); });
+          return;
+        }
+
+        // 桌面 / 不支持 Web Share：直接触发下载
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+        restoreBtn();
+      }, 'image/png');
+    }).catch(function(e){
+      console.error('保存相册失败:', e);
+      saveBtn.innerHTML = '<span data-lang="zh">保存失败，请重试</span><span data-lang="en">Failed, try again</span>';
+      setTimeout(restoreBtn, 2000);
+    });
+
+    function restoreBtn(){
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = origHTML;
+    }
   });
 
   // 写入 Supabase survey_responses（非阻塞，失败不影响结果展示）
