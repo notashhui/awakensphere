@@ -2464,7 +2464,11 @@ function renderResult() {
       backgroundColor: '#F5EFE6',
       scale: 2,
       useCORS: true,
-      logging: false
+      logging: false,
+      // 截图时跳过底部 CTA 区（引言 + 预约/重测/保存按钮）
+      ignoreElements: function(el) {
+        return el && el.classList && el.classList.contains('qz-end');
+      }
     }).then(function(canvas){
       canvas.toBlob(function(blob){
         const fileName = 'awakensphere-calibration-' + Date.now() + '.png';
