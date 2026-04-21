@@ -800,6 +800,7 @@ function contentCard(c,idx,total){
     '<div class="field-row"><div class="field full"><div class="label">标题（中文）</div><input id="cf_'+c.id+'_title_zh" value="'+esc(c.title_zh||'')+'"></div></div>',
     '<div class="field-row"><div class="field full"><div class="label">标题（英文）</div><input id="cf_'+c.id+'_title_en" value="'+esc(c.title_en||'')+'"></div></div>',
     '<div class="field-row"><div class="field full"><div class="label">摘要（中文）</div><textarea id="cf_'+c.id+'_summary_zh" style="min-height:60px">'+escText(c.summary_zh||'')+'</textarea></div></div>',
+    '<div class="field-row">',field('分类（中文）<small>如：正念冥想 / 身体疗愈 / 引导冥想</small>','cf_'+c.id+'_category_zh',c.category_zh),field('分类（英文）<small>如：MINDFULNESS / SOMATIC / GUIDED</small>','cf_'+c.id+'_category_en',c.category_en),'</div>',
     '<div class="field-row col3">',field('作者','cf_'+c.id+'_author',c.author),field('时长（中文）','cf_'+c.id+'_duration_zh',c.duration_zh),field('时长（英文）','cf_'+c.id+'_duration_en',c.duration_en),'</div>',
     // Markdown 正文
     '<div class="field full" style="margin-bottom:14px"><div class="label">📝 正文（中文 Markdown）</div><div class="md-wrap"><textarea id="cf_'+c.id+'_body_zh" style="min-height:200px" oninput="updateMdPreview(\'cf_'+c.id+'_body_zh\',\'mdpre_'+c.id+'_zh\')">'+escText(c.body_zh||'')+'</textarea><div class="md-preview" id="mdpre_'+c.id+'_zh">'+mdToHtml(c.body_zh||'')+'</div></div></div>',
@@ -822,7 +823,7 @@ async function saveContent(){
     function g(f){var el=document.getElementById('cf_'+c.id+'_'+f);return el?el.value:(c[f]||'');}
     function cb(f){var el=document.getElementById('cf_'+c.id+'_'+f);return el?el.checked:!!c[f];}
     var co=document.getElementById('cf_'+c.id+'_carousel');
-    return{id:c.id,sort_order:c.sort_order,type:g('type'),emoji:g('emoji'),title_zh:g('title_zh'),title_en:g('title_en'),summary_zh:g('summary_zh'),author:g('author'),duration_zh:g('duration_zh'),duration_en:g('duration_en'),tags:(tagState['c_'+c.id]||[]).slice(),cover_url:g('cover_url'),audio_url:g('audio_url'),podcast_link:g('podcast_link'),active:cb('active'),featured:cb('featured'),body_zh:g('body_zh'),body_en:g('body_en'),carousel_order:co?parseInt(co.value)||0:0,meta_title:g('meta_title'),meta_description:g('meta_desc'),og_image:g('og_image')};
+    return{id:c.id,sort_order:c.sort_order,type:g('type'),emoji:g('emoji'),title_zh:g('title_zh'),title_en:g('title_en'),summary_zh:g('summary_zh'),author:g('author'),duration_zh:g('duration_zh'),duration_en:g('duration_en'),category_zh:g('category_zh'),category_en:g('category_en'),tags:(tagState['c_'+c.id]||[]).slice(),cover_url:g('cover_url'),audio_url:g('audio_url'),podcast_link:g('podcast_link'),active:cb('active'),featured:cb('featured'),body_zh:g('body_zh'),body_en:g('body_en'),carousel_order:co?parseInt(co.value)||0:0,meta_title:g('meta_title'),meta_description:g('meta_desc'),og_image:g('og_image')};
   });
   var{error}=await sb.from('content').upsert(updates);
   if(error){alert('保存失败: '+error.message);return;}
