@@ -1,0 +1,177 @@
+/* ═══════════════════════════════════════════════════════
+   AwakenSphere — 全站 CSS 修复（移动端适配 + 生产优化）
+   每个 HTML 在 head 中引入：<link rel="stylesheet" href="css/fixes.css?v=1">
+   ═══════════════════════════════════════════════════════ */
+
+/* 设计稿 dev 标注（/VIDEO · /photo · COVER N° 等）生产隐藏 */
+.photo-slot-label,
+.art-cover-num,
+.art-cover-caption,
+.pf-portrait-num,
+.pf-portrait-caption,
+.hl-photo-meta { display: none !important; }
+
+/* ──────────────────────────────────────────
+   移动端适配（≤ 640px）
+   ────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* ── HEADER ── */
+  .site-header-inner { padding: 14px 18px !important; }
+  .site-header .brand { font-size: 11px !important; letter-spacing: .22em !important; }
+  .site-header .nav { gap: 10px !important; }
+  .site-header .lang { font-size: 11px !important; gap: 6px !important; }
+  .site-header .lang button[data-lang] { padding: 2px 3px !important; font-size: 11px !important; }
+  .site-header .nav-btn { padding: 6px 12px !important; font-size: 11px !important; white-space: nowrap !important; }
+  .site-header .nav-btn .lbl { white-space: nowrap !important; gap: 4px !important; }
+  .nav-dd .dd-menu { width: calc(100vw - 32px) !important; max-width: 300px; right: 0 !important; }
+  .nav-dd .dd-menu::before { right: 28px; }
+
+  /* ── HERO ── */
+  /* hero-content 必须 absolute 叠加在视频上；设计稿 @media 980 改 static 会让视频覆盖文字 */
+  .hero-stage { height: auto !important; min-height: 540px !important; }
+  .hero-content { padding: 36px 22px 28px !important; position: absolute !important; inset: 0 !important; }
+  .hero-headline { font-size: 36px !important; line-height: 1.05 !important; max-width: 100% !important; }
+  .hero-tagline-block { margin-top: 28px !important; padding-top: 14px !important; max-width: 100% !important; }
+  .hero-brand { font-size: 16px !important; }
+  .hero-sub { font-size: 11px !important; }
+  .hero-index { top: 14px !important; right: 16px !important; gap: 10px !important; font-size: 9px !important; letter-spacing: .16em !important; }
+  .scroll-cue { right: 16px !important; bottom: 16px !important; font-size: 9px !important; letter-spacing: .16em !important; }
+  .scroll-cue .line { width: 28px !important; }
+  .hero-split-left, .hero-split-right { display: none !important; }
+
+  /* ── SECTIONS ── */
+  .container { padding: 0 20px !important; }
+  section { padding: 60px 0 !important; }
+  .section-head { grid-template-columns: 1fr !important; gap: 16px !important; margin-bottom: 32px !important; padding-bottom: 16px !important; }
+  .section-head h2 { font-size: 32px !important; max-width: none !important; }
+  .section-head .meta-col { text-align: left !important; flex-direction: row !important; flex-wrap: wrap !important; gap: 12px !important; font-size: 9px !important; letter-spacing: .14em !important; }
+
+  /* ── RUNNING INDEX ── */
+  .running-index { padding: 10px 0 !important; }
+  .running-index .ri-inner { gap: 22px !important; font-size: 9px !important; letter-spacing: .16em !important; }
+
+  /* ── CONTENT EDITORIAL GRID（单列）── */
+  .content-list { grid-template-columns: 1fr !important; gap: 36px !important; }
+  .entry, .entry.featured { grid-column: 1 / -1 !important; }
+  .entry-title { font-size: 22px !important; }
+  .entry.featured .entry-title { font-size: 26px !important; }
+  .entry-excerpt { font-size: 13px !important; }
+  .entry-byline { font-size: 9px !important; gap: 10px !important; flex-wrap: wrap; }
+  .entry-meta-top { font-size: 9px !important; letter-spacing: .12em !important; }
+
+  /* ── HEALERS STRIP（卡片加宽占屏）── */
+  .healer-card { flex: 0 0 82vw !important; }
+  .healer-strip { gap: 16px !important; padding: 4px 20px 36px !important; }
+  .healer-quote { font-size: 15px !important; min-height: 7.5em !important; }
+  .healer-controls { padding: 0 20px !important; }
+  .hn-btn { width: 38px !important; height: 38px !important; }
+
+  /* ── QUOTE ── */
+  .quote { padding: 80px 24px !important; }
+  .quote-mark { font-size: 80px !important; }
+  .quote-text { font-size: 26px !important; }
+
+  /* ── FOOTER ── */
+  .site-footer { padding: 60px 20px 24px !important; }
+  .footer-grid { grid-template-columns: 1fr !important; gap: 24px !important; padding-bottom: 36px !important; }
+  .footer-col.footer-brand { grid-column: 1 / -1; }
+  .footer-legal { flex-direction: column !important; gap: 12px !important; align-items: flex-start !important; font-size: 9px !important; padding-top: 20px !important; }
+  .site-footer .footer-social a { margin-left: 16px !important; }
+  .site-footer .footer-social a:first-child { margin-left: 0 !important; }
+
+  /* ── HEALERS DIRECTORY ── */
+  .dir-hero { padding: 40px 20px !important; }
+  .dir-hero-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+  .dir-title { font-size: 36px !important; line-height: 1.1 !important; }
+  .dir-subtitle { font-size: 14px !important; }
+  .dir-hero-stats { text-align: left !important; }
+  .dir-hero-stats .big { font-size: 42px !important; }
+  .dir-filter { flex-direction: column !important; align-items: stretch !important; gap: 14px !important; padding: 0 20px !important; }
+  .dir-chips { overflow-x: auto; flex-wrap: nowrap !important; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .dir-chips::-webkit-scrollbar { display: none; }
+  .dir-chip { white-space: nowrap; flex-shrink: 0; }
+  .dir-grid-wrap { padding: 24px 20px !important; }
+  .dir-grid-head { flex-direction: column; align-items: flex-start !important; gap: 8px; font-size: 10px; }
+  .dir-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+
+  /* ── HEALER PROFILE ── */
+  .pf-wrap { padding: 20px 0 !important; }
+  .pf-breadcrumb { padding: 0 20px !important; font-size: 10px; flex-wrap: wrap; gap: 6px; }
+  .pf-hero { grid-template-columns: 1fr !important; gap: 24px !important; padding: 20px !important; }
+  .pf-name { font-size: 38px !important; line-height: 1.05 !important; }
+  .pf-title { font-size: 18px !important; }
+  .pf-subtitle { font-size: 14px !important; }
+  .pf-meta-row { font-size: 10px !important; flex-wrap: wrap; gap: 8px; }
+  .pf-portrait { aspect-ratio: 1 / 1 !important; }
+  .pf-contact { flex-wrap: wrap; gap: 8px; }
+  .pf-event { padding: 14px !important; }
+  .pf-event-body { grid-template-columns: auto 1fr auto !important; gap: 12px !important; font-size: 12px; }
+  .pf-event-name { font-size: 14px !important; }
+  .pf-section { padding: 40px 20px !important; }
+  .pf-section-title { font-size: 28px !important; }
+  .pf-about-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
+
+  /* ── ARTICLE ── */
+  .art-wrap { padding: 20px 0 !important; }
+  .art-wrap > * { padding-left: 20px !important; padding-right: 20px !important; }
+  .art-title { font-size: 30px !important; line-height: 1.18 !important; }
+  .art-deck { font-size: 16px !important; line-height: 1.5 !important; }
+  .art-byline { flex-wrap: wrap; gap: 10px; font-size: 10px; }
+  .art-body-wrap { padding: 20px !important; }
+  .art-prose { font-size: 16px !important; line-height: 1.8 !important; }
+  .art-prose h2, .art-prose .md-h2 { font-size: 22px !important; }
+  .art-prose h3, .art-prose .md-h3 { font-size: 18px !important; }
+  .art-cover { margin: 24px 0 !important; padding: 0 !important; }
+  .art-cover-img { aspect-ratio: 16/10 !important; }
+
+  /* ── QUIZ ── */
+  .qz-wrap { padding: 20px; }
+  .qz-progress { padding: 10px 18px; gap: 12px; flex-wrap: wrap; font-size: 10px; }
+  .qz-progress .crumb { min-width: 100%; }
+  .qz-intro { padding: 60px 20px !important; }
+  .qz-intro-title { font-size: 44px !important; line-height: 1.05 !important; }
+  .qz-intro-copy { font-size: 14px !important; }
+  .qz-intro-meta { gap: 22px !important; flex-wrap: wrap; }
+  .qz-intro-meta-item .val { font-size: 30px !important; }
+  .qz-intro-cta { padding: 14px 22px !important; font-size: 13px !important; }
+  .qz-screen { padding: 40px 20px !important; }
+  .qz-q-num { font-size: 28px !important; }
+  .qz-q-title { font-size: 26px !important; line-height: 1.2 !important; }
+  .qz-q-sub { font-size: 13px !important; }
+  .qz-opts { gap: 10px !important; }
+  .qz-opt { padding: 14px 16px !important; font-size: 14px !important; }
+  .qz-nav { flex-direction: column; gap: 10px; }
+  .qz-nav > * { width: 100%; justify-content: center; }
+  .qz-result { padding: 40px 20px !important; gap: 30px !important; }
+  .qz-result-title { font-size: 42px !important; line-height: 1.05 !important; }
+  .qz-result-poem { font-size: 14px !important; }
+  .qz-result-band-row { gap: 8px; font-size: 10px; }
+  .qz-radar { max-width: 100%; }
+  .qz-h-cards { grid-template-columns: 1fr !important; gap: 20px !important; }
+  .qz-h-card { padding: 20px !important; }
+  .qz-h-name { font-size: 22px !important; }
+  .qz-h-tagline { font-size: 13px !important; }
+  .qz-h-cta { padding: 10px 16px !important; font-size: 12px !important; }
+  .qz-end { padding: 30px 20px !important; flex-direction: column; gap: 20px !important; }
+  .qz-end-msg { font-size: 16px !important; }
+  .qz-end-actions { flex-direction: column; align-items: stretch !important; width: 100%; }
+  .qz-end-actions > * { width: 100%; text-align: center !important; justify-content: center !important; }
+  .qz-end-primary { padding: 14px 22px !important; }
+}
+
+/* ──────────────────────────────────────────
+   超小屏（≤ 380px）— 最后一道防线
+   ────────────────────────────────────────── */
+@media (max-width: 380px) {
+  .site-header-inner { padding: 10px 14px !important; }
+  .site-header .nav { gap: 6px !important; }
+  .site-header .brand { font-size: 10px !important; }
+  .site-header .nav-btn { padding: 5px 10px !important; font-size: 10px !important; }
+  .hero-headline { font-size: 30px !important; }
+  .section-head h2 { font-size: 26px !important; }
+  .dir-title, .pf-name, .qz-intro-title { font-size: 30px !important; }
+  .art-title { font-size: 24px !important; }
+  .qz-q-title { font-size: 22px !important; }
+  .qz-result-title { font-size: 34px !important; }
+}
