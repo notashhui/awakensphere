@@ -1,0 +1,2671 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>疗愈师匹配测试 · Calibration — AwakenSphere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Supabase JS SDK（前台匿名读数据 + 写 survey_responses） -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════
+   DESIGN SYSTEM — Editorial / Breathing / Magazine
+   ═══════════════════════════════════════════════════ */
+:root {
+  /* tweakable */
+  --accent:   #35845D;     /* primary green (kept) */
+  --blue:     #3672CD;
+  --orange:   #D89628;
+  --pink:     #C4497A;
+
+  /* neutrals — warm, sand-toned */
+  --bg:       #F5EFE6;     /* sand whisper */
+  --bg-alt:   #ECE3D4;     /* sand */
+  --bg-deep:  #2A2620;     /* ink brown */
+  --paper:    #FBF7F0;
+  --ink:      #1F1B17;
+  --ink-soft: #4A423A;
+  --muted:    #8A7F72;
+  --rule:     rgba(31,27,23,.12);
+  --rule-soft:rgba(31,27,23,.06);
+
+  /* typography */
+  --serif:    'Cormorant Garamond', 'Noto Serif SC', Georgia, serif;
+  --serif-zh: 'Noto Serif SC', 'Cormorant Garamond', serif;
+  --sans:     'Inter', 'Noto Sans SC', system-ui, sans-serif;
+  --mono:     'JetBrains Mono', ui-monospace, monospace;
+
+  /* scale — tweakable */
+  --display:  clamp(56px, 9.2vw, 132px);
+  --h1:       clamp(40px, 5.2vw, 72px);
+  --h2:       clamp(28px, 3vw, 44px);
+  --h3:       18px;
+  --body:     15px;
+  --small:    12px;
+
+  --radius:   2px;
+  --radius-lg:4px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:var(--bg); color:var(--ink); }
+body {
+  font-family: var(--sans);
+  font-size: var(--body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01","cv11";
+  overflow-x: hidden;
+}
+a { color:inherit; text-decoration:none; }
+button { font-family:inherit; }
+img { max-width:100%; display:block; }
+
+/* type utilities */
+.serif { font-family:var(--serif); font-weight:400; letter-spacing:-.01em; }
+.serif-zh { font-family:var(--serif-zh); font-weight:400; }
+.mono { font-family:var(--mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+.eyebrow {
+  font-family:var(--mono);
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: inline-flex; align-items:center; gap:10px;
+}
+.eyebrow::before { content:""; width:28px; height:1px; background:var(--accent); opacity:.9; }
+.eyebrow::after { content:"●"; color: var(--accent); font-size: 7px; margin-left:2px; }
+
+/* ── HEADER ───────────────────────────────── */
+.site-header {
+  position: sticky; top: 0; z-index: 80;
+  background: color-mix(in oklab, var(--bg) 86%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule-soft);
+}
+.site-header-inner {
+  max-width: 1440px; margin: 0 auto;
+  padding: 18px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.brand {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: .32em;
+  color: var(--ink);
+}
+.nav {
+  display: flex; align-items: center; gap: 28px;
+}
+.lang {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--sans); font-size: 12px; letter-spacing: .14em;
+  color: var(--muted);
+}
+.lang button { background:none; border:none; cursor:pointer; color:var(--muted); font:inherit; padding:2px; }
+.lang button.on { color: var(--ink); border-bottom:1px solid var(--ink); }
+/* magnetic / fill button */
+.nav-btn, .btn-fx {
+  position: relative; overflow: hidden;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  color: var(--ink);
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  cursor: pointer;
+  transition: color 1.8s ease, border-color 1.8s ease, transform 1.8s cubic-bezier(.22,.61,.36,1), background-color 1.8s ease;
+  isolation: isolate;
+}
+.nav-btn > *, .btn-fx > * { position: relative; z-index: 2; }
+.nav-btn .lbl, .btn-fx .lbl { position:relative; z-index:2; display:inline-flex; align-items:center; gap:8px; }
+.nav-btn::before, .btn-fx::before {
+  content:"";
+  position:absolute; left:50%; top:50%;
+  width:160%; aspect-ratio:1;
+  background: var(--accent);
+  border-radius: 50%;
+  transform: translate(-50%, calc(-50% + 130%)) scale(.15);
+  transition: transform 2.2s cubic-bezier(.22,.61,.36,1);
+  z-index: 1;
+}
+.nav-btn:hover, .btn-fx:hover { color: var(--paper); border-color: var(--accent); transform: translateY(-1px); }
+.nav-btn:hover::before, .btn-fx:hover::before { transform: translate(-50%, -50%) scale(1.3); }
+.nav-btn:active, .btn-fx:active { transform: translateY(0) scale(.99); transition-duration: .4s; }
+.nav-btn.solid { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.nav-btn.solid:hover { color: var(--paper); border-color: var(--accent); background: var(--ink); }
+
+/* ── NAV DROPDOWN ────────────────────── */
+.nav-dd { position: relative; }
+.nav-dd .dd-caret {
+  display: inline-block; margin-left: 6px; font-size: 9px;
+  transition: transform 1s cubic-bezier(.22,.61,.36,1);
+}
+.nav-dd.open .dd-caret { transform: rotate(180deg); }
+.dd-menu {
+  position: absolute; top: calc(100% + 14px); right: 0;
+  width: 340px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  padding: 8px;
+  box-shadow: 0 24px 60px rgba(31,27,23,.12);
+  opacity: 0; visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity .7s ease, transform .8s cubic-bezier(.22,.61,.36,1), visibility .7s;
+  z-index: 100;
+}
+.nav-dd.open .dd-menu {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+.dd-menu::before {
+  content:""; position: absolute; top: -6px; right: 24px;
+  width: 10px; height: 10px; background: var(--paper);
+  border-left: 1px solid var(--ink); border-top: 1px solid var(--ink);
+  transform: rotate(45deg);
+}
+.dd-item {
+  display: grid; grid-template-columns: auto 1fr auto;
+  gap: 14px; align-items: start;
+  padding: 16px 14px;
+  border-radius: 3px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color .8s ease;
+  position: relative;
+}
+.dd-item + .dd-item { border-top: 1px solid var(--rule-soft); }
+.dd-item:hover { background: rgba(53,132,93,.06); }
+.dd-item .dd-num {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .22em; color: var(--accent);
+  padding-top: 3px;
+}
+.dd-item .dd-title {
+  display: block;
+  font-family: var(--serif-zh); font-size: 15px;
+  font-weight: 500; color: var(--ink);
+  letter-spacing: .01em;
+}
+.dd-item .dd-desc {
+  display: block; margin-top: 4px;
+  font-family: var(--serif-zh); font-size: 12px;
+  line-height: 1.55; color: var(--muted);
+}
+.dd-item .dd-arrow {
+  font-family: var(--mono); font-size: 13px;
+  color: var(--muted); align-self: center;
+  transition: transform .9s cubic-bezier(.22,.61,.36,1), color .8s ease;
+}
+.dd-item:hover .dd-arrow { color: var(--accent); transform: translateX(4px); }
+
+/* ── HERO SHARED ──────────────────────────── */
+.hero {
+  position: relative;
+  min-height: calc(100vh - 72px);
+  padding: 0;
+  overflow: hidden;
+}
+.hero-stage {
+  position: relative;
+  width: 100%; height: calc(100vh - 72px);
+  min-height: 600px;
+  border-radius: 0;
+  overflow: hidden;
+  background: var(--bg-alt);
+}
+
+/* video layer on top of sand gradient */
+.hero-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 1;
+  background: var(--bg-alt);
+  /* zoom to crop out the letterbox bars baked into the source file */
+  transform: scale(1.14);
+  transform-origin: center;
+  filter: saturate(.92) contrast(.98) brightness(1.02);
+}
+.hero-video-overlay {
+  position: absolute; inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  /* subtle bottom fade for headline legibility only — no top/side gradients */
+  background:
+    linear-gradient(0deg, rgba(236,227,212,.55) 0%, rgba(236,227,212,.2) 18%, transparent 36%);
+}
+
+/* sand-toned atmospheric background (fallback) */
+.hero-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 80% at 70% 60%, #C9B698 0%, #D4C4AE 35%, #E8DCCB 70%, #EFE4D4 100%);
+}
+.hero-bg::after {
+  content:"";
+  position: absolute; inset: 0;
+  z-index: 3;
+  background-image:
+    repeating-linear-gradient(115deg, rgba(255,255,255,0) 0 14px, rgba(255,255,255,.04) 14px 15px);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+/* soft grain */
+.hero-bg::before {
+  content:"";
+  position: absolute; inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 10% 90%, rgba(0,0,0,.14), transparent 55%),
+                    radial-gradient(circle at 90% 10%, rgba(255,255,255,.18), transparent 50%);
+}
+
+/* placeholder caption (mono) */
+.photo-slot-label {
+  position: absolute; left: 24px; top: 24px;
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(42,38,32,.55);
+  padding: 5px 9px;
+  border: 1px solid rgba(42,38,32,.22);
+  border-radius: 2px;
+  background: rgba(245,239,230,.4);
+  backdrop-filter: blur(3px);
+  z-index: 5;
+  max-width: calc(100% - 48px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* hero content shared */
+.hero-content {
+  position: absolute; z-index: 4;
+  inset: 0;
+  padding: clamp(32px, 6vw, 84px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.hero-headline {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: var(--h1);
+  line-height: 1.02;
+  letter-spacing: -.015em;
+  color: var(--ink);
+  max-width: 15ch;
+  text-wrap: balance;
+}
+.hero-headline em {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 500;
+  position: relative;
+}
+.hero-tagline-block {
+  margin-top: clamp(36px, 5vw, 64px);
+  padding-top: 22px;
+  max-width: 420px;
+  border-top: 1px solid var(--ink);
+}
+.hero-brand {
+  font-family: var(--serif);
+  font-size: 20px;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.hero-sub {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-soft);
+  letter-spacing: .02em;
+}
+
+/* scroll cue */
+.scroll-cue {
+  position: absolute; right: 32px; bottom: 28px;
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--mono);
+  font-size: 10px; letter-spacing: .22em;
+  color: var(--ink);
+  z-index: 5;
+}
+.scroll-cue .line { width: 40px; height: 1px; background: var(--ink); position: relative; overflow:hidden;}
+.scroll-cue .line::after { content:""; position:absolute; inset:0; background:var(--bg); transform-origin:right; animation: cueSlide 2.4s ease-in-out infinite;}
+@keyframes cueSlide {
+  0%   { transform: scaleX(1); transform-origin: right; }
+  50%  { transform: scaleX(0); transform-origin: right; }
+  51%  { transform: scaleX(0); transform-origin: left;  }
+  100% { transform: scaleX(1); transform-origin: left;  }
+}
+
+/* index chip top-right */
+.hero-index {
+  position: absolute; top: 28px; right: 32px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .22em;
+  color: var(--ink); z-index: 5;
+  display: flex; gap: 14px; align-items: center;
+}
+.hero-index span.dot { width: 6px; height:6px; border-radius:50%; background:var(--accent); box-shadow: 0 0 0 0 var(--accent); animation: dotPulse 2.4s ease-in-out infinite; }
+@keyframes dotPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(53,132,93,.5); } 50% { box-shadow: 0 0 0 8px rgba(53,132,93,0); } }
+.hero-index span.dot { width: 5px; height:5px; border-radius:50%; background:var(--accent); }
+
+/* ── HERO V1 — EDITORIAL STILL ──────────── */
+.hero[data-variant="still"] .hero-content {
+  padding: clamp(40px, 6vw, 96px);
+}
+
+/* ── HERO V2 — MOTION (word reveal + parallax) ── */
+.hero[data-variant="motion"] .hero-headline .word {
+  display: inline-block;
+  opacity: 0; transform: translateY(22px);
+  animation: wordUp .9s cubic-bezier(.2,.7,.2,1) forwards;
+}
+@keyframes wordUp {
+  to { opacity:1; transform:translateY(0); }
+}
+.hero[data-variant="motion"] .hero-bg {
+  transform: scale(1.06);
+  animation: driftBg 18s ease-in-out infinite alternate;
+}
+@keyframes driftBg {
+  from { transform: scale(1.04) translate(0,0); }
+  to   { transform: scale(1.10) translate(-1.5%,-1%); }
+}
+.hero[data-variant="motion"] .hero-headline em {
+  background: linear-gradient(transparent 78%, color-mix(in oklab, var(--accent) 22%, transparent) 78%);
+  padding: 0 .06em;
+}
+
+/* ── HERO V3 — SPLIT (dual column full width) ── */
+.hero[data-variant="split"] .hero-stage {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 0;
+}
+.hero[data-variant="split"] .hero-split-left {
+  position: relative;
+  background: var(--paper);
+  padding: clamp(40px, 5vw, 80px);
+  display: flex; flex-direction: column; justify-content: space-between;
+  border-right: 1px solid var(--rule);
+}
+.hero[data-variant="split"] .hero-split-right {
+  position: relative;
+  overflow: hidden;
+}
+.hero[data-variant="split"] .hero-content { display: none; }
+.hero[data-variant="split"] .split-headline {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(44px, 5.4vw, 82px);
+  line-height: 1.02; letter-spacing: -.02em;
+  margin-top: auto; margin-bottom: 32px;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.hero[data-variant="split"] .split-headline em { font-style: italic; color: var(--accent); font-weight: 500; }
+.hero[data-variant="split"] .split-meta {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding-top: 24px; border-top: 1px solid var(--rule);
+}
+.hero[data-variant="split"] .split-intro {
+  max-width: 28ch;
+  font-family: var(--serif-zh);
+  font-size: 15px;
+  color: var(--ink-soft);
+  line-height: 1.75;
+}
+
+/* ── SECTION STRUCTURE ───────────────────── */
+.container { max-width: 1440px; margin: 0 auto; padding: 0 40px; }
+section { padding: clamp(72px, 10vw, 140px) 0; }
+.section-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 40px;
+  margin-bottom: 56px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--ink);
+}
+.section-head h2 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(32px, 4vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -.015em;
+  text-wrap: balance;
+  color: var(--ink);
+  max-width: 16ch;
+}
+.section-head h2 em { font-style: italic; color: var(--accent); font-weight: 500; }
+.section-head .meta-col {
+  display: flex; flex-direction: column; gap: 10px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+}
+.section-head .meta-col a {
+  color: var(--ink); border-bottom: 1px solid var(--ink);
+  padding-bottom: 2px; transition: color .2s, border-color .2s;
+}
+.section-head .meta-col a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* running index — thin bar at section top */
+.running-index {
+  display: flex; gap: 40px;
+  padding: 14px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted);
+  overflow: hidden; white-space: nowrap;
+}
+.running-index .ri-inner { display:flex; gap:40px; animation: marquee 48s linear infinite; }
+.running-index span.sep { color: var(--accent); }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ── KNOW YOURSELF ENTRY MODULE ─────────── */
+.know {
+  position: relative;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.know-inner {
+  max-width: 1440px; margin: 0 auto; padding: clamp(80px,9vw,140px) 40px;
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(40px, 6vw, 120px);
+  align-items: center;
+}
+.know-label {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .3em;
+  color: var(--muted); margin-bottom: 22px;
+  display: inline-flex; align-items: center; gap: 12px;
+}
+.know-label::before { content:"◆"; color:var(--accent); font-size:8px; }
+.know h2 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(40px, 5.4vw, 80px);
+  line-height: 1.02; letter-spacing: -.02em;
+  margin-bottom: 28px; text-wrap: balance;
+}
+.know h2 em { font-style: italic; color: var(--accent); font-weight: 500; position: relative; }
+.know h2 em::after {
+  content:""; position:absolute; left:0; right:0; bottom:.06em; height:.08em;
+  background: var(--accent); opacity:.25;
+  transform-origin: left; transform: scaleX(0);
+  transition: transform 1.2s cubic-bezier(.2,.7,.2,1) .2s;
+}
+.reveal.in .know h2 em::after,
+.know.animate h2 em::after { transform: scaleX(1); }
+.know p.lede {
+  font-family: var(--serif-zh); font-size: 16px; line-height: 1.85;
+  color: var(--ink-soft); max-width: 38ch; margin-bottom: 36px;
+}
+.know-cta {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 14px;
+  padding: 16px 8px 16px 28px;
+  background: var(--accent); color: var(--paper);
+  border-radius: 999px;
+  font-family: var(--sans); font-size: 14px; font-weight: 500; letter-spacing: .02em;
+  border: none; cursor: pointer;
+  transition: transform 1s cubic-bezier(.22,.61,.36,1), box-shadow 1s ease;
+  isolation: isolate;
+  box-shadow: 0 4px 0 rgba(0,0,0,0);
+}
+.know-cta::before {
+  content:""; position:absolute; inset:0;
+  background: var(--ink);
+  transform: translateY(101%);
+  transition: transform 1.1s cubic-bezier(.22,.61,.36,1);
+  z-index: -1;
+}
+.know-cta:hover { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(53,132,93,.28); }
+.know-cta:hover::before { transform: translateY(0); }
+.know-cta:active { transform: translateY(0) scale(.99); transition-duration: .3s; }
+.know-cta span.lbl { position: relative; z-index: 2; }
+.know-cta .arrow {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--paper); color: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; position: relative; z-index: 2;
+  transition: transform .9s cubic-bezier(.22,.61,.36,1);
+}
+.know-cta:hover .arrow { transform: translateX(3px); }
+
+.know-viz {
+  position: relative;
+  aspect-ratio: 1/1;
+  display: grid; place-items: center;
+}
+/* concentric rings SVG (self) */
+.know-viz svg { width: 100%; height: auto; }
+.know-viz .ring { fill:none; stroke:var(--ink); stroke-width:0.6; }
+.know-viz .ring.accent { stroke:var(--accent); stroke-width:1; }
+.know-viz .label {
+  font-family: var(--mono); font-size: 8px; letter-spacing: .18em; text-transform: uppercase;
+  fill: var(--muted);
+}
+.know-viz .center-glyph {
+  font-family: var(--serif); font-style: italic; font-size: 36px; fill: var(--accent);
+}
+
+/* ── CONTENT EDITORIAL GRID ──────────────── */
+.content-list {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 48px 32px;
+}
+.entry {
+  grid-column: span 4;
+  display: flex; flex-direction: column; gap: 16px;
+  cursor: pointer;
+}
+.entry.featured { grid-column: span 6; }
+.entry-media {
+  aspect-ratio: 4/3;
+  background: var(--bg-alt);
+  position: relative; overflow: hidden;
+  border-radius: var(--radius);
+}
+.entry.featured .entry-media { aspect-ratio: 3/2; }
+.entry-media-inner {
+  position: absolute; inset: 0;
+  transition: transform .8s cubic-bezier(.2,.7,.2,1);
+}
+.entry:hover .entry-media-inner { transform: scale(1.04); }
+
+/* svg placeholder variants */
+.media-a { background: linear-gradient(135deg, #C9B698 0%, #D4C4AE 60%, #E8DCCB 100%); }
+.media-b { background: linear-gradient(135deg, #B3C2A8 0%, #CAD3B7 100%); }
+.media-c { background: linear-gradient(135deg, #B0BDD0 0%, #CCD5DF 100%); }
+.media-d { background: linear-gradient(135deg, #D4B6A0 0%, #E6CFB8 100%); }
+.media-e { background: linear-gradient(135deg, #C4B4C9 0%, #D9CEDC 100%); }
+.media-f { background: linear-gradient(135deg, #D2C59A 0%, #E2D8B1 100%); }
+
+.entry-media-shape {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: rgba(31,27,23,.32);
+}
+.entry-meta-top {
+  position: absolute; top: 14px; left: 14px; right: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  z-index: 2;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink);
+  mix-blend-mode: difference;
+  filter: invert(1);
+}
+.entry-category {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .24em; text-transform: uppercase;
+  color: var(--accent);
+}
+.entry-category.blue { color: var(--blue); }
+.entry-category.orange { color: var(--orange); }
+.entry-category.pink { color: var(--pink); }
+.entry-title {
+  font-family: var(--serif); font-weight: 400;
+  font-size: 22px; line-height: 1.18; letter-spacing: -.01em;
+  color: var(--ink);
+  text-wrap: pretty;
+  transition: color .25s;
+}
+.entry.featured .entry-title { font-size: 34px; }
+.entry:hover .entry-title { color: var(--accent); }
+.entry-excerpt {
+  font-family: var(--serif-zh); font-size: 14px; line-height: 1.75;
+  color: var(--ink-soft);
+}
+.entry-byline {
+  padding-top: 10px; margin-top: 4px;
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+}
+.entry-byline strong { color: var(--ink); font-weight: 500; }
+
+/* ── HEALERS STRIP ───────────────────────── */
+.healers {
+  background: var(--bg-deep);
+  color: var(--paper);
+}
+.healers .section-head { border-bottom-color: rgba(255,255,255,.2); }
+.healers .section-head h2 { color: var(--paper); }
+.healers .section-head h2 em { color: #E9C58A; }
+.healers .section-head .meta-col { color: rgba(255,255,255,.45); }
+.healers .section-head .meta-col a { color: var(--paper); border-bottom-color: rgba(255,255,255,.4);}
+.healers .section-head .meta-col a:hover { color: #E9C58A; border-bottom-color: #E9C58A; }
+
+/* ── horizontal scroller ── */
+.healer-scroll-wrap {
+  position: relative;
+  margin: 0 -40px;
+}
+.healer-strip {
+  display: flex;
+  gap: 28px;
+  padding: 4px 40px 48px;
+  overflow-x: auto;
+  scroll-snap-type: none;
+  scrollbar-width: none;
+}
+.healer-strip::-webkit-scrollbar { display: none; }
+.healer-card {
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  flex: 0 0 clamp(280px, 24vw, 360px);
+  scroll-snap-align: start;
+  min-width: 0;
+  transition: transform .6s cubic-bezier(.2,.7,.2,1);
+}
+
+.healer-quote {
+  font-family: Georgia, 'Times New Roman', 'Noto Serif SC', serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.55;
+  color: rgba(255,255,255,.88);
+  letter-spacing: 0;
+  margin: 0 0 28px;
+  padding-right: 8px;
+  min-height: 9.5em;
+  text-wrap: pretty;
+}
+.healer-name-block { margin-top: auto; }
+.healer-quote br + * { margin-top: .5em; }
+.healer-card:hover { transform: translateY(-6px); }
+.healer-progress {
+  height: 1px; background: rgba(255,255,255,.15);
+  margin: 0 40px; position: relative;
+}
+.healer-progress-bar {
+  position: absolute; top:0; left:0; height:100%;
+  background: var(--accent);
+  width: 30%;
+  transition: width .3s ease, left .3s ease;
+}
+.healer-controls {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 40px; margin-top: 22px;
+}
+.healer-controls .count {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .22em; color: rgba(255,255,255,.5);
+}
+.healer-nav {
+  display: flex; gap: 10px;
+}
+.hn-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.3);
+  background: transparent; color: var(--paper);
+  cursor: pointer; display: inline-flex; align-items:center; justify-content:center;
+  transition: background-color .9s ease, border-color .9s ease, transform .9s cubic-bezier(.22,.61,.36,1), opacity .4s ease;
+  font-size: 14px;
+}
+.hn-btn:hover { background: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
+.hn-btn:active { transform: translateY(0) scale(.97); transition-duration: .3s; }
+.hn-btn:disabled { opacity: .3; cursor: not-allowed; transform: none; background: transparent; }
+.healer-portrait {
+  aspect-ratio: 4/3;
+  background: var(--bg-alt);
+  position: relative; overflow: hidden;
+  border-radius: 0;
+  transition: transform .6s ease;
+  margin-bottom: 28px;
+}
+.healer-portrait-inner { position:absolute; inset:0; transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+.healer-card:hover .healer-portrait-inner { transform: scale(1.06); }
+.healer-portrait::after {
+  content:"";
+  position: absolute; inset: auto 0 0 0; height: 0;
+  background: linear-gradient(180deg, transparent, var(--accent) 85%);
+  transition: height .5s cubic-bezier(.2,.7,.2,1);
+  mix-blend-mode: multiply;
+  opacity: 0;
+  z-index: 1;
+}
+.healer-card:hover .healer-portrait::after { height: 40%; opacity: .55; }
+.portrait-num {
+  display: none;
+}
+.portrait-loc {
+  display: none;
+}
+.portrait-a { background: linear-gradient(160deg,#D4C4AE,#B39D7E); }
+.portrait-b { background: linear-gradient(160deg,#CAD3B7,#8FA67E); }
+.portrait-c { background: linear-gradient(160deg,#CCD5DF,#8CA0B9); }
+.portrait-d { background: linear-gradient(160deg,#E6CFB8,#C49865); }
+.healer-name {
+  font-family: Georgia, 'Times New Roman', 'Noto Serif SC', serif; font-weight: 700;
+  font-size: 20px; line-height: 1.2; color: var(--paper);
+  letter-spacing: 0;
+}
+.healer-name .zh { display:block; font-family: Georgia, 'Noto Serif SC', serif; font-weight: 400; font-size:13px; color:rgba(255,255,255,.5); margin-top:6px; letter-spacing:0;}
+.healer-spec {
+  display: none;
+}
+
+/* ── EDITORIAL QUOTE / FOUNDER ──────────── */
+.quote {
+  background: var(--bg);
+  padding: clamp(100px, 14vw, 180px) 40px;
+  text-align: center;
+}
+.quote-inner { max-width: 1000px; margin: 0 auto; }
+.quote-mark {
+  font-family: var(--serif); font-style: italic;
+  font-size: 120px; line-height: .5; color: var(--accent);
+  margin-bottom: 24px;
+}
+.quote-text {
+  font-family: var(--serif-zh); font-weight: 300;
+  font-size: clamp(28px, 3.2vw, 46px);
+  line-height: 1.35; letter-spacing: -.005em;
+  color: var(--ink);
+  margin-bottom: 40px;
+  text-wrap: balance;
+}
+.quote-text em { font-family: var(--serif); font-style: italic; color: var(--accent); font-weight: 400;}
+.quote-cite {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .24em; text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── NEWSLETTER ──────────────────────────── */
+.news {
+  background: var(--bg-deep); color: var(--paper);
+  padding: clamp(72px, 10vw, 140px) 40px;
+}
+.news-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+  align-items: center;
+}
+.news h2 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(34px, 4.2vw, 60px);
+  line-height: 1.05; letter-spacing: -.015em;
+  color: var(--paper);
+}
+.news h2 em { font-style: italic; color: #E9C58A; font-weight: 500; }
+.news p {
+  font-family: var(--serif-zh); font-size: 15px;
+  color: rgba(255,255,255,.55);
+  margin-top: 20px; line-height: 1.8; max-width: 40ch;
+}
+.news-form {
+  display: flex; align-items: flex-end;
+  gap: 16px;
+  border-bottom: 1px solid rgba(255,255,255,.25);
+  padding-bottom: 14px;
+}
+.news-form label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+  display: block; margin-bottom: 8px;
+}
+.news-form input {
+  flex: 1;
+  background: transparent; border: none; outline: none;
+  color: var(--paper);
+  font-family: var(--serif); font-size: 22px;
+  padding: 6px 0;
+}
+.news-form input::placeholder { color: rgba(255,255,255,.3); font-style: italic; }
+.news-submit {
+  position: relative; overflow: hidden;
+  background: var(--accent); color: var(--paper);
+  border: none; padding: 14px 26px;
+  border-radius: 999px;
+  font-family: var(--sans); font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  transition: transform 1s cubic-bezier(.22,.61,.36,1), color 1s ease;
+  isolation: isolate;
+}
+.news-submit::before {
+  content:""; position:absolute; inset:0;
+  background: var(--paper);
+  transform: translateY(101%);
+  transition: transform 1.1s cubic-bezier(.22,.61,.36,1);
+  z-index: -1;
+}
+.news-submit:hover { color: var(--accent); transform: translateY(-1px); }
+.news-submit:hover::before { transform: translateY(0); }
+
+/* ── FOOTER ───────────────────────────────── */
+/* FOOTER — 4-col link grid, light */
+.site-footer {
+  background: var(--bg);
+  color: var(--ink);
+  border-top: 1px solid var(--rule);
+  padding: clamp(72px, 9vw, 120px) 40px 40px;
+}
+.site-footer .footer-inner {
+  max-width: 1440px; margin: 0 auto;
+  display: block;
+  text-transform: none; letter-spacing: 0; font-size: inherit;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: clamp(32px, 6vw, 96px);
+  padding-bottom: clamp(56px, 7vw, 96px);
+  border-bottom: 1px solid var(--rule);
+}
+.footer-logo {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.footer-tagline {
+  font-family: var(--serif-zh);
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--muted);
+  max-width: 28ch;
+  margin: 0;
+}
+.footer-h {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 18px;
+  font-weight: 500;
+}
+.footer-col ul {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.footer-col ul a {
+  font-family: var(--serif-zh);
+  font-size: 14px;
+  color: var(--ink);
+  transition: color .8s ease;
+}
+.footer-col ul a:hover { color: var(--accent); }
+.footer-legal {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 32px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.site-footer .footer-social a {
+  color: var(--muted);
+  margin-left: 24px;
+  transition: color .8s ease;
+}
+.site-footer .footer-social a:hover { color: var(--accent); }
+@media (max-width: 820px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .footer-brand { grid-column: 1 / -1; }
+  .footer-legal { flex-direction: column; gap: 12px; align-items: flex-start; }
+  .site-footer .footer-social a:first-child { margin-left: 0; }
+}
+
+/* ── TWEAKS PANEL ────────────────────────── */
+#tweaks {
+  position: fixed; right: 20px; bottom: 20px;
+  width: 300px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.15);
+  z-index: 100;
+  display: none;
+}
+#tweaks.open { display: block; }
+.tweaks-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 12px; margin-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.tweaks-title { font-family: var(--mono); letter-spacing: .22em; text-transform: uppercase; font-size: 10px; }
+.tweaks-close { background:none; border:none; cursor:pointer; font-size: 14px; color: var(--muted); }
+.tweak-row { margin-bottom: 16px; }
+.tweak-row label { display:block; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom:8px; }
+.tweak-seg { display: flex; gap: 4px; background: var(--bg); padding: 3px; border-radius: 4px; }
+.tweak-seg button {
+  flex: 1; border: none; background: transparent;
+  font-family: var(--sans); font-size: 11px; padding: 7px 4px;
+  cursor: pointer; border-radius: 2px; color: var(--muted);
+  transition: all .15s;
+}
+.tweak-seg button.on { background: var(--ink); color: var(--bg); }
+.tweak-swatches { display: flex; gap: 8px; }
+.tweak-swatch {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid transparent; cursor: pointer;
+  transition: all .15s;
+}
+.tweak-swatch.on { border-color: var(--ink); }
+.tweak-slider { width: 100%; }
+
+/* utility */
+.hide { display: none !important; }
+
+/* reveal-on-scroll */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 1s ease, transform 1s cubic-bezier(.2,.7,.2,1); }
+.reveal.in { opacity: 1; transform: translateY(0); }
+.reveal-stagger > * { opacity: 0; transform: translateY(24px); transition: opacity .9s ease, transform .9s cubic-bezier(.2,.7,.2,1); }
+.reveal-stagger.in > * { opacity: 1; transform: translateY(0); }
+.reveal-stagger.in > *:nth-child(1){ transition-delay:0ms;}
+.reveal-stagger.in > *:nth-child(2){ transition-delay:90ms;}
+.reveal-stagger.in > *:nth-child(3){ transition-delay:180ms;}
+.reveal-stagger.in > *:nth-child(4){ transition-delay:270ms;}
+.reveal-stagger.in > *:nth-child(5){ transition-delay:360ms;}
+.reveal-stagger.in > *:nth-child(6){ transition-delay:450ms;}
+
+/* h2 underline draw on reveal */
+.section-head h2 em { position: relative; }
+.section-head h2 em::after {
+  content:""; position:absolute; left:0; right:0; bottom:.04em; height:.08em;
+  background: var(--accent); opacity:.25;
+  transform-origin: left; transform: scaleX(0);
+  transition: transform 1s cubic-bezier(.2,.7,.2,1) .25s;
+}
+.reveal.in.section-head h2 em::after { transform: scaleX(1); }
+
+/* entry card: accent bar slide */
+.entry-media::before {
+  content:""; position: absolute; left:0; top:0; bottom:0; width:3px;
+  background: var(--accent); transform: scaleY(0); transform-origin: top;
+  transition: transform .6s cubic-bezier(.2,.7,.2,1);
+  z-index: 3;
+}
+.entry:hover .entry-media::before { transform: scaleY(1); }
+
+/* number counter / rotating marker */
+.entry-media-shape svg { animation: slowSpin 40s linear infinite; transform-origin: center; }
+@keyframes slowSpin { to { transform: rotate(360deg); } }
+
+/* accent rule on quote */
+.quote-mark { animation: qFloat 6s ease-in-out infinite; }
+@keyframes qFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+
+@media (max-width: 980px) {
+  .hero-stage { height: auto; min-height: 560px; }
+  .hero-content { position: static; padding: 80px 32px; }
+  .hero[data-variant="split"] .hero-stage { grid-template-columns: 1fr; }
+  .hero[data-variant="split"] .hero-split-right { height: 360px; }
+  .know-inner { grid-template-columns: 1fr; }
+  .content-list { grid-template-columns: 1fr; gap: 40px; }
+  .entry, .entry.featured { grid-column: span 12; }
+  .healer-strip { grid-template-columns: 1fr 1fr; }
+  .news-inner { grid-template-columns: 1fr; gap: 40px;}
+}
+
+/* ═══════════════════════════════════════════════════
+   QUIZ — 随遇而为 · Modern Practice, Waking Healing
+   ═══════════════════════════════════════════════════ */
+
+/* lang */
+html[lang="zh"] [data-lang="en"] { display: none !important; }
+html[lang="en"] [data-lang="zh"] { display: none !important; }
+/* 语言切换按钮本身也带 data-lang，必须强制可见，否则上面规则会把一个按钮隐藏 */
+.site-header .lang button[data-lang] { display: inline-block !important; cursor: pointer; }
+
+/* 5-element palette */
+:root {
+  --el-space: #C8C6BF;   /* 空 moon white */
+  --el-space-ink: #6B6963;
+  --el-wind:  #8CB3B0;   /* 风 misty cyan */
+  --el-wind-ink: #4F7773;
+  --el-fire:  #C67149;   /* 火 clay orange */
+  --el-fire-ink: #8B4926;
+  --el-water: #3A5068;   /* 水 ink blue */
+  --el-water-ink: #263549;
+  --el-earth: #9B6A3F;   /* 地 ochre */
+  --el-earth-ink: #6B461F;
+  --warm-gold: #C4923C;
+}
+
+/* ── PROGRESS TOP BAR ───────────── */
+.qz-progress {
+  position: sticky; top: 0; z-index: 60;
+  background: color-mix(in oklab, var(--bg) 94%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--rule-soft);
+  padding: 14px clamp(20px, 4vw, 48px);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px; align-items: center;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .24em; text-transform: uppercase;
+  color: var(--muted);
+}
+.qz-progress .crumb { color: var(--ink); }
+.qz-progress .crumb em { color: var(--accent); font-style: italic; font-family: var(--serif); font-size: 12px; letter-spacing: .02em; margin: 0 3px; text-transform: none; }
+.qz-progress .rail {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+}
+.qz-progress .rail .seg {
+  height: 2px;
+  background: var(--rule);
+  position: relative;
+  overflow: hidden;
+}
+.qz-progress .rail .seg.done { background: var(--ink); }
+.qz-progress .rail .seg.cur {
+  background: var(--rule);
+}
+.qz-progress .rail .seg.cur::after {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 50%;
+  background: var(--accent);
+  animation: qz-fill 1.6s ease-in-out infinite alternate;
+}
+@keyframes qz-fill { from { width: 20%; } to { width: 90%; } }
+
+/* ── SCREEN FRAME ───────── */
+.qz-wrap {
+  min-height: calc(100vh - 120px);
+  padding: clamp(32px, 5vw, 72px) clamp(24px, 5vw, 72px);
+  max-width: 1280px;
+  margin: 0 auto;
+  position: relative;
+}
+.qz-screen {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute; inset: clamp(32px, 5vw, 72px) clamp(24px, 5vw, 72px) auto;
+  transition: opacity .6s ease;
+}
+.qz-screen.active {
+  opacity: 1;
+  pointer-events: auto;
+  position: relative;
+  inset: auto;
+}
+
+/* ═══ INTRO SCREEN ═══ */
+.qz-intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(48px, 6vw, 96px);
+  align-items: center;
+  min-height: 70vh;
+}
+
+.qz-intro-copy { padding-right: 16px; }
+
+.qz-intro-kicker {
+  display: inline-flex; align-items: center; gap: 12px;
+  padding: 5px 12px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: .24em; text-transform: uppercase;
+  border-radius: 2px;
+  margin-bottom: 28px;
+}
+
+.qz-intro-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(48px, 6.5vw, 92px);
+  line-height: 1.02;
+  letter-spacing: -.025em;
+  color: var(--ink);
+  margin: 0 0 24px;
+  text-wrap: balance;
+  max-width: 14ch;
+}
+.qz-intro-title em { font-style: italic; color: var(--accent); font-weight: 400; }
+
+.qz-intro-deck {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(17px, 1.7vw, 20px);
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 42ch;
+  margin: 0 0 36px;
+  text-wrap: pretty;
+}
+html[lang="zh"] .qz-intro-deck { font-family: var(--serif-zh); font-style: normal; }
+
+.qz-intro-meta {
+  display: flex; flex-wrap: wrap; gap: 28px;
+  padding: 18px 0;
+  border-top: 1px solid var(--ink);
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 40px;
+}
+.qz-intro-meta-item {
+  display: flex; flex-direction: column; gap: 4px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted);
+}
+.qz-intro-meta-item .val {
+  font-family: var(--serif);
+  font-size: 26px;
+  color: var(--ink);
+  letter-spacing: -.01em;
+  text-transform: none;
+  line-height: 1;
+}
+.qz-intro-meta-item .val em { font-style: italic; color: var(--accent); }
+
+.qz-intro-cta {
+  display: inline-flex; align-items: center; gap: 18px;
+  padding: 18px 32px;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .26em; text-transform: uppercase;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  transition: all .6s ease;
+}
+.qz-intro-cta:hover { background: var(--accent); border-color: var(--accent); }
+.qz-intro-cta .arr { font-family: var(--serif); font-style: italic; font-size: 14px; letter-spacing: normal; text-transform: none; color: var(--accent); transition: transform .7s ease, color .6s ease; }
+.qz-intro-cta:hover .arr { color: var(--paper); transform: translateX(6px); }
+
+/* intro reticle — 5 elements */
+.qz-intro-viz {
+  position: relative;
+  aspect-ratio: 1/1;
+  max-height: 70vh;
+  align-self: center;
+}
+.qz-intro-reticle {
+  width: 100%; height: 100%;
+  display: block;
+  color: var(--ink);
+}
+.qz-el-label {
+  position: absolute;
+  font-family: var(--serif);
+  text-align: center;
+  pointer-events: none;
+}
+.qz-el-label .char {
+  font-family: var(--serif-zh);
+  font-size: 26px;
+  color: var(--ink);
+  line-height: 1;
+  margin-bottom: 4px;
+  font-weight: 400;
+}
+.qz-el-label .en {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.qz-el-label .dot {
+  display: inline-block; width: 8px; height: 8px;
+  border-radius: 50%; margin: 0 auto 6px;
+}
+
+@keyframes qz-float { 0%,100% { transform: translate(-50%,-50%) translateY(0); } 50% { transform: translate(-50%,-50%) translateY(-6px); } }
+@keyframes qz-spin { to { transform: rotate(360deg); } }
+@keyframes qz-pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+@keyframes qz-draw { to { stroke-dashoffset: 0; } }
+@keyframes qz-fadein { from { opacity: 0; transform: translate(-50%,-50%) translateY(4px); } to { opacity: 1; transform: translate(-50%,-50%) translateY(0); } }
+
+.qz-el-label { animation: qz-fadein .9s ease forwards; opacity: 0; }
+.qz-el-label.e1 { animation-delay: .6s; }
+.qz-el-label.e2 { animation-delay: .8s; }
+.qz-el-label.e3 { animation-delay: 1.0s; }
+.qz-el-label.e4 { animation-delay: 1.2s; }
+.qz-el-label.e5 { animation-delay: 1.4s; }
+
+.qz-ring-a { animation: qz-spin 80s linear infinite; transform-origin: 50% 50%; }
+.qz-ring-b { animation: qz-spin 50s linear infinite reverse; transform-origin: 50% 50%; }
+.qz-core-pulse { animation: qz-pulse 4s ease-in-out infinite; transform-origin: 50% 50%; }
+.qz-draw { stroke-dasharray: 1600; stroke-dashoffset: 1600; animation: qz-draw 2s ease-out forwards; }
+.qz-draw.d1 { animation-delay: .1s; }
+.qz-draw.d2 { animation-delay: .4s; }
+.qz-draw.d3 { animation-delay: .7s; }
+.qz-draw.d4 { animation-delay: 1.0s; }
+
+/* ═══ QUESTION SCREEN ═══ */
+.qz-q {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: clamp(48px, 6vw, 96px);
+  align-items: start;
+  min-height: 70vh;
+  padding-top: clamp(16px, 3vw, 40px);
+}
+
+.qz-q-left { position: sticky; top: 100px; padding-right: 8px; }
+
+.qz-q-index {
+  display: flex; align-items: center; gap: 16px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .24em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+.qz-q-index .num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 72px;
+  line-height: 1;
+  color: var(--accent);
+  letter-spacing: -.03em;
+  text-transform: none;
+}
+.qz-q-index .of {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.qz-q-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .26em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 18px;
+  display: flex; align-items: center; gap: 10px;
+}
+.qz-q-eyebrow::before { content: ""; width: 22px; height: 1px; background: var(--accent); }
+
+.qz-q-title {
+  font-family: var(--serif-zh);
+  font-weight: 400;
+  font-size: clamp(32px, 4vw, 52px);
+  line-height: 1.15;
+  color: var(--ink);
+  letter-spacing: -.005em;
+  margin: 0 0 22px;
+  text-wrap: balance;
+}
+html[lang="en"] .qz-q-title { font-family: var(--serif); font-style: italic; letter-spacing: -.015em; }
+
+/* Q1 poetic style = italic serif */
+.qz-q.poetic .qz-q-title {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(36px, 4.6vw, 64px);
+}
+
+.qz-q-sub {
+  font-family: var(--serif-zh);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 40ch;
+  margin: 0 0 24px;
+}
+html[lang="en"] .qz-q-sub { font-family: var(--serif); font-style: italic; }
+
+.qz-q-hint {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 16px;
+  border-top: 1px solid var(--rule-soft);
+  max-width: 30ch;
+}
+
+/* OPTIONS */
+.qz-opts {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.qz-opt {
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  gap: 20px;
+  padding: 22px 26px;
+  align-items: center;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  cursor: pointer;
+  position: relative;
+  text-align: left;
+  font-family: inherit;
+  color: var(--ink);
+  transition: all .45s ease;
+  overflow: hidden;
+}
+.qz-opt::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: opacity .35s ease, transform .45s cubic-bezier(.22,.61,.36,1);
+}
+.qz-opt:hover {
+  border-color: var(--ink);
+  background: color-mix(in oklab, var(--paper) 92%, var(--accent) 8%);
+  transform: translateX(3px);
+}
+.qz-opt:hover::before { opacity: .5; transform: scaleY(1); }
+.qz-opt.selected {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+.qz-opt.selected::before { opacity: 1; transform: scaleY(1); background: var(--accent); }
+
+.qz-opt-ch {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .18em;
+  color: var(--muted);
+  border: 1px solid var(--rule);
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  transition: all .45s ease;
+}
+.qz-opt:hover .qz-opt-ch { border-color: var(--ink); color: var(--ink); }
+.qz-opt.selected .qz-opt-ch { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+
+.qz-opt-text {
+  font-family: var(--serif-zh);
+  font-size: 16.5px;
+  line-height: 1.5;
+  color: inherit;
+}
+html[lang="en"] .qz-opt-text { font-family: var(--serif); font-size: 17px; }
+
+.qz-opt-arr {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--muted);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity .4s ease, transform .5s ease, color .4s ease;
+}
+.qz-opt:hover .qz-opt-arr { opacity: 1; transform: translateX(0); color: var(--accent); }
+.qz-opt.selected .qz-opt-arr { opacity: 1; transform: translateX(0); color: var(--paper); }
+
+/* Multi-select variant (Q5) */
+.qz-opt.multi .qz-opt-ch { border-radius: 3px; }
+.qz-opt.multi.selected { background: var(--paper); color: var(--ink); border-color: var(--ink); }
+.qz-opt.multi.selected::before { background: var(--accent); }
+.qz-opt.multi.selected .qz-opt-ch { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.qz-q-foot {
+  margin-top: 28px;
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule-soft);
+}
+.qz-back {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px 0;
+  transition: color .4s ease;
+}
+.qz-back:hover { color: var(--ink); }
+.qz-back:disabled { opacity: 0; pointer-events: none; }
+
+.qz-next {
+  display: inline-flex; align-items: center; gap: 14px;
+  padding: 14px 26px;
+  background: var(--ink); color: var(--paper);
+  font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: .26em; text-transform: uppercase;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  transition: all .5s ease;
+}
+.qz-next:hover:not(:disabled) { background: var(--accent); border-color: var(--accent); }
+.qz-next:disabled { opacity: .3; cursor: not-allowed; }
+.qz-next .arr { font-family: var(--serif); font-style: italic; font-size: 14px; letter-spacing: normal; text-transform: none; color: var(--accent); }
+.qz-next:hover:not(:disabled) .arr { color: var(--paper); }
+
+/* ═══ RESULT SCREEN ═══ */
+.qz-result {
+  display: flex; flex-direction: column; gap: clamp(48px, 6vw, 80px);
+}
+
+.qz-result-top {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: clamp(48px, 6vw, 96px);
+  align-items: center;
+}
+
+.qz-result-eyebrow {
+  display: inline-flex; align-items: center; gap: 12px;
+  font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: .26em; text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+.qz-result-eyebrow::before { content: ""; width: 22px; height: 1px; background: var(--accent); }
+
+.qz-result-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(40px, 5vw, 72px);
+  line-height: 1.04;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  margin: 0 0 28px;
+  text-wrap: balance;
+}
+.qz-result-title em { font-style: italic; color: var(--accent); font-weight: 400; }
+
+.qz-result-poem {
+  font-family: var(--serif-zh);
+  font-size: 17.5px;
+  line-height: 1.85;
+  color: var(--ink-soft);
+  max-width: 44ch;
+  margin: 0 0 24px;
+  text-wrap: pretty;
+}
+html[lang="en"] .qz-result-poem { font-family: var(--serif); font-style: italic; }
+
+.qz-result-note {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+  max-width: 36ch;
+}
+
+/* radar container */
+.qz-radar-box {
+  position: relative;
+  aspect-ratio: 1/1;
+  max-width: 520px;
+  margin: 0 auto;
+  width: 100%;
+}
+.qz-radar-caption {
+  position: absolute; bottom: -8px; left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono); font-size: 9.5px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.qz-radar svg { width: 100%; height: 100%; overflow: visible; }
+
+/* Axis labels */
+.qz-axis-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+.qz-axis-label .ch {
+  font-family: var(--serif-zh);
+  font-size: 20px; color: var(--ink);
+  margin-bottom: 2px;
+  font-weight: 400;
+}
+.qz-axis-label .en {
+  font-family: var(--mono);
+  font-size: 9.5px; letter-spacing: .24em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.qz-axis-label .score {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--accent);
+  margin-top: 2px;
+}
+
+/* ── RESULT BREAKDOWN BANDS ── */
+.qz-bands {
+  border-top: 1px solid var(--ink);
+  padding-top: 28px;
+}
+.qz-bands-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 28px;
+}
+.qz-bands-title {
+  font-family: var(--serif);
+  font-size: clamp(22px, 2.4vw, 28px);
+  color: var(--ink);
+  letter-spacing: -.01em;
+}
+.qz-bands-title em { font-style: italic; color: var(--accent); }
+.qz-bands-note {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted);
+}
+.qz-band {
+  display: grid;
+  grid-template-columns: 120px 1fr 70px;
+  gap: 24px; align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.qz-band-name { display: flex; align-items: center; gap: 12px; }
+.qz-band-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.qz-band-ch { font-family: var(--serif-zh); font-size: 18px; color: var(--ink); letter-spacing: .05em; }
+.qz-band-en { font-family: var(--mono); font-size: 10px; letter-spacing: .22em; color: var(--muted); text-transform: uppercase; }
+.qz-band-bar {
+  height: 3px;
+  background: var(--rule-soft);
+  position: relative;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.qz-band-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  border-radius: 999px;
+  transition: width 1.2s cubic-bezier(.22,.61,.36,1);
+  width: 0;
+}
+.qz-band-score {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 20px;
+  color: var(--ink);
+  text-align: right;
+}
+.qz-band-score .max { color: var(--muted); font-style: normal; font-size: 11px; font-family: var(--mono); letter-spacing: .22em; }
+
+/* ── HEALER CARDS ── */
+.qz-healers {
+  border-top: 1px solid var(--ink);
+  padding-top: 36px;
+}
+.qz-healers-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  margin-bottom: 32px;
+}
+.qz-healers-title {
+  font-family: var(--serif);
+  font-size: clamp(28px, 3.2vw, 44px);
+  letter-spacing: -.015em;
+  color: var(--ink);
+}
+.qz-healers-title em { font-style: italic; color: var(--accent); }
+
+.qz-healer-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+}
+.qz-h-card {
+  display: flex; flex-direction: column;
+  border-top: 1px solid var(--ink);
+  padding-top: 20px;
+  position: relative;
+}
+.qz-h-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 9.5px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 18px;
+}
+.qz-h-badge.expand { color: var(--warm-gold); }
+.qz-h-portrait {
+  aspect-ratio: 4/5;
+  background: linear-gradient(150deg, var(--bg-alt), var(--paper));
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.qz-h-portrait .el-tag {
+  position: absolute; top: 14px; left: 14px;
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .24em; text-transform: uppercase;
+  color: var(--paper);
+  padding: 5px 10px;
+  border-radius: 2px;
+  z-index: 2;
+}
+.qz-h-portrait .ph-num {
+  position: absolute; bottom: 14px; right: 14px;
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .24em;
+  color: rgba(251,247,240,.85);
+  padding: 3px 8px;
+  background: rgba(31,27,23,.4);
+  border-radius: 2px;
+  backdrop-filter: blur(3px);
+}
+.qz-h-name {
+  font-family: var(--serif);
+  font-size: 26px;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.qz-h-name .cn {
+  display: block;
+  font-family: var(--serif-zh);
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 2px;
+  font-weight: 400;
+  letter-spacing: .04em;
+}
+.qz-h-tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+  margin-bottom: 20px;
+  text-wrap: pretty;
+}
+html[lang="zh"] .qz-h-tagline { font-family: var(--serif-zh); font-style: normal; }
+.qz-h-why {
+  padding: 16px 0;
+  border-top: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--rule-soft);
+  margin-bottom: 16px;
+}
+.qz-h-why-label {
+  font-family: var(--mono); font-size: 9.5px;
+  letter-spacing: .24em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.qz-h-why-text {
+  font-family: var(--serif-zh);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+html[lang="en"] .qz-h-why-text { font-family: var(--serif); font-size: 14.5px; line-height: 1.55; }
+.qz-h-format {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.qz-h-format::before { content: "§"; color: var(--accent); font-family: var(--serif); font-size: 14px; font-style: italic; letter-spacing: 0; text-transform: none; }
+.qz-h-cta {
+  display: inline-flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .24em; text-transform: uppercase;
+  border: 1px solid var(--ink);
+  text-decoration: none;
+  transition: all .5s ease;
+  margin-top: auto;
+}
+.qz-h-cta:hover { background: var(--ink); color: var(--paper); }
+.qz-h-cta .arr { color: var(--accent); font-family: var(--serif); font-style: italic; font-size: 13px; letter-spacing: normal; text-transform: none; }
+.qz-h-cta:hover .arr { color: var(--paper); }
+
+/* ── END STRIP ── */
+.qz-end {
+  border-top: 1px solid var(--ink);
+  padding: 36px 0 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: center;
+}
+.qz-end-msg {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(20px, 2.4vw, 28px);
+  color: var(--ink);
+  line-height: 1.35;
+  text-wrap: balance;
+  max-width: 36ch;
+}
+html[lang="zh"] .qz-end-msg { font-family: var(--serif-zh); font-style: normal; }
+.qz-end-actions { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
+.qz-end-primary {
+  display: inline-flex; align-items: center; gap: 14px;
+  padding: 16px 28px;
+  background: var(--accent); color: var(--paper);
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .24em; text-transform: uppercase;
+  border: 1px solid var(--accent); cursor: pointer;
+  transition: all .5s ease;
+  text-decoration: none;
+}
+.qz-end-primary:hover { background: var(--ink); border-color: var(--ink); }
+.qz-end-ghost {
+  font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: .24em; text-transform: uppercase;
+  color: var(--ink);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 4px;
+  background: none; border: none; cursor: pointer;
+  text-decoration: none;
+}
+.qz-end-ghost:hover { color: var(--accent); }
+
+/* ── Responsive ── */
+@media (max-width: 1000px) {
+  .qz-intro, .qz-q, .qz-result-top { grid-template-columns: 1fr; }
+  .qz-q-left { position: static; }
+  .qz-intro-viz { max-height: 50vh; order: -1; }
+  .qz-healer-grid { grid-template-columns: 1fr; }
+  .qz-end { grid-template-columns: 1fr; }
+}
+
+</style>
+</head><body data-screen-label="06 Quiz">
+<body data-screen-label="01 Home">
+
+<!-- Tweak defaults (host persists between refreshes) -->
+<script>
+window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
+  "accent": "#35845D",
+  "heroVariant": "still",
+  "fontScale": "grand"
+}/*EDITMODE-END*/;
+</script>
+
+<!-- ─── HEADER ─────────────────────────── -->
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="index.html" class="brand">AWAKENSPHERE</a>
+    <nav class="nav">
+      <div class="lang">
+        <button class="on" data-lang="zh">中文</button>
+        <span style="opacity:.4">·</span>
+        <button data-lang="en">EN</button>
+      </div>
+      <a class="nav-btn" href="healers.html"><span class="lbl" data-zh="探索疗愈师" data-en="Explore Healers">探索疗愈师</span></a>
+      <div class="nav-dd" id="navDd">
+        <button class="nav-btn solid" id="ddTrigger" aria-haspopup="true" aria-expanded="false">
+          <span class="lbl"><span data-zh="了解自己" data-en="Know Yourself">了解自己</span> <span class="dd-caret" aria-hidden="true">▾</span></span>
+        </button>
+        <div class="dd-menu" role="menu">
+          <a class="dd-item" role="menuitem" href="quiz.html">
+            <span class="dd-num">01</span>
+            <span class="dd-body">
+              <span class="dd-title" data-zh="五分钟自我问答" data-en="5-Min Self Inquiry">五分钟自我问答</span>
+              <span class="dd-desc" data-zh="从五个安静的问题开始，绘制内在地图" data-en="Five quiet questions. Map your inner terrain.">从五个安静的问题开始，绘制内在地图</span>
+            </span>
+            <span class="dd-arrow">→</span>
+          </a>
+          <a class="dd-item" role="menuitem" href="index.html#content">
+            <span class="dd-num">02</span>
+            <span class="dd-body">
+              <span class="dd-title" data-zh="内在图书馆" data-en="Inner Library">内在图书馆</span>
+              <span class="dd-desc" data-zh="文章、音频与练习 · 按主题浏览" data-en="Articles, audio & practices · By theme">文章、音频与练习 · 按主题浏览</span>
+            </span>
+            <span class="dd-arrow">→</span>
+          </a>
+          <a class="dd-item" role="menuitem" href="#">
+            <span class="dd-num">03</span>
+            <span class="dd-body">
+              <span class="dd-title" data-zh="成长记录" data-en="Growth Journal">成长记录</span>
+              <span class="dd-desc" data-zh="你的会话、笔记与练习进度" data-en="Sessions, notes & practice progress">你的会话、笔记与练习进度</span>
+            </span>
+            <span class="dd-arrow">→</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<div class="qz-progress">
+  <div class="crumb"></div>
+  <div class="rail">
+    <div class="seg"></div><div class="seg"></div><div class="seg"></div>
+    <div class="seg"></div><div class="seg"></div><div class="seg"></div>
+  </div>
+  <div><span data-lang="zh">匿名 · 2–3 分钟</span><span data-lang="en">Anonymous · 2–3 min</span></div>
+</div>
+
+<main class="qz-wrap">
+
+  <!-- INTRO -->
+  <section class="qz-screen" id="intro">
+    <div class="qz-intro">
+      <div class="qz-intro-copy">
+        <span class="qz-intro-kicker">◊ <span data-lang="zh">内在校准</span><span data-lang="en">Inner Calibration</span></span>
+        <h1 class="qz-intro-title">
+          <span data-lang="zh">寻找你的<em>内在元素</em>。</span>
+          <span data-lang="en">Find your <em>inner element</em>.</span>
+        </h1>
+        <p class="qz-intro-deck">
+          <span data-lang="zh">6 道题，2–3 分钟，帮助你定位此刻最鲜明的内在元素 —— 空、风、火、水、地。我们会按你的状态与节奏，为你挑 3 位合适的疗愈师。</span>
+          <span data-lang="en">Six questions, two to three minutes — to locate the element most alive in you right now: Space, Wind, Fire, Water, Earth. We'll match three healers to your state and rhythm.</span>
+        </p>
+        <div class="qz-intro-meta">
+          <div class="qz-intro-meta-item"><span class="val"><em>06</em></span><span data-lang="zh">问题</span><span data-lang="en">Questions</span></div>
+          <div class="qz-intro-meta-item"><span class="val"><em>2–3'</em></span><span data-lang="zh">分钟</span><span data-lang="en">Minutes</span></div>
+          <div class="qz-intro-meta-item"><span class="val"><em>05</em></span><span data-lang="zh">元素</span><span data-lang="en">Elements</span></div>
+          <div class="qz-intro-meta-item"><span class="val"><em>03</em></span><span data-lang="zh">位匹配</span><span data-lang="en">Matches</span></div>
+        </div>
+        <button class="qz-intro-cta" id="qzBegin">
+          <span data-lang="zh">开始测试</span><span data-lang="en">Begin</span>
+          <span class="arr">→</span>
+        </button>
+      </div>
+
+      <div class="qz-intro-viz">
+        <svg class="qz-intro-reticle" viewBox="0 0 600 600" fill="none" stroke="currentColor" stroke-width="1">
+          <defs>
+            <radialGradient id="qzCore" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#C4923C" stop-opacity=".28"/>
+              <stop offset="100%" stop-color="#35845D" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="300" cy="300" r="150" fill="url(#qzCore)" class="qz-core-pulse"/>
+          <g class="qz-ring-a">
+            <circle class="qz-draw d1" cx="300" cy="300" r="250" stroke="currentColor" stroke-opacity=".28"/>
+            <line x1="540.00" y1="300.00" x2="550.00" y2="300.00" stroke-opacity="0.55" stroke-width="1"/><line x1="543.66" y1="325.61" x2="548.63" y2="326.13" stroke-opacity="0.25" stroke-width="0.6"/><line x1="539.65" y1="350.94" x2="544.54" y2="351.98" stroke-opacity="0.25" stroke-width="0.6"/><line x1="533.01" y1="375.71" x2="537.76" y2="377.25" stroke-opacity="0.25" stroke-width="0.6"/><line x1="523.82" y1="399.65" x2="528.39" y2="401.68" stroke-opacity="0.25" stroke-width="0.6"/><line x1="507.85" y1="420.00" x2="516.51" y2="425.00" stroke-opacity="0.55" stroke-width="1"/><line x1="498.21" y1="444.01" x2="502.25" y2="446.95" stroke-opacity="0.25" stroke-width="0.6"/><line x1="482.07" y1="463.94" x2="485.79" y2="467.28" stroke-opacity="0.25" stroke-width="0.6"/><line x1="463.94" y1="482.07" x2="467.28" y2="485.79" stroke-opacity="0.25" stroke-width="0.6"/><line x1="444.01" y1="498.21" x2="446.95" y2="502.25" stroke-opacity="0.25" stroke-width="0.6"/><line x1="420.00" y1="507.85" x2="425.00" y2="516.51" stroke-opacity="0.55" stroke-width="1"/><line x1="399.65" y1="523.82" x2="401.68" y2="528.39" stroke-opacity="0.25" stroke-width="0.6"/><line x1="375.71" y1="533.01" x2="377.25" y2="537.76" stroke-opacity="0.25" stroke-width="0.6"/><line x1="350.94" y1="539.65" x2="351.98" y2="544.54" stroke-opacity="0.25" stroke-width="0.6"/><line x1="325.61" y1="543.66" x2="326.13" y2="548.63" stroke-opacity="0.25" stroke-width="0.6"/><line x1="300.00" y1="540.00" x2="300.00" y2="550.00" stroke-opacity="0.55" stroke-width="1"/><line x1="274.39" y1="543.66" x2="273.87" y2="548.63" stroke-opacity="0.25" stroke-width="0.6"/><line x1="249.06" y1="539.65" x2="248.02" y2="544.54" stroke-opacity="0.25" stroke-width="0.6"/><line x1="224.29" y1="533.01" x2="222.75" y2="537.76" stroke-opacity="0.25" stroke-width="0.6"/><line x1="200.35" y1="523.82" x2="198.32" y2="528.39" stroke-opacity="0.25" stroke-width="0.6"/><line x1="180.00" y1="507.85" x2="175.00" y2="516.51" stroke-opacity="0.55" stroke-width="1"/><line x1="155.99" y1="498.21" x2="153.05" y2="502.25" stroke-opacity="0.25" stroke-width="0.6"/><line x1="136.06" y1="482.07" x2="132.72" y2="485.79" stroke-opacity="0.25" stroke-width="0.6"/><line x1="117.93" y1="463.94" x2="114.21" y2="467.28" stroke-opacity="0.25" stroke-width="0.6"/><line x1="101.79" y1="444.01" x2="97.75" y2="446.95" stroke-opacity="0.25" stroke-width="0.6"/><line x1="92.15" y1="420.00" x2="83.49" y2="425.00" stroke-opacity="0.55" stroke-width="1"/><line x1="76.18" y1="399.65" x2="71.61" y2="401.68" stroke-opacity="0.25" stroke-width="0.6"/><line x1="66.99" y1="375.71" x2="62.24" y2="377.25" stroke-opacity="0.25" stroke-width="0.6"/><line x1="60.35" y1="350.94" x2="55.46" y2="351.98" stroke-opacity="0.25" stroke-width="0.6"/><line x1="56.34" y1="325.61" x2="51.37" y2="326.13" stroke-opacity="0.25" stroke-width="0.6"/><line x1="60.00" y1="300.00" x2="50.00" y2="300.00" stroke-opacity="0.55" stroke-width="1"/><line x1="56.34" y1="274.39" x2="51.37" y2="273.87" stroke-opacity="0.25" stroke-width="0.6"/><line x1="60.35" y1="249.06" x2="55.46" y2="248.02" stroke-opacity="0.25" stroke-width="0.6"/><line x1="66.99" y1="224.29" x2="62.24" y2="222.75" stroke-opacity="0.25" stroke-width="0.6"/><line x1="76.18" y1="200.35" x2="71.61" y2="198.32" stroke-opacity="0.25" stroke-width="0.6"/><line x1="92.15" y1="180.00" x2="83.49" y2="175.00" stroke-opacity="0.55" stroke-width="1"/><line x1="101.79" y1="155.99" x2="97.75" y2="153.05" stroke-opacity="0.25" stroke-width="0.6"/><line x1="117.93" y1="136.06" x2="114.21" y2="132.72" stroke-opacity="0.25" stroke-width="0.6"/><line x1="136.06" y1="117.93" x2="132.72" y2="114.21" stroke-opacity="0.25" stroke-width="0.6"/><line x1="155.99" y1="101.79" x2="153.05" y2="97.75" stroke-opacity="0.25" stroke-width="0.6"/><line x1="180.00" y1="92.15" x2="175.00" y2="83.49" stroke-opacity="0.55" stroke-width="1"/><line x1="200.35" y1="76.18" x2="198.32" y2="71.61" stroke-opacity="0.25" stroke-width="0.6"/><line x1="224.29" y1="66.99" x2="222.75" y2="62.24" stroke-opacity="0.25" stroke-width="0.6"/><line x1="249.06" y1="60.35" x2="248.02" y2="55.46" stroke-opacity="0.25" stroke-width="0.6"/><line x1="274.39" y1="56.34" x2="273.87" y2="51.37" stroke-opacity="0.25" stroke-width="0.6"/><line x1="300.00" y1="60.00" x2="300.00" y2="50.00" stroke-opacity="0.55" stroke-width="1"/><line x1="325.61" y1="56.34" x2="326.13" y2="51.37" stroke-opacity="0.25" stroke-width="0.6"/><line x1="350.94" y1="60.35" x2="351.98" y2="55.46" stroke-opacity="0.25" stroke-width="0.6"/><line x1="375.71" y1="66.99" x2="377.25" y2="62.24" stroke-opacity="0.25" stroke-width="0.6"/><line x1="399.65" y1="76.18" x2="401.68" y2="71.61" stroke-opacity="0.25" stroke-width="0.6"/><line x1="420.00" y1="92.15" x2="425.00" y2="83.49" stroke-opacity="0.55" stroke-width="1"/><line x1="444.01" y1="101.79" x2="446.95" y2="97.75" stroke-opacity="0.25" stroke-width="0.6"/><line x1="463.94" y1="117.93" x2="467.28" y2="114.21" stroke-opacity="0.25" stroke-width="0.6"/><line x1="482.07" y1="136.06" x2="485.79" y2="132.72" stroke-opacity="0.25" stroke-width="0.6"/><line x1="498.21" y1="155.99" x2="502.25" y2="153.05" stroke-opacity="0.25" stroke-width="0.6"/><line x1="507.85" y1="180.00" x2="516.51" y2="175.00" stroke-opacity="0.55" stroke-width="1"/><line x1="523.82" y1="200.35" x2="528.39" y2="198.32" stroke-opacity="0.25" stroke-width="0.6"/><line x1="533.01" y1="224.29" x2="537.76" y2="222.75" stroke-opacity="0.25" stroke-width="0.6"/><line x1="539.65" y1="249.06" x2="544.54" y2="248.02" stroke-opacity="0.25" stroke-width="0.6"/><line x1="543.66" y1="274.39" x2="548.63" y2="273.87" stroke-opacity="0.25" stroke-width="0.6"/>
+          </g>
+          <g class="qz-ring-b">
+            <circle class="qz-draw d2" cx="300" cy="300" r="200" stroke="currentColor" stroke-opacity=".2" stroke-dasharray="2 8"/>
+          </g>
+          <circle class="qz-draw d3" cx="300" cy="300" r="165" stroke="currentColor" stroke-opacity=".35"/>
+          <!-- pentagon of 5 elements connecting lines -->
+          <g class="qz-draw d4" stroke="#35845D" stroke-opacity=".5" stroke-width="1">
+            <polygon points="300,135 456.9243251887003,249.01219592813368 396.98456662825805,433.4878040718663 203.01543337174195,433.4878040718663 143.07567481129965,249.0121959281337" fill="none"/>
+          </g>
+          <!-- element vertex markers -->
+          <circle cx="300" cy="135" r="6" fill="#C8C6BF" stroke="#FBF7F0" stroke-width="2"/><circle cx="456.9243251887003" cy="249.01219592813368" r="6" fill="#8CB3B0" stroke="#FBF7F0" stroke-width="2"/><circle cx="396.98456662825805" cy="433.4878040718663" r="6" fill="#C67149" stroke="#FBF7F0" stroke-width="2"/><circle cx="203.01543337174195" cy="433.4878040718663" r="6" fill="#3A5068" stroke="#FBF7F0" stroke-width="2"/><circle cx="143.07567481129965" cy="249.0121959281337" r="6" fill="#9B6A3F" stroke="#FBF7F0" stroke-width="2"/>
+          <!-- center -->
+          <circle cx="300" cy="300" r="4" fill="#35845D" class="qz-core-pulse"/>
+          <!-- crosshair marks -->
+          <g stroke="#35845D" stroke-opacity=".7" stroke-width="1.2">
+            <path d="M260 300 L270 300 M330 300 L340 300 M300 260 L300 270 M300 330 L300 340"/>
+          </g>
+          <!-- corner brackets -->
+          <g stroke="currentColor" stroke-opacity=".4">
+            <path d="M60 100 L60 70 L90 70"/><path d="M540 100 L540 70 L510 70"/>
+            <path d="M60 500 L60 530 L90 530"/><path d="M540 500 L540 530 L510 530"/>
+          </g>
+        </svg>
+        <div class="qz-el-label e1" style="left:50%;top:8%;transform:translate(-50%,-50%)">
+            <span class="dot" style="background:#6B6963"></span>
+            <div class="char">空</div>
+            <div class="en">Space</div>
+          </div><div class="qz-el-label e2" style="left:89.94437368439645%;top:37.02128623625221%;transform:translate(-50%,-50%)">
+            <span class="dot" style="background:#4F7773"></span>
+            <div class="char">风</div>
+            <div class="en">Wind</div>
+          </div><div class="qz-el-label e3" style="left:74.68698059628387%;top:83.97871376374779%;transform:translate(-50%,-50%)">
+            <span class="dot" style="background:#8B4926"></span>
+            <div class="char">火</div>
+            <div class="en">Fire</div>
+          </div><div class="qz-el-label e4" style="left:25.313019403716133%;top:83.97871376374779%;transform:translate(-50%,-50%)">
+            <span class="dot" style="background:#263549"></span>
+            <div class="char">水</div>
+            <div class="en">Water</div>
+          </div><div class="qz-el-label e5" style="left:10.055626315603547%;top:37.021286236252216%;transform:translate(-50%,-50%)">
+            <span class="dot" style="background:#6B461F"></span>
+            <div class="char">地</div>
+            <div class="en">Earth</div>
+          </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUESTION SCREENS -->
+  <section class="qz-screen" id="q0"></section>
+  <section class="qz-screen" id="q1"></section>
+  <section class="qz-screen" id="q2"></section>
+  <section class="qz-screen" id="q3"></section>
+  <section class="qz-screen" id="q4"></section>
+  <section class="qz-screen" id="q5"></section>
+
+  <!-- RESULT -->
+  <section class="qz-screen" id="result"></section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand">
+        <div class="footer-logo">AwakenSphere</div>
+        <p class="footer-tagline"
+          data-zh="全球华语疗愈内容平台，连接真正致力于内在探索的人。"
+          data-en="A global Chinese-language healing platform, connecting those committed to inner exploration.">全球华语疗愈内容平台，<br>连接真正致力于内在探索的人。</p>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-h" data-zh="探索" data-en="EXPLORE">探索</h4>
+        <ul>
+          <li><a href="index.html#content" data-zh="内在图书馆" data-en="Inner Library">内在图书馆</a></li>
+          <li><a href="index.html#content" data-zh="播客" data-en="Podcast">播客</a></li>
+          <li><a href="index.html#content" data-zh="访谈" data-en="Interviews">访谈</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-h" data-zh="疗愈师" data-en="HEALERS">疗愈师</h4>
+        <ul>
+          <li><a href="healers.html" data-zh="疗愈师目录" data-en="All Healers">疗愈师目录</a></li>
+          <li><a href="#" data-zh="申请加入" data-en="Apply to Join">申请加入</a></li>
+          <li><a href="#" data-zh="合作课程" data-en="Partner Courses">合作课程</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-h" data-zh="关于" data-en="ABOUT">关于</h4>
+        <ul>
+          <li><a href="#" data-zh="我们的故事" data-en="Our Story">我们的故事</a></li>
+          <li><a href="quiz.html" data-zh="了解自己" data-en="Know Yourself">了解自己</a></li>
+          <li><a href="#" data-zh="联系我们" data-en="Contact">联系我们</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <span>© 2026 · AWAKENSPHERE · WHERE HEALING BECOMES AWAKENING</span>
+      <span class="footer-social">
+        <a href="#">INSTAGRAM</a>
+        <a href="#">小红书</a>
+        <a href="#">PRIVACY</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+
+/* ═══════════════════════════════════════════════════
+   QUIZ STATE & DATA  — 随遇而为
+   ═══════════════════════════════════════════════════ */
+(function(){
+
+/* ── Data: 5 elements ── */
+const ELEMENTS = {
+  space: { zh:'空', en:'Space', color:'#C8C6BF', ink:'#6B6963', desc_zh:'静、观、容纳、留白', desc_en:'Stillness, observation, spaciousness', path_zh:'冥想 · 正念 · 观照', path_en:'Meditation · Mindfulness' },
+  wind:  { zh:'风', en:'Wind',  color:'#8CB3B0', ink:'#4F7773', desc_zh:'流动、呼吸、表达、释放', desc_en:'Flow, breath, expression, release', path_zh:'呼吸 · 瑜伽 · 舞动', path_en:'Breath · Yoga · Movement' },
+  fire:  { zh:'火', en:'Fire',  color:'#C67149', ink:'#8B4926', desc_zh:'能量、热度、转化、激活', desc_en:'Energy, heat, transformation', path_zh:'灵气 · 脉轮 · 颂钵', path_en:'Reiki · Chakra · Sound' },
+  water: { zh:'水', en:'Water', color:'#3A5068', ink:'#263549', desc_zh:'感受、直觉、映照、流淌', desc_en:'Feeling, intuition, reflection', path_zh:'心理 · 塔罗 · 占星 · 人类图', path_en:'Psych · Tarot · Astro · HD' },
+  earth: { zh:'地', en:'Earth', color:'#9B6A3F', ink:'#6B461F', desc_zh:'承接、安住、触碰、滋养', desc_en:'Grounding, holding, touch, nourishment', path_zh:'伊莎兰按摩 · 身体疗愈', path_en:'Esalen · Bodywork' },
+};
+const EL_ORDER = ['space','wind','fire','water','earth'];
+
+/* ── Questions ── */
+const QUESTIONS = [
+  {
+    id: 'Q1', kind: 'single', poetic: true,
+    eyebrow_zh: 'Q1 · 近来的你', eyebrow_en: 'Q1 · You, Lately',
+    q_zh: '如果把最近的心绪轻轻摊开，你会看见……',
+    q_en: 'If you gently unfolded your recent state of mind, you would see…',
+    options: [
+      { zh:'一条无法停下的思绪之河，奔流不息', en:'A river of thought that will not stop', score:{space:2} },
+      { zh:'一根绷得太紧的弦，想被松一松',     en:'A string pulled too tight, wanting to loosen', score:{earth:2, wind:1} },
+      { zh:'一团说不清的东西，在胸口涌动',     en:'Something unnamed, stirring in the chest',     score:{fire:2} },
+      { zh:'一个悬着的问号，想要一个答案',     en:'A question mark, looking for an answer',       score:{water:2} },
+    ],
+  },
+  {
+    id: 'Q2', kind: 'single',
+    eyebrow_zh: 'Q2 · 最想先调整的一件事', eyebrow_en: 'Q2 · First thing you want to tend to',
+    q_zh: '如果可以从一件事开始，你最想先照顾的是……',
+    q_en: 'If you could begin with just one thing, what would it be…',
+    options: [
+      { zh:'睡眠和专注——让脑子先安静下来', en:'Sleep and focus — let the mind quiet first',  score:{space:2} },
+      { zh:'身体——那些紧绷、酸痛、说不出口的不舒服', en:'The body — the tightness, aches, unspoken discomfort', score:{earth:2, wind:1} },
+      { zh:'情绪——别再被小事轻易卷走', en:'Emotion — not to be swept up so easily',    score:{space:1, water:1} },
+      { zh:'方向——看清自己要走去哪里', en:'Direction — to see where I am going',       score:{water:2} },
+      { zh:'生命力——让想做事、想爱的感觉回来', en:'Vitality — to bring the wanting back', score:{wind:1, fire:1} },
+    ],
+  },
+  {
+    id: 'Q3', kind: 'single',
+    eyebrow_zh: 'Q3 · 压力大的时候，你本能会……', eyebrow_en: 'Q3 · Under stress, you instinctively…',
+    q_zh: '选一个最像你的反应。',
+    q_en: 'Choose the one most like you.',
+    options: [
+      { zh:'一个人待着，关掉手机和所有声音', en:'Be alone — phone off, all sound off',        score:{space:2} },
+      { zh:'去运动、走路、跑步、跳舞',       en:'Move — walk, run, dance',                    score:{wind:2} },
+      { zh:'找人倾诉，或查资料、读书搞清楚问题', en:'Talk it out, or read to understand it',  score:{water:2} },
+      { zh:'泡澡、按摩、让身体被好好照顾',   en:'Bathe, get a massage, let the body be held', score:{earth:2} },
+      { zh:'点香、冥想、或打开一副塔罗牌',   en:'Incense, meditation, or a tarot spread',     score:{fire:1, water:1} },
+    ],
+  },
+  {
+    id: 'Q4', kind: 'single',
+    eyebrow_zh: 'Q4 · 你愿意以什么方式靠近疗愈', eyebrow_en: 'Q4 · How you like to approach healing',
+    q_zh: '面对疗愈这件事，你更想从哪一个方向走近它……',
+    q_en: 'When approaching healing, which direction feels right…',
+    options: [
+      { zh:'有心理学或神经科学的根据——想知道它"为什么有效"', en:'With psychology or neuroscience behind it — I want to know why it works', score:{water:2, space:1} },
+      { zh:'东方智慧和现代方法的结合，两边都借一点力',        en:'Eastern wisdom meets modern method — a little from each side',         score:{water:1, fire:1, space:1} },
+      { zh:'先跟着身体走，理论可以慢慢来',                     en:'Follow the body first; theory can come later',                        score:{wind:1, earth:2} },
+      { zh:'愿意体验一些感受先行、暂时说不清楚的方式',          en:'Open to feeling-first, hard-to-explain modalities',                  score:{fire:2} },
+    ],
+  },
+  {
+    id: 'Q5', kind: 'multi',
+    eyebrow_zh: 'Q5 · 你已经走过哪些路', eyebrow_en: 'Q5 · Paths you have walked',
+    q_zh: '下面这些方式，你曾经接触过哪些？',
+    q_en: 'Which of these have you encountered?',
+    sub_zh: '多选。我们会先从你熟悉的方向里为你挑人，也会留一点空间给新的可能。',
+    sub_en: 'Multiple select. We will draw first from what you know, but leave room for the new.',
+    options: [
+      { zh:'冥想 App / 正念练习',                 en:'Meditation apps / mindfulness practice',    tag:'space' },
+      { zh:'瑜伽 / 普拉提 / 舞动 / 呼吸练习',       en:'Yoga / pilates / dance / breathwork',       tag:'wind' },
+      { zh:'心理咨询 / 读心理学类书籍',             en:'Therapy / reading psychology',              tag:'water' },
+      { zh:'塔罗 / 占星 / 人类图',                 en:'Tarot / astrology / human design',          tag:'water' },
+      { zh:'按摩 / SPA / 身体护理',                 en:'Massage / spa / body care',                 tag:'earth' },
+      { zh:'能量疗愈 / 灵气 / 颂钵',               en:'Energy work / reiki / sound healing',       tag:'fire' },
+      { zh:'以上都没有，这是我的第一次靠近',          en:'None of the above — this is my first time', tag:'new' },
+    ],
+  },
+  {
+    id: 'Q6', kind: 'single',
+    eyebrow_zh: 'Q6 · 你希望这次疗愈的节奏', eyebrow_en: 'Q6 · The rhythm you are looking for',
+    q_zh: '你希望这一次的疗愈，以什么样的节奏展开？',
+    q_en: 'How would you like this healing to unfold?',
+    options: [
+      { zh:'每天 15–30 分钟，能一点点融进日常',  en:'15–30 minutes a day, woven into daily life',   format:'daily', format_zh:'线上短课 · 音频练习', format_en:'Short online courses · Audio' },
+      { zh:'想有一位疗愈师 1 对 1 陪我深入一次', en:'One healer, 1-on-1, for a deeper session',    format:'one',   format_zh:'1 对 1 咨询 · 深度引导', format_en:'1-on-1 · Deep guidance' },
+      { zh:'想和一群人一起共修，有能量场也有彼此', en:'A group — field and companions together',    format:'group', format_zh:'小组课 · 工作坊 · 共修营', format_en:'Group class · Workshop' },
+      { zh:'想给身体一次完整的线下体验',          en:'One full in-person experience for the body', format:'offline',format_zh:'线下 · 身体疗愈 · 伊莎兰', format_en:'In-person bodywork' },
+    ],
+  },
+];
+
+/* ── Healer library ── */
+const HEALERS = {
+  space_daily: { name_en:'Naomi Chen', name_cn:'陈若南', tag_zh:'"呼吸科学 × 正念，把思绪安定下来"', tag_en:'"Breath science and mindfulness, for settling thought"', img:'linear-gradient(135deg,#5A6B5D 0%,#8BA28A 60%,#C1CFB8 100%)', tag_ch:'空', tag_color:'#6B6963', format_zh:'线上短课 · 音频', format_en:'Short courses · Audio' },
+  space_one:   { name_en:'Naomi Chen', name_cn:'陈若南', tag_zh:'"1 对 1 观照引导，为过度思考的人而设"', tag_en:'"1-on-1 insight practice for the over-thinking mind"', img:'linear-gradient(135deg,#5A6B5D 0%,#8BA28A 60%,#C1CFB8 100%)', tag_ch:'空', tag_color:'#6B6963', format_zh:'1 对 1 · 深度引导', format_en:'1-on-1 · Guided' },
+  space_group: { name_en:'Naomi Chen', name_cn:'陈若南', tag_zh:'"共修静坐小组，四周 · 周日清晨"', tag_en:'"Group sitting, four weeks, Sunday mornings"',       img:'linear-gradient(135deg,#5A6B5D 0%,#8BA28A 60%,#C1CFB8 100%)', tag_ch:'空', tag_color:'#6B6963', format_zh:'小组共修 · 4 周', format_en:'Group · 4 weeks' },
+
+  wind_daily:  { name_en:'Rishi Patel', name_cn:'瑞诗 · 帕特尔', tag_zh:'"每日呼吸练习 · 把身体从焦虑里带回来"', tag_en:'"Daily breath practice to bring the body home"',      img:'linear-gradient(135deg,#4F7773 0%,#8CB3B0 60%,#BCD3CF 100%)', tag_ch:'风', tag_color:'#4F7773', format_zh:'音频练习 · 每日 10 分钟', format_en:'Audio · 10 min daily' },
+  wind_group:  { name_en:'Rishi Patel', name_cn:'瑞诗 · 帕特尔', tag_zh:'"阿斯汤加工作坊 · 流动与呼吸共修"', tag_en:'"Ashtanga workshop — flow and breath together"',      img:'linear-gradient(135deg,#4F7773 0%,#8CB3B0 60%,#BCD3CF 100%)', tag_ch:'风', tag_color:'#4F7773', format_zh:'工作坊 · 周末', format_en:'Workshop · Weekend' },
+  wind_offline:{ name_en:'Rishi Patel', name_cn:'瑞诗 · 帕特尔', tag_zh:'"线下私教 · 哈他与呼吸法"', tag_en:'"In-person private — hatha and pranayama"',            img:'linear-gradient(135deg,#4F7773 0%,#8CB3B0 60%,#BCD3CF 100%)', tag_ch:'风', tag_color:'#4F7773', format_zh:'线下 · 1 对 1', format_en:'In-person · 1-on-1' },
+
+  water_one:   { name_en:'Dr. Mei Lin', name_cn:'林薇', tag_zh:'"心理学 × 占星，清醒地看清自己"', tag_en:'"Psychology meets astrology — seeing yourself clearly"', img:'linear-gradient(135deg,#263549 0%,#3A5068 60%,#6B859A 100%)', tag_ch:'水', tag_color:'#263549', format_zh:'1 对 1 · 90 分钟', format_en:'1-on-1 · 90 min' },
+  water_daily: { name_en:'Dr. Mei Lin', name_cn:'林薇', tag_zh:'"自我觉察音频系列 · 30 天"', tag_en:'"Self-inquiry audio series — 30 days"',                  img:'linear-gradient(135deg,#263549 0%,#3A5068 60%,#6B859A 100%)', tag_ch:'水', tag_color:'#263549', format_zh:'音频 · 30 天', format_en:'Audio · 30 days' },
+  water_group: { name_en:'Dr. Mei Lin', name_cn:'林薇', tag_zh:'"小组工作坊 · 从星盘读情绪地图"', tag_en:'"Group workshop — reading the emotional chart"',       img:'linear-gradient(135deg,#263549 0%,#3A5068 60%,#6B859A 100%)', tag_ch:'水', tag_color:'#263549', format_zh:'小组 · 6 人', format_en:'Group · 6 people' },
+
+  earth_offline:{ name_en:'Zoe Zhao', name_cn:'赵梓桐', tag_zh:'"伊莎兰按摩 · 让身体先放下"', tag_en:'"Esalen bodywork — let the body release first"',          img:'linear-gradient(135deg,#6B461F 0%,#9B6A3F 60%,#C49060 100%)', tag_ch:'地', tag_color:'#6B461F', format_zh:'线下 · 90 分钟', format_en:'In-person · 90 min' },
+  earth_one:    { name_en:'Zoe Zhao', name_cn:'赵梓桐', tag_zh:'"身体觉察 1 对 1 · 触碰与呼吸"', tag_en:'"1-on-1 somatic — touch and breath"',                    img:'linear-gradient(135deg,#6B461F 0%,#9B6A3F 60%,#C49060 100%)', tag_ch:'地', tag_color:'#6B461F', format_zh:'1 对 1 · 线下', format_en:'1-on-1 · In-person' },
+  earth_group:  { name_en:'Zoe Zhao', name_cn:'赵梓桐', tag_zh:'"身体释放工作坊 · 周末"', tag_en:'"Body-release workshop — weekend"',                         img:'linear-gradient(135deg,#6B461F 0%,#9B6A3F 60%,#C49060 100%)', tag_ch:'地', tag_color:'#6B461F', format_zh:'工作坊 · 周末', format_en:'Workshop · Weekend' },
+
+  fire_daily:  { name_en:'Anya Korova', name_cn:'安雅 · 科洛娃', tag_zh:'"颂钵冥想音频 · 激活与转化"', tag_en:'"Singing-bowl audio — activation and transformation"', img:'linear-gradient(135deg,#8B4926 0%,#C67149 60%,#E3A078 100%)', tag_ch:'火', tag_color:'#8B4926', format_zh:'音频 · 15 分钟', format_en:'Audio · 15 min' },
+  fire_one:    { name_en:'Anya Korova', name_cn:'安雅 · 科洛娃', tag_zh:'"1 对 1 能量疗愈 · 脉轮调频"', tag_en:'"1-on-1 energy work — chakra tuning"',              img:'linear-gradient(135deg,#8B4926 0%,#C67149 60%,#E3A078 100%)', tag_ch:'火', tag_color:'#8B4926', format_zh:'1 对 1 · 60 分钟', format_en:'1-on-1 · 60 min' },
+  fire_group:  { name_en:'Anya Korova', name_cn:'安雅 · 科洛娃', tag_zh:'"颂钵静修 · 周末营"', tag_en:'"Singing-bowl retreat — weekend"',                       img:'linear-gradient(135deg,#8B4926 0%,#C67149 60%,#E3A078 100%)', tag_ch:'火', tag_color:'#8B4926', format_zh:'周末营 · 2 天', format_en:'Retreat · 2 days' },
+};
+function healerByElFormat(el, fmt) {
+  const key = `${el}_${fmt}`;
+  if (HEALERS[key]) return { ...HEALERS[key], fallback:false };
+  // fallback: any format for this element
+  const any = Object.keys(HEALERS).find(k => k.startsWith(el + '_'));
+  if (any) return { ...HEALERS[any], fallback:true };
+  return null;
+}
+
+/* ── State ── */
+const state = {
+  step: 'intro', // intro | q0..q5 | result
+  answers: {},   // Q1..Q6 -> optionIndex (or array for Q5)
+};
+
+/* ── DOM refs ── */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+/* ── Render ── */
+function showScreen(id) {
+  $$('.qz-screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+  updateProgress();
+}
+
+function updateProgress() {
+  const segs = $$('.qz-progress .rail .seg');
+  const crumb = $('.qz-progress .crumb');
+  let idx;
+  if (state.step === 'intro') idx = -1;
+  else if (state.step === 'result') idx = 6;
+  else idx = parseInt(state.step.slice(1), 10);
+
+  segs.forEach((s, i) => {
+    s.classList.toggle('done', i < idx);
+    s.classList.toggle('cur', i === idx);
+  });
+
+  if (state.step === 'intro') {
+    crumb.innerHTML = '<span data-lang="zh">介绍</span><span data-lang="en">Intro</span>';
+  } else if (state.step === 'result') {
+    crumb.innerHTML = '<span data-lang="zh">你的结果</span><span data-lang="en">Your Result</span>';
+  } else {
+    const n = idx + 1;
+    crumb.innerHTML = `<em>${String(n).padStart(2,'0')}</em> <span data-lang="zh">/ 共 06</span><span data-lang="en">/ of 06</span>`;
+  }
+}
+
+function renderQuestion(qIdx) {
+  const Q = QUESTIONS[qIdx];
+  const screenId = `q${qIdx}`;
+  const screen = document.getElementById(screenId);
+  const isMulti = Q.kind === 'multi';
+  const selected = state.answers[Q.id];
+
+  screen.innerHTML = `
+    <div class="qz-q ${Q.poetic ? 'poetic' : ''}">
+      <div class="qz-q-left">
+        <div class="qz-q-index">
+          <span class="num">${String(qIdx+1).padStart(2,'0')}</span>
+          <div>
+            <div class="of">/ 06</div>
+          </div>
+        </div>
+        <div class="qz-q-eyebrow">
+          <span data-lang="zh">${Q.eyebrow_zh}</span><span data-lang="en">${Q.eyebrow_en}</span>
+        </div>
+        <h2 class="qz-q-title">
+          <span data-lang="zh">${Q.q_zh}</span><span data-lang="en">${Q.q_en}</span>
+        </h2>
+        ${Q.sub_zh ? `<p class="qz-q-sub"><span data-lang="zh">${Q.sub_zh}</span><span data-lang="en">${Q.sub_en}</span></p>` : ''}
+        <div class="qz-q-hint">
+          <span data-lang="zh">${isMulti ? '可多选 · 选完后点下一题' : '单选 · 选中后自动进入下一题'}</span>
+          <span data-lang="en">${isMulti ? 'Multi-select · tap Next when done' : 'Single · auto-advance'}</span>
+        </div>
+      </div>
+
+      <div>
+        <div class="qz-opts">
+          ${Q.options.map((opt, i) => `
+            <button class="qz-opt ${isMulti ? 'multi' : ''} ${
+              (isMulti ? (selected && selected.includes(i)) : selected === i) ? 'selected' : ''
+            }" data-opt="${i}">
+              <span class="qz-opt-ch">${String.fromCharCode(65+i)}</span>
+              <span class="qz-opt-text"><span data-lang="zh">${opt.zh}</span><span data-lang="en">${opt.en}</span></span>
+              <span class="qz-opt-arr">${isMulti ? '✓' : '→'}</span>
+            </button>
+          `).join('')}
+        </div>
+        <div class="qz-q-foot">
+          <button class="qz-back" ${qIdx === 0 ? 'disabled' : ''}>
+            <span data-lang="zh">← 上一题</span><span data-lang="en">← Previous</span>
+          </button>
+          <button class="qz-next" ${isMulti ? '' : 'style="display:none"'} data-next>
+            <span data-lang="zh">下一题</span><span data-lang="en">Next</span>
+            <span class="arr">→</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // bindings
+  screen.querySelectorAll('.qz-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.opt, 10);
+      if (isMulti) {
+        const arr = state.answers[Q.id] || [];
+        const idx = arr.indexOf(i);
+        if (idx >= 0) arr.splice(idx, 1); else arr.push(i);
+        state.answers[Q.id] = arr;
+        btn.classList.toggle('selected');
+        // Enable next button
+        const nextBtn = screen.querySelector('[data-next]');
+        nextBtn.disabled = arr.length === 0;
+      } else {
+        state.answers[Q.id] = i;
+        screen.querySelectorAll('.qz-opt').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        // auto advance
+        setTimeout(() => gotoNext(qIdx), 420);
+      }
+    });
+  });
+
+  // next button for multi
+  const nextBtn = screen.querySelector('[data-next]');
+  if (nextBtn) {
+    const arr = state.answers[Q.id] || [];
+    nextBtn.disabled = arr.length === 0;
+    nextBtn.addEventListener('click', () => gotoNext(qIdx));
+  }
+
+  // back
+  screen.querySelector('.qz-back').addEventListener('click', () => {
+    if (qIdx === 0) { state.step = 'intro'; showScreen('intro'); }
+    else { state.step = `q${qIdx-1}`; renderQuestion(qIdx-1); showScreen(`q${qIdx-1}`); }
+  });
+}
+
+function gotoNext(qIdx) {
+  if (qIdx < QUESTIONS.length - 1) {
+    state.step = `q${qIdx+1}`;
+    renderQuestion(qIdx+1);
+    showScreen(`q${qIdx+1}`);
+  } else {
+    state.step = 'result';
+    renderResult();
+    showScreen('result');
+  }
+}
+
+/* ── Scoring ── */
+function computeScores() {
+  const s = { space:0, wind:0, fire:0, water:0, earth:0 };
+  ['Q1','Q2','Q3','Q4'].forEach(qid => {
+    const q = QUESTIONS.find(x => x.id === qid);
+    const i = state.answers[qid];
+    if (i == null) return;
+    const sc = q.options[i].score || {};
+    Object.keys(sc).forEach(k => s[k] += sc[k]);
+  });
+  return s;
+}
+
+function familiarTags() {
+  const a = state.answers.Q5 || [];
+  const tags = new Set();
+  const q5 = QUESTIONS.find(x => x.id === 'Q5');
+  a.forEach(i => { const t = q5.options[i].tag; if (t && t !== 'new') tags.add(t); });
+  return tags;
+}
+
+function chosenFormat() {
+  const i = state.answers.Q6;
+  if (i == null) return 'daily';
+  return QUESTIONS.find(x => x.id === 'Q6').options[i].format;
+}
+
+function renderResult() {
+  const scores = computeScores();
+  const ranked = EL_ORDER.slice().sort((a,b) => scores[b] - scores[a]);
+  const [top1, top2, top3] = ranked;
+  const fam = familiarTags();
+  const fmt = chosenFormat();
+
+  // Choose healers — 3 slots
+  // Slot 1: top1
+  // Slot 2: top2 (prefer familiar; else find highest familiar)
+  // Slot 3: expand — highest-score but NOT familiar
+  let slot1 = top1;
+  let slot2 = top2;
+  if (!fam.has(top2)) {
+    const firstFamiliar = ranked.find(el => fam.has(el) && el !== top1);
+    if (firstFamiliar) slot2 = firstFamiliar;
+  }
+  let slot3 = ranked.find(el => !fam.has(el) && el !== slot1 && el !== slot2) || ranked[2];
+
+  // If user is "new" (no familiar): use top 3 directly, mark all as gentle
+  const isNew = (state.answers.Q5 || []).some(i => {
+    const q5 = QUESTIONS.find(x => x.id === 'Q5');
+    return q5.options[i].tag === 'new';
+  }) && fam.size === 0;
+  if (isNew) { slot1 = top1; slot2 = top2; slot3 = top3; }
+
+  const healerSlot1 = healerByElFormat(slot1, fmt);
+  const healerSlot2 = healerByElFormat(slot2, fmt);
+  const healerSlot3 = healerByElFormat(slot3, fmt);
+
+  // Build result markup
+  const el1 = ELEMENTS[top1], el2 = ELEMENTS[top2];
+  const poemZH = `你最鲜明的两个面向，是「${el1.zh} · ${el2.zh}」。这说明你既懂得${firstLine(el1,'zh')}，也愿意${secondLine(el2,'zh')}——像${imagery(top1,top2,'zh')}。`;
+  const poemEN = `Your two most defined facets are "${el1.en} · ${el2.en}". You know how to ${firstLine(el1,'en')}, and are willing to ${secondLine(el2,'en')} — like ${imagery(top1,top2,'en')}.`;
+
+  document.getElementById('result').innerHTML = `
+    <div class="qz-result">
+      <div class="qz-result-top">
+        <div>
+          <div class="qz-result-eyebrow">
+            <span data-lang="zh">你的内在坐标</span><span data-lang="en">Your Inner Coordinate</span>
+          </div>
+          <h1 class="qz-result-title">
+            <span data-lang="zh"><em>${el1.zh} · ${el2.zh}</em>。<br/>安，而且<em>澄</em>。</span>
+            <span data-lang="en"><em>${el1.en} · ${el2.en}</em>.<br/>Quiet, and <em>clear</em>.</span>
+          </h1>
+          <p class="qz-result-poem">
+            <span data-lang="zh">${poemZH}</span>
+            <span data-lang="en">${poemEN}</span>
+          </p>
+          <div class="qz-result-note">
+            <span data-lang="zh">这张图记录的是你此刻的状态，不是你永远的样子</span>
+            <span data-lang="en">A snapshot of this moment — not a verdict on who you are</span>
+          </div>
+        </div>
+
+        <div class="qz-radar-box" id="radarBox">
+          ${buildRadarSVG(scores)}
+          ${EL_ORDER.map((k,i) => {
+            const pos = labelPosition(i, EL_ORDER.length);
+            return `<div class="qz-axis-label" style="left:${pos.x}%;top:${pos.y}%">
+              <div class="ch">${ELEMENTS[k].zh}</div>
+              <div class="en">${ELEMENTS[k].en}</div>
+              <div class="score">${scores[k]}</div>
+            </div>`;
+          }).join('')}
+          <div class="qz-radar-caption">
+            <span data-lang="zh">五元素坐标 · PANCHA BHUTA</span>
+            <span data-lang="en">FIVE ELEMENTS · PANCHA BHUTA</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- healers -->
+      <div class="qz-healers">
+        <div class="qz-healers-head">
+          <div class="qz-healers-title">
+            <span data-lang="zh">为你 <em>挑</em> 的三位</span>
+            <span data-lang="en">Three, chosen <em>for you</em></span>
+          </div>
+          <div class="qz-bands-note">
+            <span data-lang="zh">按你的方向与节奏匹配</span>
+            <span data-lang="en">By direction + rhythm</span>
+          </div>
+        </div>
+        <div class="qz-healer-grid">
+          ${healerCard(healerSlot1, slot1, 1, false, fmt)}
+          ${healerCard(healerSlot2, slot2, 2, false, fmt)}
+          ${healerCard(healerSlot3, slot3, 3, true,  fmt)}
+        </div>
+      </div>
+
+      <!-- end -->
+      <div class="qz-end">
+        <div class="qz-end-msg">
+          <span data-lang="zh">"无论你选择哪一条路，我们都会陪你慢慢走。"</span>
+          <span data-lang="en">"Whichever path you choose, we walk with you, slowly."</span>
+        </div>
+        <div class="qz-end-actions">
+          <a class="qz-end-primary" href="healers.html">
+            <span data-lang="zh">预约第一次疗愈</span>
+            <span data-lang="en">Book your first session</span>
+            <span class="arr" style="font-family:var(--serif);font-style:italic;">→</span>
+          </a>
+          <button class="qz-end-ghost" id="qzRetake">
+            <span data-lang="zh">重新测一次</span><span data-lang="en">Retake</span>
+          </button>
+          <button class="qz-end-ghost">
+            <span data-lang="zh">保存到相册</span><span data-lang="en">Save to album</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // animate band fills after mount
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      document.querySelectorAll('.qz-band-fill').forEach(f => {
+        f.style.width = f.dataset.pct + '%';
+      });
+    }, 200);
+  });
+
+  // retake
+  const rt = document.getElementById('qzRetake');
+  if (rt) rt.addEventListener('click', () => {
+    state.answers = {};
+    state.step = 'intro';
+    state._saved = false;
+    showScreen('intro');
+  });
+
+  // 写入 Supabase survey_responses（非阻塞，失败不影响结果展示）
+  if (typeof sb !== 'undefined' && !state._saved) {
+    state._saved = true;
+    try {
+      sb.from('survey_responses').insert({
+        answers: state.answers,
+        result_type: ranked[0]
+      }).then(function(){ console.log('问卷结果已保存'); })
+        .catch(function(e){ console.warn('问卷保存失败:', e); });
+    } catch(e) { console.warn('Supabase 未就绪:', e); }
+  }
+}
+
+function firstLine(el, lang) {
+  const map = {
+    space: {zh:'向内观察', en:'observe within'},
+    wind:  {zh:'在流动中找呼吸', en:'find breath in motion'},
+    fire:  {zh:'感受热度与转化', en:'meet heat and change'},
+    water: {zh:'用理解走近自己', en:'approach yourself by understanding'},
+    earth: {zh:'让身体先安住', en:'let the body settle'},
+  };
+  return map[el.en.toLowerCase()][lang];
+}
+function secondLine(el, lang) {
+  const map = {
+    space: {zh:'留出空间', en:'leave space'},
+    wind:  {zh:'用流动释放', en:'release through flow'},
+    fire:  {zh:'用热度转化', en:'transform through heat'},
+    water: {zh:'用感受认识', en:'know through feeling'},
+    earth: {zh:'用身体承接', en:'be held by the body'},
+  };
+  return map[el.en.toLowerCase()][lang];
+}
+function imagery(a, b, lang) {
+  const m = {
+    zh: '一湾静水映着一面镜子',
+    en: 'still water reflecting a clear mirror',
+  };
+  return m[lang];
+}
+
+function healerCard(h, el, slot, expand, fmt) {
+  if (!h) return '';
+  const elObj = ELEMENTS[el];
+  const fmtLabel = h.fallback
+    ? `<span data-lang="zh">暂无${qFormatLabel(fmt,'zh')}，建议从 ${h.format_zh} 开始</span><span data-lang="en">No ${qFormatLabel(fmt,'en')} yet — start with ${h.format_en}</span>`
+    : `<span data-lang="zh">${h.format_zh}</span><span data-lang="en">${h.format_en}</span>`;
+  const why = whyText(el, slot, expand);
+  return `
+    <article class="qz-h-card">
+      <div class="qz-h-badge ${expand?'expand':''}">
+        ${expand
+          ? `◊ <span data-lang="zh">也许你也可以试试</span><span data-lang="en">Perhaps, also try</span>`
+          : `◊ <span data-lang="zh">熟悉的方向 · Slot 0${slot}</span><span data-lang="en">Familiar direction · Slot 0${slot}</span>`}
+      </div>
+      <div class="qz-h-portrait" style="background:${h.img}">
+        <span class="el-tag" style="background:${h.tag_color}">${elObj.zh} · ${elObj.en}</span>
+        <span class="ph-num">N°${String(slot).padStart(2,'0')}</span>
+      </div>
+      <h3 class="qz-h-name">${h.name_en}<span class="cn">${h.name_cn}</span></h3>
+      <p class="qz-h-tagline">${escapeLang(h.tag_zh, h.tag_en)}</p>
+      <div class="qz-h-why">
+        <div class="qz-h-why-label"><span data-lang="zh">为什么推荐</span><span data-lang="en">Why this one</span></div>
+        <div class="qz-h-why-text">${why}</div>
+      </div>
+      <div class="qz-h-format">${fmtLabel}</div>
+      <a class="qz-h-cta" href="healer.html?id=zoe">
+        <span><span data-lang="zh">查看档案</span><span data-lang="en">View profile</span></span>
+        <span class="arr">→</span>
+      </a>
+    </article>
+  `;
+}
+
+function qFormatLabel(f, lang) {
+  const m = {
+    daily: {zh:'每日短课', en:'daily course'},
+    one:   {zh:'1 对 1',   en:'1-on-1'},
+    group: {zh:'小组课',   en:'group class'},
+    offline:{zh:'线下体验', en:'in-person'},
+  };
+  return (m[f] || m.daily)[lang];
+}
+function escapeLang(zh, en) {
+  return `<span data-lang="zh">${zh}</span><span data-lang="en">${en}</span>`;
+}
+function whyText(el, slot, expand) {
+  const el_ = ELEMENTS[el];
+  if (expand) {
+    const m = {
+      space: {zh:'静坐可能是你还没深入过的方向。当心里太满时，从"不做"开始，常常比从"做什么"开始更有效。',
+              en:'Stillness may be a path you haven\'t gone deep into. When things feel too full, starting from "not doing" often works better than from "doing more."'},
+      wind:  {zh:'呼吸与流动可能是你还未深入过的方向——当脑子绕不开时，从身体的节奏开始，常常比从思考开始更有效。',
+              en:'Breath and flow may be a new direction — when the mind loops, starting from rhythm often works better than from thought.'},
+      fire:  {zh:'能量与颂钵可能是你还没体验过的方向。有时候"说不清却被触动"本身就是疗愈的开始。',
+              en:'Energy work and sound may be new to you. Sometimes being moved without words is where healing begins.'},
+      water: {zh:'心理学或星盘可能是你还未接触过的方向。把自己看清楚，常常是放下的第一步。',
+              en:'Psychology or astrology may be new. Seeing yourself clearly is often the first step toward letting go.'},
+      earth: {zh:'伊莎兰按摩可能是你还没体验过的方向。当头脑太忙时，从身体开始放松，常常比从思考开始更有效。',
+              en:'Esalen bodywork may be a new path. When the mind is too busy, starting from the body often works better than from thought.'},
+    };
+    return escapeLang(m[el].zh, m[el].en);
+  }
+  const m = {
+    space: {zh:'因为你最近最突出的状态是"想得太多"，而你也熟悉这条路——这位老师从呼吸科学切入，适合从身体层面先把思绪安定下来。',
+            en:'Your most prominent state lately is "thinking too much" — and you know this path. This teacher works from the science of breath, easing the mind through the body first.'},
+    wind:  {zh:'你的身体希望流动起来，而你熟悉瑜伽/呼吸的方式——这位老师把阿斯汤加与 pranayama 结合，适合你当下需要的那种"动着才能静下来"。',
+            en:'Your body asks for motion, and yoga/breathwork is familiar ground — this teacher blends ashtanga with pranayama, well suited to the kind of stillness that only comes through motion.'},
+    fire:  {zh:'你对能量 / 颂钵已经有感觉，这位老师的练习会帮你把内在未命名的热度，安全地转化。',
+            en:'Energy and sound already speak to you — this teacher will help transform the unnamed heat within, gently and safely.'},
+    water: {zh:'你对塔罗 / 占星 / 心理已经有接触，这位老师擅长把星盘与心理学结合，适合你想要的"清醒地看清自己"。',
+            en:'You already know tarot / astrology / psychology. This teacher blends the chart with the mind — good for the kind of seeing you are after.'},
+    earth: {zh:'你熟悉身体层面的工作，这位老师用伊莎兰按摩的节奏，帮你在触碰与呼吸中把身体释放出来。',
+            en:'Bodywork is familiar ground for you. This teacher uses the rhythm of Esalen — release through touch and breath.'},
+  };
+  return escapeLang(m[el].zh, m[el].en);
+}
+
+/* ── Radar SVG ── */
+function buildRadarSVG(scores) {
+  const size = 520, cx = size/2, cy = size/2;
+  const maxR = 180;
+  const n = EL_ORDER.length;
+  // Rings (1/4, 2/4, 3/4, 4/4)
+  const rings = [0.25, 0.5, 0.75, 1].map(f => {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+      const a = -Math.PI/2 + i * 2*Math.PI/n;
+      const r = maxR * f;
+      pts.push([cx + Math.cos(a)*r, cy + Math.sin(a)*r]);
+    }
+    return pts.map(p => p.join(',')).join(' ');
+  });
+  // Axes
+  const axes = EL_ORDER.map((_, i) => {
+    const a = -Math.PI/2 + i * 2*Math.PI/n;
+    return `<line x1="${cx}" y1="${cy}" x2="${cx + Math.cos(a)*maxR}" y2="${cy + Math.sin(a)*maxR}" stroke="#1F1B17" stroke-opacity=".15" stroke-width="1"/>`;
+  }).join('');
+  // User shape
+  const maxScore = 8;
+  const userPts = EL_ORDER.map((k, i) => {
+    const a = -Math.PI/2 + i * 2*Math.PI/n;
+    const r = maxR * Math.min(1, scores[k] / maxScore);
+    return [cx + Math.cos(a)*r, cy + Math.sin(a)*r];
+  });
+  const shape = userPts.map(p => p.join(',')).join(' ');
+  // per-vertex dots
+  const dots = EL_ORDER.map((k, i) => {
+    const [x,y] = userPts[i];
+    return `<circle cx="${x}" cy="${y}" r="5" fill="${ELEMENTS[k].color}" stroke="#FBF7F0" stroke-width="2"/>`;
+  }).join('');
+  // Ring labels (25/50/75/100)
+  return `
+    <svg class="qz-radar-svg" viewBox="0 0 ${size} ${size}" fill="none">
+      <defs>
+        <radialGradient id="qzRadarGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#C4923C" stop-opacity=".45"/>
+          <stop offset="100%" stop-color="#35845D" stop-opacity=".15"/>
+        </radialGradient>
+      </defs>
+      <!-- rings -->
+      ${rings.map((pts, i) => `<polygon points="${pts}" stroke="#1F1B17" stroke-opacity="${i===3?.3:.12}" stroke-width="${i===3?1.2:.8}" fill="none" ${i===3?'':'stroke-dasharray="2 4"'}/>`).join('')}
+      <!-- axes -->
+      ${axes}
+      <!-- user filled shape -->
+      <polygon points="${shape}" fill="url(#qzRadarGrad)" stroke="#35845D" stroke-width="1.5"/>
+      ${dots}
+      <!-- center -->
+      <circle cx="${cx}" cy="${cy}" r="2.5" fill="#35845D"/>
+      <!-- ring labels at top axis -->
+      <g font-family="JetBrains Mono, monospace" font-size="9" fill="#8A7F72" letter-spacing="1.2">
+        <text x="${cx+5}" y="${cy - maxR*0.25 + 4}" opacity=".5">2</text>
+        <text x="${cx+5}" y="${cy - maxR*0.5 + 4}" opacity=".5">4</text>
+        <text x="${cx+5}" y="${cy - maxR*0.75 + 4}" opacity=".5">6</text>
+        <text x="${cx+5}" y="${cy - maxR + 4}" opacity=".5">8</text>
+      </g>
+    </svg>
+  `;
+}
+
+function labelPosition(i, n) {
+  const a = -Math.PI/2 + i * 2*Math.PI/n;
+  const radiusPct = 56;
+  const x = 50 + Math.cos(a) * radiusPct;
+  const y = 50 + Math.sin(a) * radiusPct;
+  return { x, y };
+}
+
+/* ── Intro / begin ── */
+function bindIntro() {
+  document.getElementById('qzBegin').addEventListener('click', () => {
+    state.step = 'q0';
+    renderQuestion(0);
+    showScreen('q0');
+  });
+}
+
+/* ── Init ── */
+document.addEventListener('DOMContentLoaded', () => {
+  bindIntro();
+  showScreen('intro');
+});
+
+})();
+
+</script>
+<script>
+(function(){
+  const dd = document.getElementById('navDd'); if (!dd) return;
+  const trig = document.getElementById('ddTrigger');
+  function close() { dd.classList.remove('open'); trig.setAttribute('aria-expanded','false'); }
+  trig.addEventListener('click', e => { e.stopPropagation();
+    const open = dd.classList.toggle('open');
+    trig.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', e => { if (!dd.contains(e.target)) close(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+})();
+/* 语言切换：统一由 common.js 管理（as_lang localStorage + html.lang + html.data-lang） */
+</script>
+
+<!-- 共享基础设施：Supabase 客户端 / data-zh/en 双语 / admin#hash 跳转 -->
+<script src="js/common.js?v=2"></script>
+</body></html>

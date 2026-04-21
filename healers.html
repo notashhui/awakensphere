@@ -1,0 +1,1999 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meet the Healers — AwakenSphere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- Supabase JS SDK（前台匿名读数据） -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+/* ═══════════════════════════════════════════════════
+   DESIGN SYSTEM — Editorial / Breathing / Magazine
+   ═══════════════════════════════════════════════════ */
+:root {
+  /* tweakable */
+  --accent:   #35845D;     /* primary green (kept) */
+  --blue:     #3672CD;
+  --orange:   #D89628;
+  --pink:     #C4497A;
+
+  /* neutrals — warm, sand-toned */
+  --bg:       #F5EFE6;     /* sand whisper */
+  --bg-alt:   #ECE3D4;     /* sand */
+  --bg-deep:  #2A2620;     /* ink brown */
+  --paper:    #FBF7F0;
+  --ink:      #1F1B17;
+  --ink-soft: #4A423A;
+  --muted:    #8A7F72;
+  --rule:     rgba(31,27,23,.12);
+  --rule-soft:rgba(31,27,23,.06);
+
+  /* typography */
+  --serif:    'Cormorant Garamond', 'Noto Serif SC', Georgia, serif;
+  --serif-zh: 'Noto Serif SC', 'Cormorant Garamond', serif;
+  --sans:     'Inter', 'Noto Sans SC', system-ui, sans-serif;
+  --mono:     'JetBrains Mono', ui-monospace, monospace;
+
+  /* scale — tweakable */
+  --display:  clamp(56px, 9.2vw, 132px);
+  --h1:       clamp(40px, 5.2vw, 72px);
+  --h2:       clamp(28px, 3vw, 44px);
+  --h3:       18px;
+  --body:     15px;
+  --small:    12px;
+
+  --radius:   2px;
+  --radius-lg:4px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background:var(--bg); color:var(--ink); }
+body {
+  font-family: var(--sans);
+  font-size: var(--body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01","cv11";
+  overflow-x: hidden;
+}
+a { color:inherit; text-decoration:none; }
+button { font-family:inherit; }
+img { max-width:100%; display:block; }
+
+/* type utilities */
+.serif { font-family:var(--serif); font-weight:400; letter-spacing:-.01em; }
+.serif-zh { font-family:var(--serif-zh); font-weight:400; }
+.mono { font-family:var(--mono); font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+.eyebrow {
+  font-family:var(--mono);
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: inline-flex; align-items:center; gap:10px;
+}
+.eyebrow::before { content:""; width:28px; height:1px; background:var(--accent); opacity:.9; }
+.eyebrow::after { content:"●"; color: var(--accent); font-size: 7px; margin-left:2px; }
+
+/* ── HEADER ───────────────────────────────── */
+.site-header {
+  position: sticky; top: 0; z-index: 80;
+  background: color-mix(in oklab, var(--bg) 86%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rule-soft);
+}
+.site-header-inner {
+  max-width: 1440px; margin: 0 auto;
+  padding: 18px 40px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.brand {
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: .32em;
+  color: var(--ink);
+}
+.nav {
+  display: flex; align-items: center; gap: 28px;
+}
+.lang {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--sans); font-size: 12px; letter-spacing: .14em;
+  color: var(--muted);
+}
+.lang button { background:none; border:none; cursor:pointer; color:var(--muted); font:inherit; padding:2px; }
+.lang button.on { color: var(--ink); border-bottom:1px solid var(--ink); }
+/* magnetic / fill button */
+.nav-btn, .btn-fx {
+  position: relative; overflow: hidden;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: .04em;
+  color: var(--ink);
+  padding: 10px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  cursor: pointer;
+  transition: color 1.8s ease, border-color 1.8s ease, transform 1.8s cubic-bezier(.22,.61,.36,1), background-color 1.8s ease;
+  isolation: isolate;
+}
+.nav-btn > *, .btn-fx > * { position: relative; z-index: 2; }
+.nav-btn .lbl, .btn-fx .lbl { position:relative; z-index:2; display:inline-flex; align-items:center; gap:8px; }
+.nav-btn::before, .btn-fx::before {
+  content:"";
+  position:absolute; left:50%; top:50%;
+  width:160%; aspect-ratio:1;
+  background: var(--accent);
+  border-radius: 50%;
+  transform: translate(-50%, calc(-50% + 130%)) scale(.15);
+  transition: transform 2.2s cubic-bezier(.22,.61,.36,1);
+  z-index: 1;
+}
+.nav-btn:hover, .btn-fx:hover { color: var(--paper); border-color: var(--accent); transform: translateY(-1px); }
+.nav-btn:hover::before, .btn-fx:hover::before { transform: translate(-50%, -50%) scale(1.3); }
+.nav-btn:active, .btn-fx:active { transform: translateY(0) scale(.99); transition-duration: .4s; }
+.nav-btn.solid { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.nav-btn.solid:hover { color: var(--paper); border-color: var(--accent); background: var(--ink); }
+
+/* ── NAV DROPDOWN ────────────────────── */
+.nav-dd { position: relative; }
+.nav-dd .dd-caret {
+  display: inline-block; margin-left: 6px; font-size: 9px;
+  transition: transform 1s cubic-bezier(.22,.61,.36,1);
+}
+.nav-dd.open .dd-caret { transform: rotate(180deg); }
+.dd-menu {
+  position: absolute; top: calc(100% + 14px); right: 0;
+  width: 340px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  padding: 8px;
+  box-shadow: 0 24px 60px rgba(31,27,23,.12);
+  opacity: 0; visibility: hidden;
+  transform: translateY(-8px);
+  transition: opacity .7s ease, transform .8s cubic-bezier(.22,.61,.36,1), visibility .7s;
+  z-index: 100;
+}
+.nav-dd.open .dd-menu {
+  opacity: 1; visibility: visible; transform: translateY(0);
+}
+.dd-menu::before {
+  content:""; position: absolute; top: -6px; right: 24px;
+  width: 10px; height: 10px; background: var(--paper);
+  border-left: 1px solid var(--ink); border-top: 1px solid var(--ink);
+  transform: rotate(45deg);
+}
+.dd-item {
+  display: grid; grid-template-columns: auto 1fr auto;
+  gap: 14px; align-items: start;
+  padding: 16px 14px;
+  border-radius: 3px;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background-color .8s ease;
+  position: relative;
+}
+.dd-item + .dd-item { border-top: 1px solid var(--rule-soft); }
+.dd-item:hover { background: rgba(53,132,93,.06); }
+.dd-item .dd-num {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .22em; color: var(--accent);
+  padding-top: 3px;
+}
+.dd-item .dd-title {
+  display: block;
+  font-family: var(--serif-zh); font-size: 15px;
+  font-weight: 500; color: var(--ink);
+  letter-spacing: .01em;
+}
+.dd-item .dd-desc {
+  display: block; margin-top: 4px;
+  font-family: var(--serif-zh); font-size: 12px;
+  line-height: 1.55; color: var(--muted);
+}
+.dd-item .dd-arrow {
+  font-family: var(--mono); font-size: 13px;
+  color: var(--muted); align-self: center;
+  transition: transform .9s cubic-bezier(.22,.61,.36,1), color .8s ease;
+}
+.dd-item:hover .dd-arrow { color: var(--accent); transform: translateX(4px); }
+
+/* ── HERO SHARED ──────────────────────────── */
+.hero {
+  position: relative;
+  min-height: calc(100vh - 72px);
+  padding: 0;
+  overflow: hidden;
+}
+.hero-stage {
+  position: relative;
+  width: 100%; height: calc(100vh - 72px);
+  min-height: 600px;
+  border-radius: 0;
+  overflow: hidden;
+  background: var(--bg-alt);
+}
+
+/* video layer on top of sand gradient */
+.hero-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+  z-index: 1;
+  background: var(--bg-alt);
+  /* zoom to crop out the letterbox bars baked into the source file */
+  transform: scale(1.14);
+  transform-origin: center;
+  filter: saturate(.92) contrast(.98) brightness(1.02);
+}
+.hero-video-overlay {
+  position: absolute; inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  /* subtle bottom fade for headline legibility only — no top/side gradients */
+  background:
+    linear-gradient(0deg, rgba(236,227,212,.55) 0%, rgba(236,227,212,.2) 18%, transparent 36%);
+}
+
+/* sand-toned atmospheric background (fallback) */
+.hero-bg {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 80% at 70% 60%, #C9B698 0%, #D4C4AE 35%, #E8DCCB 70%, #EFE4D4 100%);
+}
+.hero-bg::after {
+  content:"";
+  position: absolute; inset: 0;
+  z-index: 3;
+  background-image:
+    repeating-linear-gradient(115deg, rgba(255,255,255,0) 0 14px, rgba(255,255,255,.04) 14px 15px);
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+/* soft grain */
+.hero-bg::before {
+  content:"";
+  position: absolute; inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background-image: radial-gradient(circle at 10% 90%, rgba(0,0,0,.14), transparent 55%),
+                    radial-gradient(circle at 90% 10%, rgba(255,255,255,.18), transparent 50%);
+}
+
+/* placeholder caption (mono) */
+.photo-slot-label {
+  position: absolute; left: 24px; top: 24px;
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(42,38,32,.55);
+  padding: 5px 9px;
+  border: 1px solid rgba(42,38,32,.22);
+  border-radius: 2px;
+  background: rgba(245,239,230,.4);
+  backdrop-filter: blur(3px);
+  z-index: 5;
+  max-width: calc(100% - 48px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* hero content shared */
+.hero-content {
+  position: absolute; z-index: 4;
+  inset: 0;
+  padding: clamp(32px, 6vw, 84px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.hero-headline {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: var(--h1);
+  line-height: 1.02;
+  letter-spacing: -.015em;
+  color: var(--ink);
+  max-width: 15ch;
+  text-wrap: balance;
+}
+.hero-headline em {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 500;
+  position: relative;
+}
+.hero-tagline-block {
+  margin-top: clamp(36px, 5vw, 64px);
+  padding-top: 22px;
+  max-width: 420px;
+  border-top: 1px solid var(--ink);
+}
+.hero-brand {
+  font-family: var(--serif);
+  font-size: 20px;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+.hero-sub {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-soft);
+  letter-spacing: .02em;
+}
+
+/* scroll cue */
+.scroll-cue {
+  position: absolute; right: 32px; bottom: 28px;
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--mono);
+  font-size: 10px; letter-spacing: .22em;
+  color: var(--ink);
+  z-index: 5;
+}
+.scroll-cue .line { width: 40px; height: 1px; background: var(--ink); position: relative; overflow:hidden;}
+.scroll-cue .line::after { content:""; position:absolute; inset:0; background:var(--bg); transform-origin:right; animation: cueSlide 2.4s ease-in-out infinite;}
+@keyframes cueSlide {
+  0%   { transform: scaleX(1); transform-origin: right; }
+  50%  { transform: scaleX(0); transform-origin: right; }
+  51%  { transform: scaleX(0); transform-origin: left;  }
+  100% { transform: scaleX(1); transform-origin: left;  }
+}
+
+/* index chip top-right */
+.hero-index {
+  position: absolute; top: 28px; right: 32px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .22em;
+  color: var(--ink); z-index: 5;
+  display: flex; gap: 14px; align-items: center;
+}
+.hero-index span.dot { width: 6px; height:6px; border-radius:50%; background:var(--accent); box-shadow: 0 0 0 0 var(--accent); animation: dotPulse 2.4s ease-in-out infinite; }
+@keyframes dotPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(53,132,93,.5); } 50% { box-shadow: 0 0 0 8px rgba(53,132,93,0); } }
+.hero-index span.dot { width: 5px; height:5px; border-radius:50%; background:var(--accent); }
+
+/* ── HERO V1 — EDITORIAL STILL ──────────── */
+.hero[data-variant="still"] .hero-content {
+  padding: clamp(40px, 6vw, 96px);
+}
+
+/* ── HERO V2 — MOTION (word reveal + parallax) ── */
+.hero[data-variant="motion"] .hero-headline .word {
+  display: inline-block;
+  opacity: 0; transform: translateY(22px);
+  animation: wordUp .9s cubic-bezier(.2,.7,.2,1) forwards;
+}
+@keyframes wordUp {
+  to { opacity:1; transform:translateY(0); }
+}
+.hero[data-variant="motion"] .hero-bg {
+  transform: scale(1.06);
+  animation: driftBg 18s ease-in-out infinite alternate;
+}
+@keyframes driftBg {
+  from { transform: scale(1.04) translate(0,0); }
+  to   { transform: scale(1.10) translate(-1.5%,-1%); }
+}
+.hero[data-variant="motion"] .hero-headline em {
+  background: linear-gradient(transparent 78%, color-mix(in oklab, var(--accent) 22%, transparent) 78%);
+  padding: 0 .06em;
+}
+
+/* ── HERO V3 — SPLIT (dual column full width) ── */
+.hero[data-variant="split"] .hero-stage {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 0;
+}
+.hero[data-variant="split"] .hero-split-left {
+  position: relative;
+  background: var(--paper);
+  padding: clamp(40px, 5vw, 80px);
+  display: flex; flex-direction: column; justify-content: space-between;
+  border-right: 1px solid var(--rule);
+}
+.hero[data-variant="split"] .hero-split-right {
+  position: relative;
+  overflow: hidden;
+}
+.hero[data-variant="split"] .hero-content { display: none; }
+.hero[data-variant="split"] .split-headline {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(44px, 5.4vw, 82px);
+  line-height: 1.02; letter-spacing: -.02em;
+  margin-top: auto; margin-bottom: 32px;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.hero[data-variant="split"] .split-headline em { font-style: italic; color: var(--accent); font-weight: 500; }
+.hero[data-variant="split"] .split-meta {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  padding-top: 24px; border-top: 1px solid var(--rule);
+}
+.hero[data-variant="split"] .split-intro {
+  max-width: 28ch;
+  font-family: var(--serif-zh);
+  font-size: 15px;
+  color: var(--ink-soft);
+  line-height: 1.75;
+}
+
+/* ── SECTION STRUCTURE ───────────────────── */
+.container { max-width: 1440px; margin: 0 auto; padding: 0 40px; }
+section { padding: clamp(72px, 10vw, 140px) 0; }
+.section-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 40px;
+  margin-bottom: 56px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--ink);
+}
+.section-head h2 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(32px, 4vw, 56px);
+  line-height: 1.05;
+  letter-spacing: -.015em;
+  text-wrap: balance;
+  color: var(--ink);
+  max-width: 16ch;
+}
+.section-head h2 em { font-style: italic; color: var(--accent); font-weight: 500; }
+.section-head .meta-col {
+  display: flex; flex-direction: column; gap: 10px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+}
+.section-head .meta-col a {
+  color: var(--ink); border-bottom: 1px solid var(--ink);
+  padding-bottom: 2px; transition: color .2s, border-color .2s;
+}
+.section-head .meta-col a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* running index — thin bar at section top */
+.running-index {
+  display: flex; gap: 40px;
+  padding: 14px 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted);
+  overflow: hidden; white-space: nowrap;
+}
+.running-index .ri-inner { display:flex; gap:40px; animation: marquee 48s linear infinite; }
+.running-index span.sep { color: var(--accent); }
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+/* ── KNOW YOURSELF ENTRY MODULE ─────────── */
+.know {
+  position: relative;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.know-inner {
+  max-width: 1440px; margin: 0 auto; padding: clamp(80px,9vw,140px) 40px;
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(40px, 6vw, 120px);
+  align-items: center;
+}
+.know-label {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .3em;
+  color: var(--muted); margin-bottom: 22px;
+  display: inline-flex; align-items: center; gap: 12px;
+}
+.know-label::before { content:"◆"; color:var(--accent); font-size:8px; }
+.know h2 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(40px, 5.4vw, 80px);
+  line-height: 1.02; letter-spacing: -.02em;
+  margin-bottom: 28px; text-wrap: balance;
+}
+.know h2 em { font-style: italic; color: var(--accent); font-weight: 500; position: relative; }
+.know h2 em::after {
+  content:""; position:absolute; left:0; right:0; bottom:.06em; height:.08em;
+  background: var(--accent); opacity:.25;
+  transform-origin: left; transform: scaleX(0);
+  transition: transform 1.2s cubic-bezier(.2,.7,.2,1) .2s;
+}
+.reveal.in .know h2 em::after,
+.know.animate h2 em::after { transform: scaleX(1); }
+.know p.lede {
+  font-family: var(--serif-zh); font-size: 16px; line-height: 1.85;
+  color: var(--ink-soft); max-width: 38ch; margin-bottom: 36px;
+}
+.know-cta {
+  position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 14px;
+  padding: 16px 8px 16px 28px;
+  background: var(--accent); color: var(--paper);
+  border-radius: 999px;
+  font-family: var(--sans); font-size: 14px; font-weight: 500; letter-spacing: .02em;
+  border: none; cursor: pointer;
+  transition: transform 1s cubic-bezier(.22,.61,.36,1), box-shadow 1s ease;
+  isolation: isolate;
+  box-shadow: 0 4px 0 rgba(0,0,0,0);
+}
+.know-cta::before {
+  content:""; position:absolute; inset:0;
+  background: var(--ink);
+  transform: translateY(101%);
+  transition: transform 1.1s cubic-bezier(.22,.61,.36,1);
+  z-index: -1;
+}
+.know-cta:hover { transform: translateY(-2px); box-shadow: 0 16px 34px rgba(53,132,93,.28); }
+.know-cta:hover::before { transform: translateY(0); }
+.know-cta:active { transform: translateY(0) scale(.99); transition-duration: .3s; }
+.know-cta span.lbl { position: relative; z-index: 2; }
+.know-cta .arrow {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--paper); color: var(--accent);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 14px; position: relative; z-index: 2;
+  transition: transform .9s cubic-bezier(.22,.61,.36,1);
+}
+.know-cta:hover .arrow { transform: translateX(3px); }
+
+.know-viz {
+  position: relative;
+  aspect-ratio: 1/1;
+  display: grid; place-items: center;
+}
+/* concentric rings SVG (self) */
+.know-viz svg { width: 100%; height: auto; }
+.know-viz .ring { fill:none; stroke:var(--ink); stroke-width:0.6; }
+.know-viz .ring.accent { stroke:var(--accent); stroke-width:1; }
+.know-viz .label {
+  font-family: var(--mono); font-size: 8px; letter-spacing: .18em; text-transform: uppercase;
+  fill: var(--muted);
+}
+.know-viz .center-glyph {
+  font-family: var(--serif); font-style: italic; font-size: 36px; fill: var(--accent);
+}
+
+/* ── CONTENT EDITORIAL GRID ──────────────── */
+.content-list {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 48px 32px;
+}
+.entry {
+  grid-column: span 4;
+  display: flex; flex-direction: column; gap: 16px;
+  cursor: pointer;
+}
+.entry.featured { grid-column: span 6; }
+.entry-media {
+  aspect-ratio: 4/3;
+  background: var(--bg-alt);
+  position: relative; overflow: hidden;
+  border-radius: var(--radius);
+}
+.entry.featured .entry-media { aspect-ratio: 3/2; }
+.entry-media-inner {
+  position: absolute; inset: 0;
+  transition: transform .8s cubic-bezier(.2,.7,.2,1);
+}
+.entry:hover .entry-media-inner { transform: scale(1.04); }
+
+/* svg placeholder variants */
+.media-a { background: linear-gradient(135deg, #C9B698 0%, #D4C4AE 60%, #E8DCCB 100%); }
+.media-b { background: linear-gradient(135deg, #B3C2A8 0%, #CAD3B7 100%); }
+.media-c { background: linear-gradient(135deg, #B0BDD0 0%, #CCD5DF 100%); }
+.media-d { background: linear-gradient(135deg, #D4B6A0 0%, #E6CFB8 100%); }
+.media-e { background: linear-gradient(135deg, #C4B4C9 0%, #D9CEDC 100%); }
+.media-f { background: linear-gradient(135deg, #D2C59A 0%, #E2D8B1 100%); }
+
+.entry-media-shape {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  color: rgba(31,27,23,.32);
+}
+.entry-meta-top {
+  position: absolute; top: 14px; left: 14px; right: 14px;
+  display: flex; justify-content: space-between; align-items: center;
+  z-index: 2;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink);
+  mix-blend-mode: difference;
+  filter: invert(1);
+}
+.entry-category {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .24em; text-transform: uppercase;
+  color: var(--accent);
+}
+.entry-category.blue { color: var(--blue); }
+.entry-category.orange { color: var(--orange); }
+.entry-category.pink { color: var(--pink); }
+.entry-title {
+  font-family: var(--serif); font-weight: 400;
+  font-size: 22px; line-height: 1.18; letter-spacing: -.01em;
+  color: var(--ink);
+  text-wrap: pretty;
+  transition: color .25s;
+}
+.entry.featured .entry-title { font-size: 34px; }
+.entry:hover .entry-title { color: var(--accent); }
+.entry-excerpt {
+  font-family: var(--serif-zh); font-size: 14px; line-height: 1.75;
+  color: var(--ink-soft);
+}
+.entry-byline {
+  padding-top: 10px; margin-top: 4px;
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--muted);
+  border-top: 1px solid var(--rule);
+}
+.entry-byline strong { color: var(--ink); font-weight: 500; }
+
+/* ── HEALERS STRIP ───────────────────────── */
+.healers {
+  background: var(--bg-deep);
+  color: var(--paper);
+}
+.healers .section-head { border-bottom-color: rgba(255,255,255,.2); }
+.healers .section-head h2 { color: var(--paper); }
+.healers .section-head h2 em { color: #E9C58A; }
+.healers .section-head .meta-col { color: rgba(255,255,255,.45); }
+.healers .section-head .meta-col a { color: var(--paper); border-bottom-color: rgba(255,255,255,.4);}
+.healers .section-head .meta-col a:hover { color: #E9C58A; border-bottom-color: #E9C58A; }
+
+/* ── horizontal scroller ── */
+.healer-scroll-wrap {
+  position: relative;
+  margin: 0 -40px;
+}
+.healer-strip {
+  display: flex;
+  gap: 28px;
+  padding: 4px 40px 48px;
+  overflow-x: auto;
+  scroll-snap-type: none;
+  scrollbar-width: none;
+}
+.healer-strip::-webkit-scrollbar { display: none; }
+.healer-card {
+  cursor: pointer;
+  display: flex; flex-direction: column;
+  flex: 0 0 clamp(280px, 24vw, 360px);
+  scroll-snap-align: start;
+  min-width: 0;
+  transition: transform .6s cubic-bezier(.2,.7,.2,1);
+}
+
+.healer-quote {
+  font-family: Georgia, 'Times New Roman', 'Noto Serif SC', serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1.55;
+  color: rgba(255,255,255,.88);
+  letter-spacing: 0;
+  margin: 0 0 28px;
+  padding-right: 8px;
+  min-height: 9.5em;
+  text-wrap: pretty;
+}
+.healer-name-block { margin-top: auto; }
+.healer-quote br + * { margin-top: .5em; }
+.healer-card:hover { transform: translateY(-6px); }
+.healer-progress {
+  height: 1px; background: rgba(255,255,255,.15);
+  margin: 0 40px; position: relative;
+}
+.healer-progress-bar {
+  position: absolute; top:0; left:0; height:100%;
+  background: var(--accent);
+  width: 30%;
+  transition: width .3s ease, left .3s ease;
+}
+.healer-controls {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0 40px; margin-top: 22px;
+}
+.healer-controls .count {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .22em; color: rgba(255,255,255,.5);
+}
+.healer-nav {
+  display: flex; gap: 10px;
+}
+.hn-btn {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.3);
+  background: transparent; color: var(--paper);
+  cursor: pointer; display: inline-flex; align-items:center; justify-content:center;
+  transition: background-color .9s ease, border-color .9s ease, transform .9s cubic-bezier(.22,.61,.36,1), opacity .4s ease;
+  font-size: 14px;
+}
+.hn-btn:hover { background: var(--accent); border-color: var(--accent); transform: translateY(-1px); }
+.hn-btn:active { transform: translateY(0) scale(.97); transition-duration: .3s; }
+.hn-btn:disabled { opacity: .3; cursor: not-allowed; transform: none; background: transparent; }
+.healer-portrait {
+  aspect-ratio: 4/3;
+  background: var(--bg-alt);
+  position: relative; overflow: hidden;
+  border-radius: 0;
+  transition: transform .6s ease;
+  margin-bottom: 28px;
+}
+.healer-portrait-inner { position:absolute; inset:0; transition: transform .8s cubic-bezier(.2,.7,.2,1); }
+.healer-card:hover .healer-portrait-inner { transform: scale(1.06); }
+.healer-portrait::after {
+  content:"";
+  position: absolute; inset: auto 0 0 0; height: 0;
+  background: linear-gradient(180deg, transparent, var(--accent) 85%);
+  transition: height .5s cubic-bezier(.2,.7,.2,1);
+  mix-blend-mode: multiply;
+  opacity: 0;
+  z-index: 1;
+}
+.healer-card:hover .healer-portrait::after { height: 40%; opacity: .55; }
+.portrait-num {
+  display: none;
+}
+.portrait-loc {
+  display: none;
+}
+.portrait-a { background: linear-gradient(160deg,#D4C4AE,#B39D7E); }
+.portrait-b { background: linear-gradient(160deg,#CAD3B7,#8FA67E); }
+.portrait-c { background: linear-gradient(160deg,#CCD5DF,#8CA0B9); }
+.portrait-d { background: linear-gradient(160deg,#E6CFB8,#C49865); }
+.healer-name {
+  font-family: Georgia, 'Times New Roman', 'Noto Serif SC', serif; font-weight: 700;
+  font-size: 20px; line-height: 1.2; color: var(--paper);
+  letter-spacing: 0;
+}
+.healer-name .zh { display:block; font-family: Georgia, 'Noto Serif SC', serif; font-weight: 400; font-size:13px; color:rgba(255,255,255,.5); margin-top:6px; letter-spacing:0;}
+.healer-spec {
+  display: none;
+}
+
+/* ── EDITORIAL QUOTE / FOUNDER ──────────── */
+.quote {
+  background: var(--bg);
+  padding: clamp(100px, 14vw, 180px) 40px;
+  text-align: center;
+}
+.quote-inner { max-width: 1000px; margin: 0 auto; }
+.quote-mark {
+  font-family: var(--serif); font-style: italic;
+  font-size: 120px; line-height: .5; color: var(--accent);
+  margin-bottom: 24px;
+}
+.quote-text {
+  font-family: var(--serif-zh); font-weight: 300;
+  font-size: clamp(28px, 3.2vw, 46px);
+  line-height: 1.35; letter-spacing: -.005em;
+  color: var(--ink);
+  margin-bottom: 40px;
+  text-wrap: balance;
+}
+.quote-text em { font-family: var(--serif); font-style: italic; color: var(--accent); font-weight: 400;}
+.quote-cite {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .24em; text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ── NEWSLETTER ──────────────────────────── */
+.news {
+  background: var(--bg-deep); color: var(--paper);
+  padding: clamp(72px, 10vw, 140px) 40px;
+}
+.news-inner {
+  max-width: 1200px; margin: 0 auto;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+  align-items: center;
+}
+.news h2 {
+  font-family: var(--serif); font-weight: 400;
+  font-size: clamp(34px, 4.2vw, 60px);
+  line-height: 1.05; letter-spacing: -.015em;
+  color: var(--paper);
+}
+.news h2 em { font-style: italic; color: #E9C58A; font-weight: 500; }
+.news p {
+  font-family: var(--serif-zh); font-size: 15px;
+  color: rgba(255,255,255,.55);
+  margin-top: 20px; line-height: 1.8; max-width: 40ch;
+}
+.news-form {
+  display: flex; align-items: flex-end;
+  gap: 16px;
+  border-bottom: 1px solid rgba(255,255,255,.25);
+  padding-bottom: 14px;
+}
+.news-form label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .24em; text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+  display: block; margin-bottom: 8px;
+}
+.news-form input {
+  flex: 1;
+  background: transparent; border: none; outline: none;
+  color: var(--paper);
+  font-family: var(--serif); font-size: 22px;
+  padding: 6px 0;
+}
+.news-form input::placeholder { color: rgba(255,255,255,.3); font-style: italic; }
+.news-submit {
+  position: relative; overflow: hidden;
+  background: var(--accent); color: var(--paper);
+  border: none; padding: 14px 26px;
+  border-radius: 999px;
+  font-family: var(--sans); font-size: 13px; font-weight: 500;
+  cursor: pointer;
+  transition: transform 1s cubic-bezier(.22,.61,.36,1), color 1s ease;
+  isolation: isolate;
+}
+.news-submit::before {
+  content:""; position:absolute; inset:0;
+  background: var(--paper);
+  transform: translateY(101%);
+  transition: transform 1.1s cubic-bezier(.22,.61,.36,1);
+  z-index: -1;
+}
+.news-submit:hover { color: var(--accent); transform: translateY(-1px); }
+.news-submit:hover::before { transform: translateY(0); }
+
+/* ── FOOTER ───────────────────────────────── */
+/* FOOTER — 4-col link grid, light */
+.site-footer {
+  background: var(--bg);
+  color: var(--ink);
+  border-top: 1px solid var(--rule);
+  padding: clamp(72px, 9vw, 120px) 40px 40px;
+}
+.site-footer .footer-inner {
+  max-width: 1440px; margin: 0 auto;
+  display: block;
+  text-transform: none; letter-spacing: 0; font-size: inherit;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: clamp(32px, 6vw, 96px);
+  padding-bottom: clamp(56px, 7vw, 96px);
+  border-bottom: 1px solid var(--rule);
+}
+.footer-logo {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+.footer-tagline {
+  font-family: var(--serif-zh);
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--muted);
+  max-width: 28ch;
+  margin: 0;
+}
+.footer-h {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 18px;
+  font-weight: 500;
+}
+.footer-col ul {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.footer-col ul a {
+  font-family: var(--serif-zh);
+  font-size: 14px;
+  color: var(--ink);
+  transition: color .8s ease;
+}
+.footer-col ul a:hover { color: var(--accent); }
+.footer-legal {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 32px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.site-footer .footer-social a {
+  color: var(--muted);
+  margin-left: 24px;
+  transition: color .8s ease;
+}
+.site-footer .footer-social a:hover { color: var(--accent); }
+@media (max-width: 820px) {
+  .footer-grid { grid-template-columns: 1fr 1fr; }
+  .footer-brand { grid-column: 1 / -1; }
+  .footer-legal { flex-direction: column; gap: 12px; align-items: flex-start; }
+  .site-footer .footer-social a:first-child { margin-left: 0; }
+}
+
+/* ── TWEAKS PANEL ────────────────────────── */
+#tweaks {
+  position: fixed; right: 20px; bottom: 20px;
+  width: 300px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  border-radius: 4px;
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.15);
+  z-index: 100;
+  display: none;
+}
+#tweaks.open { display: block; }
+.tweaks-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-bottom: 12px; margin-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.tweaks-title { font-family: var(--mono); letter-spacing: .22em; text-transform: uppercase; font-size: 10px; }
+.tweaks-close { background:none; border:none; cursor:pointer; font-size: 14px; color: var(--muted); }
+.tweak-row { margin-bottom: 16px; }
+.tweak-row label { display:block; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom:8px; }
+.tweak-seg { display: flex; gap: 4px; background: var(--bg); padding: 3px; border-radius: 4px; }
+.tweak-seg button {
+  flex: 1; border: none; background: transparent;
+  font-family: var(--sans); font-size: 11px; padding: 7px 4px;
+  cursor: pointer; border-radius: 2px; color: var(--muted);
+  transition: all .15s;
+}
+.tweak-seg button.on { background: var(--ink); color: var(--bg); }
+.tweak-swatches { display: flex; gap: 8px; }
+.tweak-swatch {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 2px solid transparent; cursor: pointer;
+  transition: all .15s;
+}
+.tweak-swatch.on { border-color: var(--ink); }
+.tweak-slider { width: 100%; }
+
+/* utility */
+.hide { display: none !important; }
+
+/* reveal-on-scroll */
+.reveal { opacity: 0; transform: translateY(28px); transition: opacity 1s ease, transform 1s cubic-bezier(.2,.7,.2,1); }
+.reveal.in { opacity: 1; transform: translateY(0); }
+.reveal-stagger > * { opacity: 0; transform: translateY(24px); transition: opacity .9s ease, transform .9s cubic-bezier(.2,.7,.2,1); }
+.reveal-stagger.in > * { opacity: 1; transform: translateY(0); }
+.reveal-stagger.in > *:nth-child(1){ transition-delay:0ms;}
+.reveal-stagger.in > *:nth-child(2){ transition-delay:90ms;}
+.reveal-stagger.in > *:nth-child(3){ transition-delay:180ms;}
+.reveal-stagger.in > *:nth-child(4){ transition-delay:270ms;}
+.reveal-stagger.in > *:nth-child(5){ transition-delay:360ms;}
+.reveal-stagger.in > *:nth-child(6){ transition-delay:450ms;}
+
+/* h2 underline draw on reveal */
+.section-head h2 em { position: relative; }
+.section-head h2 em::after {
+  content:""; position:absolute; left:0; right:0; bottom:.04em; height:.08em;
+  background: var(--accent); opacity:.25;
+  transform-origin: left; transform: scaleX(0);
+  transition: transform 1s cubic-bezier(.2,.7,.2,1) .25s;
+}
+.reveal.in.section-head h2 em::after { transform: scaleX(1); }
+
+/* entry card: accent bar slide */
+.entry-media::before {
+  content:""; position: absolute; left:0; top:0; bottom:0; width:3px;
+  background: var(--accent); transform: scaleY(0); transform-origin: top;
+  transition: transform .6s cubic-bezier(.2,.7,.2,1);
+  z-index: 3;
+}
+.entry:hover .entry-media::before { transform: scaleY(1); }
+
+/* number counter / rotating marker */
+.entry-media-shape svg { animation: slowSpin 40s linear infinite; transform-origin: center; }
+@keyframes slowSpin { to { transform: rotate(360deg); } }
+
+/* accent rule on quote */
+.quote-mark { animation: qFloat 6s ease-in-out infinite; }
+@keyframes qFloat { 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+
+@media (max-width: 980px) {
+  .hero-stage { height: auto; min-height: 560px; }
+  .hero-content { position: static; padding: 80px 32px; }
+  .hero[data-variant="split"] .hero-stage { grid-template-columns: 1fr; }
+  .hero[data-variant="split"] .hero-split-right { height: 360px; }
+  .know-inner { grid-template-columns: 1fr; }
+  .content-list { grid-template-columns: 1fr; gap: 40px; }
+  .entry, .entry.featured { grid-column: span 12; }
+  .healer-strip { grid-template-columns: 1fr 1fr; }
+  .news-inner { grid-template-columns: 1fr; gap: 40px;}
+}
+
+/* ── DIRECTORY PAGE ─────────────────── */
+.dir-hero {
+  padding: clamp(64px, 10vw, 140px) clamp(32px, 6vw, 80px) clamp(40px, 5vw, 72px);
+  position: relative;
+  border-bottom: 1px solid var(--rule);
+}
+.dir-breadcrumb {
+  display: inline-flex; align-items: center; gap: 14px;
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 28px;
+}
+.dir-breadcrumb a {
+  color: var(--muted);
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+  transition: color .6s ease, border-color .6s ease;
+}
+.dir-breadcrumb a:hover { color: var(--ink); border-color: var(--accent); }
+.dir-breadcrumb .sep { opacity: .4; }
+.dir-breadcrumb .cur { color: var(--ink); }
+
+.dir-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 48px;
+  align-items: end;
+}
+.dir-hero-left {}
+.dir-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+  display: flex; align-items: center; gap: 14px;
+}
+.dir-eyebrow::before {
+  content:""; width: 42px; height: 1px; background: var(--accent);
+}
+.dir-title {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: clamp(52px, 7.5vw, 108px);
+  line-height: .98;
+  letter-spacing: -.02em;
+  color: var(--ink);
+  margin: 0 0 .5em 0;
+  max-width: 14ch;
+  text-wrap: balance;
+}
+.dir-title em {
+  font-style: italic;
+  color: var(--accent);
+  font-weight: 500;
+}
+.dir-subtitle {
+  font-family: var(--serif-zh);
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  max-width: 52ch;
+  margin: 20px 0 0;
+}
+.dir-hero-stats {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-align: right;
+  border-left: 1px solid var(--rule);
+  padding-left: 32px;
+  min-width: 160px;
+}
+.dir-hero-stats .big {
+  display: block;
+  font-family: var(--serif);
+  font-size: 56px;
+  color: var(--ink);
+  letter-spacing: -.01em;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.dir-hero-stats .sm {
+  display: block; margin-top: 4px;
+  font-family: var(--mono); font-size: 10px;
+  color: var(--muted); letter-spacing: .2em;
+}
+
+/* ── FILTER BAR ─────────────────────── */
+.dir-filter {
+  padding: 28px clamp(32px, 6vw, 80px);
+  display: grid;
+  grid-template-columns: 1.1fr 2fr auto;
+  gap: 36px;
+  align-items: center;
+  border-bottom: 1px solid var(--rule);
+  position: sticky; top: 72px; z-index: 50;
+  background: color-mix(in oklab, var(--bg) 94%, transparent);
+  backdrop-filter: blur(10px);
+}
+.dir-search {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 4px 10px 0;
+  border-bottom: 1px solid var(--ink);
+  font-family: var(--mono); font-size: 11px;
+  letter-spacing: .2em; text-transform: uppercase;
+}
+.dir-search::before {
+  content: "⌕";
+  font-size: 16px; color: var(--ink);
+  font-family: var(--serif);
+}
+.dir-search input {
+  flex: 1; border: none; background: transparent;
+  font-family: var(--sans);
+  font-size: 14px;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
+  outline: none;
+}
+.dir-search input::placeholder { color: var(--muted); font-style: italic; }
+
+.dir-chips {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  align-items: center;
+}
+.dir-chip {
+  font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: .18em; text-transform: uppercase;
+  padding: 8px 16px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: color 1s ease, border-color 1s ease, background-color 1s ease;
+}
+.dir-chip:hover { border-color: var(--ink); color: var(--ink); }
+.dir-chip.on {
+  background: var(--ink); color: var(--paper);
+  border-color: var(--ink);
+}
+
+.dir-view-toggle {
+  display: flex; gap: 0;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.dir-view-toggle button {
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .2em; text-transform: uppercase;
+  padding: 8px 14px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .6s ease;
+}
+.dir-view-toggle button + button { border-left: 1px solid var(--rule); }
+.dir-view-toggle button.on { background: var(--ink); color: var(--paper); }
+
+/* ── GRID ─────────────────────────── */
+.dir-grid-wrap {
+  padding: clamp(40px, 5vw, 72px) clamp(32px, 6vw, 80px) clamp(80px, 8vw, 140px);
+}
+.dir-grid-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 36px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.dir-grid-head .count { color: var(--ink); font-weight: 500; }
+.dir-grid-head .sort {
+  display: inline-flex; gap: 16px; align-items: center;
+}
+.dir-grid-head .sort a {
+  color: var(--muted);
+  border-bottom: 1px solid transparent;
+  padding-bottom: 1px;
+  transition: color .6s ease, border-color .6s ease;
+}
+.dir-grid-head .sort a.on { color: var(--ink); border-color: var(--accent); }
+.dir-grid-head .sort a:hover { color: var(--ink); }
+
+.dir-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--rule);
+  border-left: 1px solid var(--rule);
+}
+.hl-card {
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  overflow: hidden;
+  position: relative;
+  transition: background-color .8s ease;
+}
+.hl-card:hover { background: color-mix(in oklab, var(--accent) 4%, transparent); }
+.hl-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 0;
+}
+.hl-photo {
+  position: relative;
+  aspect-ratio: 4/3;
+  overflow: hidden;
+  background: var(--bg-alt);
+}
+.hl-photo::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 70% 30%, rgba(255,255,255,.14), transparent 60%),
+              radial-gradient(circle at 20% 80%, rgba(0,0,0,.12), transparent 50%);
+  mix-blend-mode: overlay;
+}
+.hl-photo-num {
+  position: absolute; top: 18px; left: 18px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .22em; color: rgba(42,38,32,.55);
+  padding: 4px 8px;
+  border: 1px solid rgba(42,38,32,.22);
+  border-radius: 2px;
+  background: rgba(245,239,230,.35);
+  backdrop-filter: blur(3px);
+  z-index: 2;
+}
+.hl-photo-meta {
+  position: absolute; bottom: 18px; left: 18px;
+  font-family: var(--mono); font-size: 9px;
+  letter-spacing: .12em;
+  color: rgba(42,38,32,.5);
+  text-transform: uppercase;
+  z-index: 2;
+}
+.hl-avail {
+  position: absolute; top: 18px; right: 18px;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .16em; text-transform: uppercase;
+  color: rgba(42,38,32,.65);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(245,239,230,.55);
+  backdrop-filter: blur(3px);
+  z-index: 2;
+}
+.hl-avail.on { color: var(--accent); }
+
+.hl-body {
+  padding: 24px 26px 28px;
+  background: var(--bg);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.hl-meta-row {
+  display: flex; justify-content: space-between;
+  font-family: var(--mono); font-size: 10px;
+  letter-spacing: .22em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.hl-num { color: var(--accent); }
+.hl-name {
+  font-family: var(--serif);
+  font-weight: 400;
+  font-size: 28px;
+  line-height: 1.1;
+  letter-spacing: -.01em;
+  color: var(--ink);
+  margin: 0;
+}
+.hl-name em {
+  font-style: italic;
+  font-family: var(--serif);
+  font-size: .78em;
+  color: var(--ink-soft);
+  font-weight: 300;
+  margin-left: 4px;
+}
+.hl-spec {
+  font-family: var(--serif-zh);
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  padding-top: 4px;
+  border-top: 1px solid var(--rule-soft);
+  padding-bottom: 2px;
+}
+.hl-bio {
+  font-family: var(--serif-zh);
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  line-height: 1.72;
+  margin: 0;
+  text-wrap: pretty;
+}
+.hl-tags {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-top: 4px;
+}
+.hl-tag {
+  font-family: var(--mono); font-size: 9.5px;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: 4px 9px;
+  background: rgba(31,27,23,.04);
+  color: var(--ink-soft);
+  border-radius: 2px;
+}
+.hl-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule-soft);
+  margin-top: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.hl-arrow { color: var(--ink); }
+.hl-arrow-ic {
+  font-size: 14px;
+  transition: transform .9s cubic-bezier(.22,.61,.36,1);
+  color: var(--accent);
+}
+.hl-card:hover .hl-arrow-ic { transform: translateX(6px); }
+
+/* blank placeholder card — "coming soon" */
+.hl-card-blank { background: transparent; }
+.hl-card-blank:hover { background: transparent; }
+.hl-photo-blank {
+  background: repeating-linear-gradient(45deg, var(--bg-alt) 0 10px, var(--bg) 10px 20px);
+}
+.hl-blank-note {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif-zh);
+  font-size: 14px;
+  color: var(--muted);
+  letter-spacing: .1em;
+  z-index: 2;
+}
+.hl-body-blank { opacity: .55; }
+.hl-name-blank { color: var(--muted); font-style: italic; }
+.hl-spec-blank, .hl-bio-blank { color: var(--muted); }
+
+/* List view variant */
+.dir-grid.list-view {
+  grid-template-columns: 1fr;
+  border: none;
+}
+.dir-grid.list-view .hl-card {
+  border: none;
+  border-bottom: 1px solid var(--rule);
+}
+.dir-grid.list-view .hl-link {
+  display: grid;
+  grid-template-columns: 160px 1fr auto;
+  gap: 40px;
+  padding: 28px 0;
+  align-items: start;
+}
+.dir-grid.list-view .hl-photo {
+  aspect-ratio: 1/1;
+  margin-bottom: 0;
+}
+.dir-grid.list-view .hl-body {
+  background: transparent;
+  padding: 4px 0;
+}
+.dir-grid.list-view .hl-foot {
+  align-self: center;
+  border-top: none;
+  padding-top: 0;
+}
+
+/* ── RESPONSIVE ───────────────────── */
+@media (max-width: 900px) {
+  .dir-hero-grid { grid-template-columns: 1fr; }
+  .dir-hero-stats { border-left: none; border-top: 1px solid var(--rule); padding-left: 0; padding-top: 20px; text-align: left; }
+  .dir-filter { grid-template-columns: 1fr; gap: 18px; position: static; }
+  .dir-view-toggle { justify-self: start; }
+  .dir-grid { grid-template-columns: 1fr; }
+  .dir-grid.list-view .hl-link { grid-template-columns: 100px 1fr; gap: 20px; }
+  .dir-grid.list-view .hl-foot { display: none; }
+}
+
+</style>
+</head>
+<body data-screen-label="02 Healers Directory">
+
+<body data-screen-label="01 Home">
+
+<!-- Tweak defaults (host persists between refreshes) -->
+<script>
+window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
+  "accent": "#35845D",
+  "heroVariant": "still",
+  "fontScale": "grand"
+}/*EDITMODE-END*/;
+</script>
+
+<!-- ─── HEADER ─────────────────────────── -->
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="index.html" class="brand">AWAKENSPHERE</a>
+    <nav class="nav">
+      <div class="lang">
+        <button class="on" data-lang="zh">中文</button>
+        <span style="opacity:.4">·</span>
+        <button data-lang="en">EN</button>
+      </div>
+      <button class="nav-btn" onclick="window.location.href='healers.html'"><span class="lbl" data-zh="探索疗愈师" data-en="Explore Healers">探索疗愈师</span></button>
+      <div class="nav-dd" id="navDd">
+        <button class="nav-btn solid" id="ddTrigger" aria-haspopup="true" aria-expanded="false">
+          <span class="lbl"><span data-zh="了解自己" data-en="Know Yourself">了解自己</span> <span class="dd-caret" aria-hidden="true">▾</span></span>
+        </button>
+        <div class="dd-menu" role="menu">
+          <a class="dd-item" role="menuitem" href="quiz.html">
+            <span class="dd-num">01</span>
+            <span class="dd-body">
+              <span class="dd-title" data-zh="五分钟自我问答" data-en="5-Min Self Inquiry">五分钟自我问答</span>
+              <span class="dd-desc" data-zh="从五个安静的问题开始，绘制内在地图" data-en="Five quiet questions. Map your inner terrain.">从五个安静的问题开始，绘制内在地图</span>
+            </span>
+            <span class="dd-arrow">→</span>
+          </a>
+          <a class="dd-item" role="menuitem" href="index.html#content">
+            <span class="dd-num">02</span>
+            <span class="dd-body">
+              <span class="dd-title" data-zh="内在图书馆" data-en="Inner Library">内在图书馆</span>
+              <span class="dd-desc" data-zh="文章、音频与练习 · 按主题浏览" data-en="Articles, audio & practices · By theme">文章、音频与练习 · 按主题浏览</span>
+            </span>
+            <span class="dd-arrow">→</span>
+          </a>
+          <a class="dd-item" role="menuitem" href="#">
+            <span class="dd-num">03</span>
+            <span class="dd-body">
+              <span class="dd-title" data-zh="成长记录" data-en="Growth Journal">成长记录</span>
+              <span class="dd-desc" data-zh="你的会话、笔记与练习进度" data-en="Sessions, notes & practice progress">你的会话、笔记与练习进度</span>
+            </span>
+            <span class="dd-arrow">→</span>
+          </a>
+        </div>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- ─── BREADCRUMB + HERO ──────────── -->
+<section class="dir-hero">
+  <div class="dir-breadcrumb">
+    <a href="index.html">AwakenSphere</a>
+    <span class="sep">/</span>
+    <span class="cur">Healers Directory</span>
+  </div>
+
+  <div class="dir-hero-grid">
+    <div class="dir-hero-left">
+      <div class="dir-eyebrow">Vol. 01 · Catalog</div>
+      <h1 class="dir-title">Meet the <em>healers</em> behind the practice.</h1>
+      <p class="dir-subtitle">认识 AwakenSphere 平台上的每一位认证疗愈师 —— 他们来自按摩、正念、声音、创伤、动态五个方向，在全球十余座城市工作。挑选一位与你此刻的节奏相合的人。</p>
+    </div>
+    <aside class="dir-hero-stats">
+      <span class="big">30+</span>
+      <span>Certified Practitioners</span>
+      <span class="sm">7 Featured · 23 Private</span>
+    </aside>
+  </div>
+</section>
+
+<!-- ─── FILTER BAR ─────────────────── -->
+<section class="dir-filter" id="dirFilter">
+  <div class="dir-search">
+    <input type="text" id="dirSearch" placeholder="Search by name, modality, city…">
+  </div>
+
+  <div class="dir-chips" id="dirChips">
+    <button class="dir-chip on" data-cat="all">All · 全部</button>
+    <button class="dir-chip" data-cat="massage">Massage · 按摩</button>
+    <button class="dir-chip" data-cat="mindfulness">Mindfulness · 正念</button>
+    <button class="dir-chip" data-cat="sound">Sound · 声音</button>
+    <button class="dir-chip" data-cat="trauma">Trauma · 创伤</button>
+    <button class="dir-chip" data-cat="movement">Movement · 动态</button>
+  </div>
+
+  <div class="dir-view-toggle" id="dirViewToggle">
+    <button data-v="grid" class="on">Grid</button>
+    <button data-v="list">List</button>
+  </div>
+</section>
+
+<!-- ─── GRID ────────────────────────── -->
+<section class="dir-grid-wrap">
+  <div class="dir-grid-head">
+    <span class="count" id="dirCount">07 showing · 30 total</span>
+    <span class="sort">
+      Sort by:
+      <a href="#" class="on" data-sort="featured">Featured</a>
+      <a href="#" data-sort="name">Name</a>
+      <a href="#" data-sort="city">City</a>
+    </span>
+  </div>
+
+  <div class="dir-grid" id="dirGrid">
+
+        <article class="hl-card" data-cats="massage mindfulness" data-name="赵子珊 Zoe Zhao" data-spec="Esalen® 按摩师 · 芳香脉轮疗愈师" data-tags="Esalen 按摩 芳香疗法 脉轮">
+          <a class="hl-link" href="healer.html?id=zoe">
+            <div class="hl-photo" style="background:linear-gradient(165deg,#D4C4AE 0%,#B39D7E 60%,#8C7658 100%);">
+              <span class="hl-photo-num">N°01</span>
+              <span class="hl-photo-meta">/portrait — zoe_zhao.jpg</span>
+              <span class="hl-avail on">● 线上可约</span>
+            </div>
+            <div class="hl-body">
+              <div class="hl-meta-row">
+                <span class="hl-num">01</span>
+                <span class="hl-loc">巴厘岛 · 武汉</span>
+              </div>
+              <h3 class="hl-name">赵子珊 <em>Zoe Zhao</em></h3>
+              <div class="hl-spec">Esalen® 按摩师 · 芳香脉轮疗愈师</div>
+              <p class="hl-bio">来自武汉，现居巴厘岛 / 新西兰。法国香水学位，2022 年 Esalen 认证。</p>
+              <div class="hl-tags"><span class="hl-tag">Esalen 按摩</span><span class="hl-tag">芳香疗法</span><span class="hl-tag">脉轮</span></div>
+              <div class="hl-foot">
+                <span class="hl-arrow">查看主页</span>
+                <span class="hl-arrow-ic">→</span>
+              </div>
+            </div>
+          </a>
+        </article>
+        <article class="hl-card" data-cats="massage mindfulness trauma" data-name="杨凯莉 Carrie Yang" data-spec="疗愈空间创建者 · 课程开发者" data-tags="身体疗愈 冥想 创始人">
+          <a class="hl-link" href="healer.html?id=carrie">
+            <div class="hl-photo" style="background:linear-gradient(165deg,#CAD3B7 0%,#8FA67E 55%,#5E7557 100%);">
+              <span class="hl-photo-num">N°02</span>
+              <span class="hl-photo-meta">/portrait — carrie_yang.jpg</span>
+              <span class="hl-avail on">● 线上可约</span>
+            </div>
+            <div class="hl-body">
+              <div class="hl-meta-row">
+                <span class="hl-num">02</span>
+                <span class="hl-loc">巴厘岛</span>
+              </div>
+              <h3 class="hl-name">杨凯莉 <em>Carrie Yang</em></h3>
+              <div class="hl-spec">疗愈空间创建者 · 课程开发者</div>
+              <p class="hl-bio">曾在金融行业工作直到身体发出警报，从此走上疗愈之路，创立 AwakenSphere。</p>
+              <div class="hl-tags"><span class="hl-tag">身体疗愈</span><span class="hl-tag">冥想</span><span class="hl-tag">创始人</span></div>
+              <div class="hl-foot">
+                <span class="hl-arrow">查看主页</span>
+                <span class="hl-arrow-ic">→</span>
+              </div>
+            </div>
+          </a>
+        </article>
+        <article class="hl-card" data-cats="movement mindfulness" data-name="林山 Lin Shan" data-spec="动态艺术家 · 正念引导者" data-tags="动态冥想 正念 工作坊">
+          <a class="hl-link" href="healer.html?id=lin">
+            <div class="hl-photo" style="background:linear-gradient(165deg,#CCD5DF 0%,#8CA0B9 55%,#5E7189 100%);">
+              <span class="hl-photo-num">N°03</span>
+              <span class="hl-photo-meta">/portrait — lin_shan.jpg</span>
+              <span class="hl-avail on">● 线上可约</span>
+            </div>
+            <div class="hl-body">
+              <div class="hl-meta-row">
+                <span class="hl-num">03</span>
+                <span class="hl-loc">新加坡</span>
+              </div>
+              <h3 class="hl-name">林山 <em>Lin Shan</em></h3>
+              <div class="hl-spec">动态艺术家 · 正念引导者</div>
+              <p class="hl-bio">以身体动作为语言，探索情绪与空间的关系，开发结合艺术与疗愈的独特实践。</p>
+              <div class="hl-tags"><span class="hl-tag">动态冥想</span><span class="hl-tag">正念</span><span class="hl-tag">工作坊</span></div>
+              <div class="hl-foot">
+                <span class="hl-arrow">查看主页</span>
+                <span class="hl-arrow-ic">→</span>
+              </div>
+            </div>
+          </a>
+        </article>
+        <article class="hl-card" data-cats="sound mindfulness" data-name="陈美玲 Mei Chen" data-spec="声音治疗师 · 水晶钵演奏者" data-tags="颂钵 声音冥想 水晶钵">
+          <a class="hl-link" href="healer.html?id=mei">
+            <div class="hl-photo" style="background:linear-gradient(165deg,#D9CAB9 0%,#B59A7E 55%,#8A6F52 100%);">
+              <span class="hl-photo-num">N°04</span>
+              <span class="hl-photo-meta">/portrait — mei_chen.jpg</span>
+              <span class="hl-avail ">○ 排期中</span>
+            </div>
+            <div class="hl-body">
+              <div class="hl-meta-row">
+                <span class="hl-num">04</span>
+                <span class="hl-loc">香港</span>
+              </div>
+              <h3 class="hl-name">陈美玲 <em>Mei Chen</em></h3>
+              <div class="hl-spec">声音治疗师 · 水晶钵演奏者</div>
+              <p class="hl-bio">专注声音疗愈十年，结合藏式颂钵、水晶钵与人声，提供个人及团体疗愈体验。</p>
+              <div class="hl-tags"><span class="hl-tag">颂钵</span><span class="hl-tag">声音冥想</span><span class="hl-tag">水晶钵</span></div>
+              <div class="hl-foot">
+                <span class="hl-arrow">查看主页</span>
+                <span class="hl-arrow-ic">→</span>
+              </div>
+            </div>
+          </a>
+        </article>
+        <article class="hl-card" data-cats="trauma mindfulness" data-name="周雅慧 Aria Zhou" data-spec="内在小孩工作者 · 表达性艺术治疗" data-tags="内在小孩 艺术治疗 情绪释放">
+          <a class="hl-link" href="healer.html?id=aria">
+            <div class="hl-photo" style="background:linear-gradient(165deg,#E8D2B8 0%,#C89F75 55%,#8F6B42 100%);">
+              <span class="hl-photo-num">N°05</span>
+              <span class="hl-photo-meta">/portrait — aria_zhou.jpg</span>
+              <span class="hl-avail on">● 线上可约</span>
+            </div>
+            <div class="hl-body">
+              <div class="hl-meta-row">
+                <span class="hl-num">05</span>
+                <span class="hl-loc">台北</span>
+              </div>
+              <h3 class="hl-name">周雅慧 <em>Aria Zhou</em></h3>
+              <div class="hl-spec">内在小孩工作者 · 表达性艺术治疗</div>
+              <p class="hl-bio">通过绘画、写作与身体感知，帮助个案与内在小孩重新建立连结，释放情绪创伤。</p>
+              <div class="hl-tags"><span class="hl-tag">内在小孩</span><span class="hl-tag">艺术治疗</span><span class="hl-tag">情绪释放</span></div>
+              <div class="hl-foot">
+                <span class="hl-arrow">查看主页</span>
+                <span class="hl-arrow-ic">→</span>
+              </div>
+            </div>
+          </a>
+        </article>
+        <article class="hl-card" data-cats="trauma mindfulness massage" data-name="刘薇 Wei Liu" data-spec="创伤知情身体工作者" data-tags="SE 身体体验 中医 创伤">
+          <a class="hl-link" href="healer.html?id=wei">
+            <div class="hl-photo" style="background:linear-gradient(165deg,#C7B8A0 0%,#9A8264 55%,#6D5940 100%);">
+              <span class="hl-photo-num">N°06</span>
+              <span class="hl-photo-meta">/portrait — wei_liu.jpg</span>
+              <span class="hl-avail on">● 线上可约</span>
+            </div>
+            <div class="hl-body">
+              <div class="hl-meta-row">
+                <span class="hl-num">06</span>
+                <span class="hl-loc">上海</span>
+              </div>
+              <h3 class="hl-name">刘薇 <em>Wei Liu</em></h3>
+              <div class="hl-spec">创伤知情身体工作者</div>
+              <p class="hl-bio">整合 Somatic Experiencing 与传统中医，专注慢性压力和创伤造成的身体疼痛与情绪冻结。</p>
+              <div class="hl-tags"><span class="hl-tag">SE 身体体验</span><span class="hl-tag">中医</span><span class="hl-tag">创伤</span></div>
+              <div class="hl-foot">
+                <span class="hl-arrow">查看主页</span>
+                <span class="hl-arrow-ic">→</span>
+              </div>
+            </div>
+          </a>
+        </article>
+        <article class="hl-card" data-cats="mindfulness sound" data-name="张明远 MingYuan" data-spec="正念冥想教师 · 静修带领者" data-tags="Vipassana 禅修营 MBSR">
+          <a class="hl-link" href="healer.html?id=ming">
+            <div class="hl-photo" style="background:linear-gradient(165deg,#B6C2C7 0%,#8A9BA4 55%,#5E7178 100%);">
+              <span class="hl-photo-num">N°07</span>
+              <span class="hl-photo-meta">/portrait — mingyuan.jpg</span>
+              <span class="hl-avail ">○ 排期中</span>
+            </div>
+            <div class="hl-body">
+              <div class="hl-meta-row">
+                <span class="hl-num">07</span>
+                <span class="hl-loc">巴厘岛</span>
+              </div>
+              <h3 class="hl-name">张明远 <em>MingYuan</em></h3>
+              <div class="hl-spec">正念冥想教师 · 静修带领者</div>
+              <p class="hl-bio">斯里兰卡上座部佛教冥想受训，现居巴厘岛，带领月禅修营与线上八周正念课程。</p>
+              <div class="hl-tags"><span class="hl-tag">Vipassana</span><span class="hl-tag">禅修营</span><span class="hl-tag">MBSR</span></div>
+              <div class="hl-foot">
+                <span class="hl-arrow">查看主页</span>
+                <span class="hl-arrow-ic">→</span>
+              </div>
+            </div>
+          </a>
+        </article>
+
+        <article class="hl-card hl-card-blank" data-cats="placeholder">
+          <div class="hl-photo hl-photo-blank">
+            <span class="hl-photo-num">N°08</span>
+            <span class="hl-blank-note">即将加入</span>
+          </div>
+          <div class="hl-body hl-body-blank">
+            <div class="hl-meta-row"><span class="hl-num">08</span><span class="hl-loc">—</span></div>
+            <h3 class="hl-name hl-name-blank">Coming Soon</h3>
+            <div class="hl-spec hl-spec-blank">我们正在审核新加入的疗愈师</div>
+            <p class="hl-bio hl-bio-blank">AwakenSphere 每月仅接纳少数认证疗愈师，以保证对话质量与对方法论的坚持。</p>
+          </div>
+        </article>
+        <article class="hl-card hl-card-blank" data-cats="placeholder">
+          <div class="hl-photo hl-photo-blank">
+            <span class="hl-photo-num">N°09</span>
+            <span class="hl-blank-note">即将加入</span>
+          </div>
+          <div class="hl-body hl-body-blank">
+            <div class="hl-meta-row"><span class="hl-num">09</span><span class="hl-loc">—</span></div>
+            <h3 class="hl-name hl-name-blank">Coming Soon</h3>
+            <div class="hl-spec hl-spec-blank">我们正在审核新加入的疗愈师</div>
+            <p class="hl-bio hl-bio-blank">AwakenSphere 每月仅接纳少数认证疗愈师，以保证对话质量与对方法论的坚持。</p>
+          </div>
+        </article>
+        <article class="hl-card hl-card-blank" data-cats="placeholder">
+          <div class="hl-photo hl-photo-blank">
+            <span class="hl-photo-num">N°10</span>
+            <span class="hl-blank-note">即将加入</span>
+          </div>
+          <div class="hl-body hl-body-blank">
+            <div class="hl-meta-row"><span class="hl-num">10</span><span class="hl-loc">—</span></div>
+            <h3 class="hl-name hl-name-blank">Coming Soon</h3>
+            <div class="hl-spec hl-spec-blank">我们正在审核新加入的疗愈师</div>
+            <p class="hl-bio hl-bio-blank">AwakenSphere 每月仅接纳少数认证疗愈师，以保证对话质量与对方法论的坚持。</p>
+          </div>
+        </article>
+        <article class="hl-card hl-card-blank" data-cats="placeholder">
+          <div class="hl-photo hl-photo-blank">
+            <span class="hl-photo-num">N°11</span>
+            <span class="hl-blank-note">即将加入</span>
+          </div>
+          <div class="hl-body hl-body-blank">
+            <div class="hl-meta-row"><span class="hl-num">11</span><span class="hl-loc">—</span></div>
+            <h3 class="hl-name hl-name-blank">Coming Soon</h3>
+            <div class="hl-spec hl-spec-blank">我们正在审核新加入的疗愈师</div>
+            <p class="hl-bio hl-bio-blank">AwakenSphere 每月仅接纳少数认证疗愈师，以保证对话质量与对方法论的坚持。</p>
+          </div>
+        </article>
+        <article class="hl-card hl-card-blank" data-cats="placeholder">
+          <div class="hl-photo hl-photo-blank">
+            <span class="hl-photo-num">N°12</span>
+            <span class="hl-blank-note">即将加入</span>
+          </div>
+          <div class="hl-body hl-body-blank">
+            <div class="hl-meta-row"><span class="hl-num">12</span><span class="hl-loc">—</span></div>
+            <h3 class="hl-name hl-name-blank">Coming Soon</h3>
+            <div class="hl-spec hl-spec-blank">我们正在审核新加入的疗愈师</div>
+            <p class="hl-bio hl-bio-blank">AwakenSphere 每月仅接纳少数认证疗愈师，以保证对话质量与对方法论的坚持。</p>
+          </div>
+        </article>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-col footer-brand">
+        <div class="footer-logo">AwakenSphere</div>
+        <p class="footer-tagline"
+          data-zh="全球华语疗愈内容平台，连接真正致力于内在探索的人。"
+          data-en="A global Chinese-language healing platform, connecting those committed to inner exploration.">全球华语疗愈内容平台，<br>连接真正致力于内在探索的人。</p>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-h" data-zh="探索" data-en="EXPLORE">探索</h4>
+        <ul>
+          <li><a href="index.html#content" data-zh="内在图书馆" data-en="Inner Library">内在图书馆</a></li>
+          <li><a href="index.html#content" data-zh="播客" data-en="Podcast">播客</a></li>
+          <li><a href="index.html#content" data-zh="访谈" data-en="Interviews">访谈</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-h" data-zh="疗愈师" data-en="HEALERS">疗愈师</h4>
+        <ul>
+          <li><a href="healers.html" data-zh="疗愈师目录" data-en="All Healers">疗愈师目录</a></li>
+          <li><a href="#" data-zh="申请加入" data-en="Apply to Join">申请加入</a></li>
+          <li><a href="#" data-zh="合作课程" data-en="Partner Courses">合作课程</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 class="footer-h" data-zh="关于" data-en="ABOUT">关于</h4>
+        <ul>
+          <li><a href="#" data-zh="我们的故事" data-en="Our Story">我们的故事</a></li>
+          <li><a href="quiz.html" data-zh="了解自己" data-en="Know Yourself">了解自己</a></li>
+          <li><a href="#" data-zh="联系我们" data-en="Contact">联系我们</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <span>© 2026 · AWAKENSPHERE · WHERE HEALING BECOMES AWAKENING</span>
+      <span class="footer-social">
+        <a href="#">INSTAGRAM</a>
+        <a href="#">小红书</a>
+        <a href="#">PRIVACY</a>
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ── Filtering / Search / View toggle ── */
+(function(){
+  const grid = document.getElementById('dirGrid');
+  const chips = document.querySelectorAll('#dirChips .dir-chip');
+  const search = document.getElementById('dirSearch');
+  const count = document.getElementById('dirCount');
+  const viewBtns = document.querySelectorAll('#dirViewToggle button');
+
+  let activeCat = 'all';
+  let query = '';
+
+  function apply() {
+    const cards = [...grid.querySelectorAll('.hl-card')];
+    let visible = 0;
+    cards.forEach(c => {
+      if (c.dataset.cats === 'placeholder') {
+        c.style.display = (activeCat === 'all' && !query) ? '' : 'none';
+        return;
+      }
+      const cats = c.dataset.cats || '';
+      const haystack = (c.dataset.name + ' ' + c.dataset.spec + ' ' + c.dataset.tags + ' ' + (c.textContent || '')).toLowerCase();
+      const catOk = activeCat === 'all' || cats.includes(activeCat);
+      const qOk = !query || haystack.includes(query);
+      const show = catOk && qOk;
+      c.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+    count.textContent = String(visible).padStart(2,'0') + ' showing · 30 total';
+  }
+
+  chips.forEach(b => b.addEventListener('click', () => {
+    chips.forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    activeCat = b.dataset.cat;
+    apply();
+  }));
+
+  search.addEventListener('input', () => {
+    query = search.value.trim().toLowerCase();
+    apply();
+  });
+
+  viewBtns.forEach(b => b.addEventListener('click', () => {
+    viewBtns.forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    grid.classList.toggle('list-view', b.dataset.v === 'list');
+  }));
+
+  /* Sort (ui toggle only for now) */
+  document.querySelectorAll('.dir-grid-head .sort a').forEach(a => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      document.querySelectorAll('.dir-grid-head .sort a').forEach(x => x.classList.remove('on'));
+      a.classList.add('on');
+    });
+  });
+})();
+
+/* ── Nav dropdown (same as home) ── */
+(function(){
+  const dd = document.getElementById('navDd');
+  if (!dd) return;
+  const trig = document.getElementById('ddTrigger');
+  function close() { dd.classList.remove('open'); trig.setAttribute('aria-expanded', 'false'); }
+  trig.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = dd.classList.toggle('open');
+    trig.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', (e) => { if (!dd.contains(e.target)) close(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+})();
+</script>
+
+<!-- 共享基础设施：Supabase 客户端 / 双语 / admin#hash 跳转 -->
+<script src="js/common.js?v=2"></script>
+
+<!-- Supabase 覆盖层：有 healers 表数据时覆盖设计稿 sample -->
+<script>
+function goToHealer(id) { window.location.href = 'healer.html?id=' + encodeURIComponent(id); }
+
+// tag 字符串 → chip 分类 key（供原设计 filter 用）
+function healerCatsFromTags(tags) {
+  if (!tags || !tags.length) return '';
+  var blob = tags.join(' ').toLowerCase();
+  var cats = [];
+  if (/esalen|按摩|massage|bodywork/i.test(blob)) cats.push('massage');
+  if (/mindful|正念|冥想|meditation/i.test(blob)) cats.push('mindfulness');
+  if (/sound|声音|crystal|钵/i.test(blob)) cats.push('sound');
+  if (/trauma|创伤|somatic|身体疗愈/i.test(blob)) cats.push('trauma');
+  if (/movement|动态|舞蹈|dance/i.test(blob)) cats.push('movement');
+  return cats.join(' ');
+}
+
+// 七彩渐变循环（对照设计稿的 7 种卡片颜色）
+var HL_GRADIENTS = [
+  'linear-gradient(165deg,#D4C4AE 0%,#B39D7E 60%,#8C7658 100%)',
+  'linear-gradient(165deg,#CAD3B7 0%,#8FA67E 55%,#5E7557 100%)',
+  'linear-gradient(165deg,#CCD5DF 0%,#8CA0B9 55%,#5D7085 100%)',
+  'linear-gradient(165deg,#E6CFB8 0%,#C49865 55%,#8F5F2F 100%)',
+  'linear-gradient(165deg,#D4BFAD 0%,#9B7A66 55%,#5C3E30 100%)',
+  'linear-gradient(165deg,#B7CCC3 0%,#748F85 55%,#42574E 100%)',
+  'linear-gradient(165deg,#D4C9E0 0%,#9C87B0 55%,#5E4A78 100%)'
+];
+
+function overrideHealersGrid() {
+  var items = sbCache.healers || [];
+  if (items.length === 0) return; // 无数据保留设计稿 sample
+  var grid = document.getElementById('dirGrid');
+  if (!grid) return;
+
+  var html = '';
+  for (var i = 0; i < items.length; i++) {
+    var h = items[i];
+    var num = (i + 1 < 10 ? '0' + (i + 1) : String(i + 1));
+    var cats = healerCatsFromTags(h.tags);
+    var nameEn = h.name_en || h.name_zh || '';
+    var nameZh = h.name_zh || '';
+    var titleZh = h.title_zh + (h.sub_zh ? ' · ' + h.sub_zh : '');
+    var titleEn = (h.title_en || h.title_zh) + (h.sub_en ? ' · ' + h.sub_en : h.sub_zh ? ' · ' + h.sub_zh : '');
+    var locZh = h.location_zh || '';
+    var locEn = h.location_en || h.location_zh || '';
+    var bioZh = h.bio_zh || '';
+    var bioEn = h.bio_en || h.bio_zh || '';
+    var availZh = h.avail_zh || '线上可约';
+    var availEn = h.avail_en || 'Online available';
+    var photoStyle = h.avatar_url
+      ? 'background-image:url(' + esc(h.avatar_url) + ');background-size:cover;background-position:center;'
+      : 'background:' + HL_GRADIENTS[i % HL_GRADIENTS.length] + ';';
+    var tagsHtml = '';
+    if (h.tags && h.tags.length) {
+      for (var t = 0; t < Math.min(3, h.tags.length); t++) {
+        tagsHtml += '<span class="hl-tag">' + esc(h.tags[t]) + '</span>';
+      }
+    }
+    var searchBlob = (h.name_zh + ' ' + (h.name_en || '') + ' ' + titleZh + ' ' + (h.tags || []).join(' ') + ' ' + locZh).toLowerCase();
+
+    html += '<article class="hl-card" data-cats="' + esc(cats) + '" '
+      + 'data-name="' + esc(nameZh + ' ' + nameEn) + '" '
+      + 'data-spec="' + esc(titleZh) + '" '
+      + 'data-tags="' + esc(searchBlob) + '">'
+      + '<a class="hl-link" href="healer.html?id=' + esc(h.id) + '">'
+      + '<div class="hl-photo" style="' + photoStyle + '">'
+      + '<span class="hl-photo-num">N°' + num + '</span>'
+      + '<span class="hl-photo-meta">/portrait — ' + esc(h.id) + '.jpg</span>'
+      + '<span class="hl-avail on" data-zh="● ' + esc(availZh) + '" data-en="● ' + esc(availEn) + '">● ' + esc(availZh) + '</span>'
+      + '</div>'
+      + '<div class="hl-body">'
+      + '<div class="hl-meta-row"><span class="hl-num">' + num + '</span>'
+      + '<span class="hl-loc" data-zh="' + esc(locZh) + '" data-en="' + esc(locEn) + '">' + esc(locZh) + '</span></div>'
+      + '<h3 class="hl-name">' + esc(nameZh.replace(nameEn, '').trim()) + ' <em>' + esc(nameEn) + '</em></h3>'
+      + '<div class="hl-spec" data-zh="' + esc(titleZh) + '" data-en="' + esc(titleEn) + '">' + esc(titleZh) + '</div>'
+      + '<p class="hl-bio" data-zh="' + esc(bioZh) + '" data-en="' + esc(bioEn) + '">' + esc(bioZh) + '</p>'
+      + '<div class="hl-tags">' + tagsHtml + '</div>'
+      + '<div class="hl-foot"><span class="hl-arrow" data-zh="查看主页" data-en="View Profile">查看主页</span>'
+      + '<span class="hl-arrow-ic">→</span></div>'
+      + '</div></a></article>';
+  }
+  grid.innerHTML = html;
+
+  // 更新 count
+  var cnt = document.getElementById('dirCount');
+  if (cnt) {
+    var n = items.length;
+    var pad = (n < 10 ? '0' + n : String(n));
+    cnt.setAttribute('data-zh', pad + ' 位显示 · 共 ' + pad);
+    cnt.setAttribute('data-en', pad + ' showing · ' + pad + ' total');
+    cnt.textContent = pad + ' showing · ' + pad + ' total';
+  }
+}
+
+async function loadHealersData() {
+  await loadAllSiteData();
+  overrideHealersGrid();
+  applyLang();
+  // 触发原设计 filter 脚本重新扫描卡片（若已加 init 逻辑）
+  window.dispatchEvent(new Event('resize'));
+}
+
+window.addEventListener('as:langchange', applyLang);
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', loadHealersData);
+} else {
+  loadHealersData();
+}
+</script>
+
+</body>
+</html>
