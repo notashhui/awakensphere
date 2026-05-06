@@ -2328,15 +2328,13 @@ function applyHealerData(h) {
   }
 
   // ═══════════════════════════════════════════════════════
-  // 产品区（h.products）—— 当前 healer 没产品就隐藏整个 Touch Soul 硬编码区
+  // 产品区：总是隐藏（C-6 决策按 Carrie v2 文档"短期方案：临时隐藏"，
+  // 等完整后台化方案确认后再开发动态渲染）
   // ═══════════════════════════════════════════════════════
-  if (!h.products || !h.products.length) {
-    var allSecs = document.querySelectorAll('section');
-    allSecs.forEach(function(sec){
-      // 通过 Touch Soul 文本识别产品区（设计稿原硬编码）
-      if (sec.textContent.indexOf('Touch Soul') >= 0) sec.style.display = 'none';
-    });
-  }
+  var allSecsForProd = document.querySelectorAll('section');
+  allSecsForProd.forEach(function(sec){
+    if (sec.textContent.indexOf('Touch Soul') >= 0) sec.style.display = 'none';
+  });
 
   // ═══════════════════════════════════════════════════════
   // C-9：底部特色引言（pf-quote）
