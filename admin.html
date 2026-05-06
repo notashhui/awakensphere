@@ -718,8 +718,6 @@ function healerCard(h){
     '<div class="field" style="margin-bottom:14px" id="jsec_svc_'+h.id+'">',renderServicesList(h.id),'</div>',
     '<div class="field" style="margin-bottom:14px" id="jsec_evt_'+h.id+'">',renderEventsList(h.id),'</div>',
     '<div class="field" style="margin-bottom:14px" id="jsec_prd_'+h.id+'">',renderProductsList(h.id),'</div>',
-    // P1: SEO
-    '<div class="seo-section"><div class="label">🔍 SEO</div><div style="height:8px"></div><div class="field-row">',field('Meta 标题','hf_'+h.id+'_meta_title',h.meta_title),field('OG 图片','hf_'+h.id+'_og_image',h.og_image),'</div><div class="field-row"><div class="field full"><div class="label">Meta 描述</div><input id="hf_'+h.id+'_meta_desc" value="'+esc(h.meta_description)+'"></div></div></div>',
   '</div></div>'].join('');
 }
 
@@ -729,7 +727,7 @@ async function saveHealers(){
   var updates=healers.map(function(h){
     function g(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.value:(h[f]||'');}
     function cb(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.checked:!!h[f];}
-    return{id:h.id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[h.id]||[]).slice(),avatar_url:g('avatar_url'),active:cb('active'),services:jsonState['svc_'+h.id],events:jsonState['evt_'+h.id],products:jsonState['prd_'+h.id],meta_title:g('meta_title'),meta_description:g('meta_desc'),og_image:g('og_image')};
+    return{id:h.id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[h.id]||[]).slice(),avatar_url:g('avatar_url'),active:cb('active'),services:jsonState['svc_'+h.id],events:jsonState['evt_'+h.id],products:jsonState['prd_'+h.id]};
   });
   var{error}=await sb.from('healers').upsert(updates);
   if(error){alert('保存失败: '+error.message);return;}
@@ -797,8 +795,6 @@ function contentCard(c,idx,total){
     '<div class="field full" style="margin-bottom:14px"><div class="label">📝 正文（英文 Markdown）</div><div class="md-wrap"><textarea id="cf_'+c.id+'_body_en" style="min-height:200px" oninput="updateMdPreview(\'cf_'+c.id+'_body_en\',\'mdpre_'+c.id+'_en\')">'+escText(c.body_en||'')+'</textarea><div class="md-preview" id="mdpre_'+c.id+'_en">'+mdToHtml(c.body_en||'')+'</div></div></div>',
     // 标签
     '<div class="field" style="margin-bottom:14px"><div class="label">标签</div>',tagEditor(ckey),'</div>',
-    // P1: SEO
-    '<div class="seo-section"><div class="label">🔍 SEO</div><div style="height:8px"></div><div class="field-row">',field('Meta 标题','cf_'+c.id+'_meta_title',c.meta_title),field('OG 图片','cf_'+c.id+'_og_image',c.og_image),'</div><div class="field-row"><div class="field full"><div class="label">Meta 描述</div><input id="cf_'+c.id+'_meta_desc" value="'+esc(c.meta_description)+'"></div></div></div>',
   '</div></div>'].join('');
 }
 
@@ -813,7 +809,7 @@ async function saveContent(){
     function g(f){var el=document.getElementById('cf_'+c.id+'_'+f);return el?el.value:(c[f]||'');}
     function cb(f){var el=document.getElementById('cf_'+c.id+'_'+f);return el?el.checked:!!c[f];}
     var co=document.getElementById('cf_'+c.id+'_carousel');
-    return{id:c.id,sort_order:c.sort_order,type:g('type'),emoji:g('emoji'),title_zh:g('title_zh'),title_en:g('title_en'),summary_zh:g('summary_zh'),author:g('author'),duration_zh:g('duration_zh'),duration_en:g('duration_en'),category_zh:g('category_zh'),category_en:g('category_en'),tags:(tagState['c_'+c.id]||[]).slice(),cover_url:g('cover_url'),audio_url:g('audio_url'),podcast_link:g('podcast_link'),active:cb('active'),featured:cb('featured'),body_zh:g('body_zh'),body_en:g('body_en'),carousel_order:co?parseInt(co.value)||0:0,meta_title:g('meta_title'),meta_description:g('meta_desc'),og_image:g('og_image')};
+    return{id:c.id,sort_order:c.sort_order,type:g('type'),emoji:g('emoji'),title_zh:g('title_zh'),title_en:g('title_en'),summary_zh:g('summary_zh'),author:g('author'),duration_zh:g('duration_zh'),duration_en:g('duration_en'),category_zh:g('category_zh'),category_en:g('category_en'),tags:(tagState['c_'+c.id]||[]).slice(),cover_url:g('cover_url'),audio_url:g('audio_url'),podcast_link:g('podcast_link'),active:cb('active'),featured:cb('featured'),body_zh:g('body_zh'),body_en:g('body_en'),carousel_order:co?parseInt(co.value)||0:0};
   });
   var{error}=await sb.from('content').upsert(updates);
   if(error){alert('保存失败: '+error.message);return;}
