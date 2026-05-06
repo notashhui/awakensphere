@@ -254,6 +254,7 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
       <div class="nav-item" onclick="goPage('homepage',this)">🏠 首页内容</div>
       <div class="nav-item" onclick="goPage('content',this)">📚 内容库</div>
       <div class="nav-item" onclick="goPage('ticker',this)">🏷️ 分类标签</div>
+      <div class="nav-item" onclick="goPage('categories',this)">📁 疗愈方向</div>
       <div class="nav-item" onclick="goPage('stats',this)">📊 数据统计</div>
       <div class="nav-item" onclick="goPage('subscribers',this)">📧 订阅管理</div>
       <div class="nav-item" onclick="goPage('survey',this)">📋 问卷数据</div>
@@ -373,6 +374,41 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
         <div class="save-bar">
           <span class="save-msg" id="tickerMsg">✅ 已保存</span>
           <button class="btn-save" onclick="saveTicker()">💾 保存标签</button>
+        </div>
+      </div>
+
+      <!-- 疗愈方向（健康师筛选用大类） -->
+      <div class="page" id="page-categories">
+        <div class="page-title">📁 疗愈方向</div>
+        <div class="page-sub">疗愈师目录页（/healers）筛选 chip 用的大类。slug 是代码识别用，不要随意改；中英文标签可改</div>
+        <div class="card">
+          <div class="card-title">分类列表</div>
+          <div style="height:16px"></div>
+          <div id="categoryList"></div>
+          <div style="height:16px"></div>
+          <button class="btn-save" onclick="openAddCategory()">+ 新增分类</button>
+        </div>
+        <div class="save-bar">
+          <span class="save-msg" id="categoryMsg">✅ 已保存</span>
+          <button class="btn-save" onclick="saveCategories()">💾 保存所有分类</button>
+        </div>
+      </div>
+
+      <!-- 新增分类弹窗 -->
+      <div class="modal" id="modalCategory" style="display:none">
+        <div class="modal-card">
+          <div class="modal-title">+ 新增疗愈方向</div>
+          <div class="field-row">
+            <div class="field"><div class="label">slug（英文小写，代码识别用）</div><input id="nc_slug" placeholder="如：bodywork"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><div class="label">中文标签</div><input id="nc_label_zh" placeholder="如：身体工作"></div>
+            <div class="field"><div class="label">英文标签</div><input id="nc_label_en" placeholder="如：Bodywork"></div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeAddCategory()">取消</button>
+            <button class="btn-save" onclick="confirmAddCategory()">添加</button>
+          </div>
         </div>
       </div>
 
@@ -596,7 +632,40 @@ const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
 const BG_CLASSES=['hc1','hc2','hc3','hc4','hc5','hc6','hc7','hc8'];
 var cache={healers:null,homepage:null,content:null,ticker:null};
-var tagState={}, jsonState={};
+var tagState={}, jsonState={}, healerCatState={};
+// 渲染 healer 卡片中的"所属分类"多选 chips
+function categoriesEditor(healerId) {
+  if (!categoriesData || !categoriesData.length) return '<div style="color:#9ca3af;font-size:12px">暂无可选分类，请先去"📁 疗愈方向"页添加</div>';
+  var sel = healerCatState[healerId] || [];
+  var html = '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+  for (var i = 0; i < categoriesData.length; i++) {
+    var c = categoriesData[i];
+    var isOn = sel.indexOf(c.id) >= 0;
+    html += '<button type="button" class="cat-pick" onclick="toggleHealerCat(\''+healerId+'\','+c.id+',this)"'
+      + ' style="padding:6px 12px;border-radius:999px;font-size:11px;letter-spacing:.1em;cursor:pointer;border:1px solid '
+      + (isOn?'#35845D;background:#35845D;color:#fff':'#2d3548;background:transparent;color:#9ca3af')+'"'
+      + ' data-on="'+(isOn?'1':'0')+'">'+esc(c.label_zh||c.slug)+' · '+esc(c.label_en||c.slug)+'</button>';
+  }
+  return html + '</div>';
+}
+function toggleHealerCat(healerId, catId, btn) {
+  if (!healerCatState[healerId]) healerCatState[healerId] = [];
+  var arr = healerCatState[healerId];
+  var idx = arr.indexOf(catId);
+  if (idx >= 0) {
+    arr.splice(idx, 1);
+    btn.style.background = 'transparent';
+    btn.style.borderColor = '#2d3548';
+    btn.style.color = '#9ca3af';
+    btn.dataset.on = '0';
+  } else {
+    arr.push(catId);
+    btn.style.background = '#35845D';
+    btn.style.borderColor = '#35845D';
+    btn.style.color = '#fff';
+    btn.dataset.on = '1';
+  }
+}
 var currentUserEmail='';
 
 // ── 数据读取 ─────────────────────────────────────────────
@@ -641,11 +710,12 @@ function goPage(name,el){
     if(name==='media')loadMedia();
     if(name==='audit')loadAuditLog();
     if(name==='surveyedit')loadSurveyQuestions();
+    if(name==='categories')renderCategories();
   }
 }
 
 async function initDashboard(){
-  await Promise.all([renderHealers(),loadHomepage(),renderContent(),renderTicker()]);
+  await Promise.all([renderHealers(),loadHomepage(),renderContent(),renderTicker(),renderCategories()]);
   updateStats();
 }
 
@@ -655,7 +725,7 @@ function escText(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt
 function field(lbl,id,val){return'<div class="field"><div class="label">'+lbl+'</div><input id="'+id+'" value="'+esc(val)+'"></div>';}
 function showMsg(id){var el=document.getElementById(id);if(!el)return;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2500);}
 // admin 写入成功后清前台 localStorage 缓存（与 common.js 的 SBCACHE_KEY 同步）
-function bustSiteCache(){try{localStorage.removeItem('as_sbcache_v1');}catch(e){}}
+function bustSiteCache(){try{localStorage.removeItem('as_sbcache_v2');localStorage.removeItem('as_sbcache_v1');}catch(e){}}
 function toggleCard(bodyId){var body=document.getElementById('cb_'+bodyId);if(!body)return;body.classList.toggle('collapsed');var btn=body.previousElementSibling&&body.previousElementSibling.querySelector('.collapse-btn');if(btn)btn.textContent=body.classList.contains('collapsed')?'展开 ▼':'收起 ▲';}
 function fmtDate(iso){if(!iso)return'—';var d=new Date(iso);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 
@@ -688,7 +758,7 @@ function updateMdPreview(srcId,previewId){var s=document.getElementById(srcId),p
 // ══════════════════════════════════════════════════════════
 // HEALERS（含 SEO 字段）
 // ══════════════════════════════════════════════════════════
-async function renderHealers(){var healers=await fetchHealers();document.getElementById('healersList').innerHTML=healers.map(function(h){tagState[h.id]=(h.tags||[]).slice();jsonState['svc_'+h.id]=(h.services||[]).slice();jsonState['evt_'+h.id]=(h.events||[]).slice();jsonState['prd_'+h.id]=(h.products||[]).slice();return healerCard(h);}).join('');}
+async function renderHealers(){if(!categoriesData||!categoriesData.length)await renderCategories();var healers=await fetchHealers();document.getElementById('healersList').innerHTML=healers.map(function(h){tagState[h.id]=(h.tags||[]).slice();healerCatState[h.id]=(h.category_ids||[]).slice();jsonState['svc_'+h.id]=(h.services||[]).slice();jsonState['evt_'+h.id]=(h.events||[]).slice();jsonState['prd_'+h.id]=(h.products||[]).slice();return healerCard(h);}).join('');}
 
 function healerCard(h){
   var chk=h.active!==false?'checked':'',off=h.active===false?' <span style="font-size:11px;color:#ef4444;font-weight:400">· 已下线</span>':'';
@@ -705,7 +775,8 @@ function healerCard(h){
     '<div class="field-row col3">',field('价格','hf_'+h.id+'_price',h.price),field('所在地（中文）','hf_'+h.id+'_location_zh',h.location_zh),field('所在地（英文）','hf_'+h.id+'_location_en',h.location_en),'</div>',
     '<div class="field-row">',field('可约状态（中文）','hf_'+h.id+'_avail_zh',h.avail_zh||'线上可约'),field('可约状态（英文）','hf_'+h.id+'_avail_en',h.avail_en||'Online available'),'</div>',
     '<div class="field-row">',field('预约日期','hf_'+h.id+'_book_day',h.book_day),field('预约月份','hf_'+h.id+'_book_month',h.book_month),'</div>',
-    '<div class="field" style="margin-bottom:14px"><div class="label">标签</div>',tagEditor(h.id),'</div>',
+    '<div class="field" style="margin-bottom:14px"><div class="label">所属分类 <small>（疗愈师目录页 chip 筛选用，可多选）</small></div>',categoriesEditor(h.id),'</div>',
+    '<div class="field" style="margin-bottom:14px"><div class="label">细标签 <small>（个人主页展示，自由文本，逗号或回车分隔）</small></div>',tagEditor(h.id),'</div>',
     '<div class="field" style="margin-bottom:14px" id="jsec_svc_'+h.id+'">',renderServicesList(h.id),'</div>',
     '<div class="field" style="margin-bottom:14px" id="jsec_evt_'+h.id+'">',renderEventsList(h.id),'</div>',
     '<div class="field" style="margin-bottom:14px" id="jsec_prd_'+h.id+'">',renderProductsList(h.id),'</div>',
@@ -718,7 +789,10 @@ async function saveHealers(){
   var updates=healers.map(function(h){
     function g(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.value:(h[f]||'');}
     function cb(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.checked:!!h[f];}
-    return{id:h.id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[h.id]||[]).slice(),avatar_url:g('avatar_url'),active:cb('active'),services:jsonState['svc_'+h.id],events:jsonState['evt_'+h.id],products:jsonState['prd_'+h.id]};
+    var obj={id:h.id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[h.id]||[]).slice(),avatar_url:g('avatar_url'),active:cb('active'),services:jsonState['svc_'+h.id],events:jsonState['evt_'+h.id],products:jsonState['prd_'+h.id]};
+    // 仅当 categories 表就绪时才写 category_ids（避免 SQL 迁移未执行时 schema cache 报错）
+    if(categoriesData&&categoriesData.length)obj.category_ids=(healerCatState[h.id]||[]).slice();
+    return obj;
   });
   var{error}=await sb.from('healers').upsert(updates);
   if(error){alert('保存失败: '+error.message);return;}
@@ -733,7 +807,7 @@ async function confirmAddHealer(){var id=(document.getElementById('nh_id').value
 var pendingDel=null;
 function confirmDelete(t,id,name){pendingDel={type:t,id:id,name:name};document.getElementById('confirmTitle').textContent='删除「'+name+'」';document.getElementById('confirmSub').textContent='删除后无法恢复，请确认。';document.getElementById('confirmDlg').style.display='flex';}
 function closeConfirm(){pendingDel=null;document.getElementById('confirmDlg').style.display='none';}
-async function execConfirm(){if(!pendingDel)return;if(pendingDel.type==='healer')await deleteHealer(pendingDel.id);if(pendingDel.type==='content')await deleteContent(pendingDel.id);closeConfirm();}
+async function execConfirm(){if(!pendingDel)return;if(pendingDel.type==='healer')await deleteHealer(pendingDel.id);if(pendingDel.type==='content')await deleteContent(pendingDel.id);if(pendingDel.type==='category')await deleteCategory(pendingDel.id);closeConfirm();}
 async function deleteHealer(id){await sb.from('healers').delete().eq('id',id);await logAudit('delete','healer',id,'删除疗愈师');delete tagState[id];await renderHealers();updateStats();bustSiteCache();showMsg('healerMsg');}
 
 // ══════════════════════════════════════════════════════════
@@ -823,6 +897,89 @@ function moveTickerItem(i,d){var j=i+d;if(j<0||j>=tickerData.length)return;var t
 function delTickerItem(i){tickerData.splice(i,1);rebuildTickerUI();}
 function addTickerTag(){var el=document.getElementById('tickerNewInput');var v=el.value.trim();if(!v||tickerData.find(function(t){return t.label===v;})){el.value='';return;}tickerData.push({id:null,label:v,sort_order:tickerData.length+1});el.value='';rebuildTickerUI();}
 async function saveTicker(){await sb.from('ticker').delete().gte('id',0);var ins=tickerData.map(function(t,i){return{label:t.label,sort_order:i+1};});if(ins.length>0){var{error}=await sb.from('ticker').insert(ins);if(error){alert('保存失败: '+error.message);return;}}await logAudit('update','ticker','all','更新标签');bustSiteCache();showMsg('tickerMsg');await renderTicker();updateStats();}
+
+// ══════════════════════════════════════════════════════════
+// CATEGORIES（疗愈方向，healers.html 筛选 chip 用）
+// ══════════════════════════════════════════════════════════
+var categoriesData = [];
+async function fetchCategories() {
+  var {data, error} = await sb.from('categories').select('*').order('sort_order');
+  if (error) { console.error(error); return []; }
+  return data || [];
+}
+async function renderCategories() {
+  categoriesData = await fetchCategories();
+  rebuildCategoriesUI();
+}
+function rebuildCategoriesUI() {
+  var n = categoriesData.length;
+  var html = '';
+  for (var i = 0; i < n; i++) {
+    var c = categoriesData[i];
+    html += '<div class="ticker-row" style="gap:8px;flex-wrap:wrap">'
+      + '<span class="ticker-name" style="flex:0 0 auto;font-family:var(--mono);color:#9ca3af;min-width:120px">'+esc(c.slug)+'</span>'
+      + '<input id="cat_zh_'+i+'" value="'+esc(c.label_zh||'')+'" placeholder="中文标签" style="flex:1;min-width:120px;background:#111827;border:1px solid #2d3548;color:#fff;padding:6px 10px;border-radius:4px;font-size:13px">'
+      + '<input id="cat_en_'+i+'" value="'+esc(c.label_en||'')+'" placeholder="English" style="flex:1;min-width:120px;background:#111827;border:1px solid #2d3548;color:#fff;padding:6px 10px;border-radius:4px;font-size:13px">'
+      + '<div class="ticker-btns">'
+      + '<button class="ticker-btn" onclick="moveCategoryItem('+i+',-1)"'+(i===0?' disabled':'')+'>▲</button>'
+      + '<button class="ticker-btn" onclick="moveCategoryItem('+i+',1)"'+(i===n-1?' disabled':'')+'>▼</button>'
+      + '<button class="ticker-btn del" onclick="confirmDelete(\'category\',\''+c.id+'\',\''+esc(c.label_zh||c.slug)+'\')">×</button>'
+      + '</div>'
+      + '</div>';
+  }
+  document.getElementById('categoryList').innerHTML = html || '<div style="color:#9ca3af;font-size:13px;padding:8px">暂无分类，点下面"新增分类"添加</div>';
+}
+function moveCategoryItem(i,d) {
+  var j = i+d;
+  if (j<0||j>=categoriesData.length) return;
+  // 先把当前 row 的 input 值同步回 categoriesData，再交换，避免编辑丢失
+  collectCategoryInputs();
+  var t = categoriesData[i]; categoriesData[i] = categoriesData[j]; categoriesData[j] = t;
+  rebuildCategoriesUI();
+}
+function collectCategoryInputs() {
+  for (var i = 0; i < categoriesData.length; i++) {
+    var zh = document.getElementById('cat_zh_'+i);
+    var en = document.getElementById('cat_en_'+i);
+    if (zh) categoriesData[i].label_zh = zh.value;
+    if (en) categoriesData[i].label_en = en.value;
+  }
+}
+function openAddCategory() { ['nc_slug','nc_label_zh','nc_label_en'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';}); document.getElementById('modalCategory').style.display='flex'; }
+function closeAddCategory() { document.getElementById('modalCategory').style.display='none'; }
+async function confirmAddCategory() {
+  function v(id){return(document.getElementById(id)||{value:''}).value.trim();}
+  var slug = v('nc_slug').toLowerCase().replace(/\s+/g,'-');
+  var lz = v('nc_label_zh');
+  var le = v('nc_label_en');
+  if (!slug || !lz || !le) { alert('请填写 slug + 中文 + 英文标签'); return; }
+  var mx = categoriesData.reduce(function(m,c){return Math.max(m,c.sort_order||0);},0);
+  var {error} = await sb.from('categories').insert({slug:slug,label_zh:lz,label_en:le,sort_order:mx+1,active:true});
+  if (error) { alert('添加失败: '+error.message); return; }
+  await logAudit('create','category',slug,'新增分类: '+lz);
+  closeAddCategory();
+  bustSiteCache();
+  await renderCategories();
+}
+async function deleteCategory(id) {
+  await sb.from('categories').delete().eq('id',id);
+  await logAudit('delete','category',id,'删除分类');
+  bustSiteCache();
+  await renderCategories();
+}
+async function saveCategories() {
+  collectCategoryInputs();
+  var updates = categoriesData.map(function(c,i){
+    return {id:c.id,slug:c.slug,label_zh:c.label_zh||'',label_en:c.label_en||'',sort_order:i+1,active:c.active!==false};
+  });
+  if (updates.length === 0) { showMsg('categoryMsg'); return; }
+  var {error} = await sb.from('categories').upsert(updates);
+  if (error) { alert('保存失败: '+error.message); return; }
+  await logAudit('update','categories','all','批量更新分类');
+  bustSiteCache();
+  showMsg('categoryMsg');
+  await renderCategories();
+}
 
 // ══════════════════════════════════════════════════════════
 // P1: 数据统计

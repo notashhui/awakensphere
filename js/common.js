@@ -10,7 +10,7 @@ var SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 var sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 // 跨函数共享的数据缓存
-var sbCache = { healers: null, content: null, homepage: null, ticker: null };
+var sbCache = { healers: null, content: null, homepage: null, ticker: null, categories: null };
 
 // ── 中英语言切换 ───────────────────────────────────
 var LANG_KEY = 'as_lang';
@@ -107,7 +107,8 @@ function mdRender(md) {
 // ── 本地缓存层（降低 Supabase Egress 用量） ────────────
 // 一次成功 fetch 后写 localStorage，TTL 内重复访问不打网络。
 // 失效路径：(1) TTL 过期；(2) URL ?nocache=1；(3) admin 写入后调 invalidateSiteCache()。
-var SBCACHE_KEY = 'as_sbcache_v1';
+// v2: 加 categories 字段，旧 v1 缓存自动失效（key 不同就读不到）
+var SBCACHE_KEY = 'as_sbcache_v2';
 var SBCACHE_TTL_MS = 10 * 60 * 1000; // 10 分钟
 
 function loadFromCache() {
@@ -122,6 +123,7 @@ function loadFromCache() {
     sbCache.homepage = obj.homepage || {};
     sbCache.content = obj.content || [];
     sbCache.ticker = obj.ticker || [];
+    sbCache.categories = obj.categories || [];
     return true;
   } catch (e) {
     return false;
@@ -135,7 +137,8 @@ function saveToCache() {
       healers: sbCache.healers,
       homepage: sbCache.homepage,
       content: sbCache.content,
-      ticker: sbCache.ticker
+      ticker: sbCache.ticker,
+      categories: sbCache.categories
     }));
   } catch (e) {
     // localStorage 写满或被禁用，静默失败（不影响主流程）
@@ -147,7 +150,7 @@ function invalidateSiteCache() {
 }
 window.invalidateSiteCache = invalidateSiteCache;
 
-// ── 四表批量加载（首页用；其他页面可按需调用单表） ────
+// ── 五表批量加载（首页/目录页用；其他页面可按需调用单表） ────
 async function loadAllSiteData() {
   // 先查本地缓存，命中则跳过网络
   if (loadFromCache()) return;
@@ -156,12 +159,14 @@ async function loadAllSiteData() {
       sb.from('healers').select('*').eq('active', true).order('sort_order'),
       sb.from('homepage').select('*').eq('id', 1).single(),
       sb.from('content').select('*').eq('active', true).order('sort_order'),
-      sb.from('ticker').select('*').order('sort_order')
+      sb.from('ticker').select('*').order('sort_order'),
+      sb.from('categories').select('*').eq('active', true).order('sort_order')
     ]);
     sbCache.healers = results[0].data || [];
     sbCache.homepage = results[1].data || {};
     sbCache.content = results[2].data || [];
     sbCache.ticker = results[3].data || [];
+    sbCache.categories = (results[4] && results[4].data) || [];
     saveToCache();
   } catch (e) {
     console.warn('Supabase 全站数据加载失败:', e);

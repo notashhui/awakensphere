@@ -1506,9 +1506,8 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
         data-en="Meet every certified practitioner on AwakenSphere — across bodywork, mindfulness, sound, trauma and movement, in cities around the world. Pick one whose rhythm meets yours.">认识 AwakenSphere 平台上的每一位认证疗愈师 —— 他们来自按摩、正念、声音、创伤、动态五个方向，在全球十余座城市工作。挑选一位与你此刻的节奏相合的人。</p>
     </div>
     <aside class="dir-hero-stats">
-      <span class="big">30+</span>
-      <span>Certified Practitioners</span>
-      <span class="sm">7 Featured · 23 Private</span>
+      <span class="big" id="dirStatBig">—</span>
+      <span data-zh="位认证疗愈师" data-en="Certified Practitioners">Certified Practitioners</span>
     </aside>
   </div>
 </section>
@@ -1521,11 +1520,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
 
   <div class="dir-chips" id="dirChips">
     <button class="dir-chip on" data-cat="all" data-zh="全部" data-en="All">全部</button>
-    <button class="dir-chip" data-cat="massage" data-zh="按摩" data-en="Massage">按摩</button>
-    <button class="dir-chip" data-cat="mindfulness" data-zh="正念" data-en="Mindfulness">正念</button>
-    <button class="dir-chip" data-cat="sound" data-zh="声音" data-en="Sound">声音</button>
-    <button class="dir-chip" data-cat="trauma" data-zh="创伤" data-en="Trauma">创伤</button>
-    <button class="dir-chip" data-cat="movement" data-zh="动态" data-en="Movement">动态</button>
+    <!-- 其他 chip 由 renderDirChips() 从 sbCache.categories 动态注入；fallback 时容器为空，"全部"仍可用 -->
   </div>
 
   <div class="dir-view-toggle" id="dirViewToggle">
@@ -1820,9 +1815,10 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
 
 <script>
 /* ── Filtering / Search / View toggle ── */
+window.dirFilterApply = null; // 暴露给 overrideHealersGrid 渲染后重算 count
 (function(){
   const grid = document.getElementById('dirGrid');
-  const chips = document.querySelectorAll('#dirChips .dir-chip');
+  const chipsBox = document.getElementById('dirChips');
   const search = document.getElementById('dirSearch');
   const count = document.getElementById('dirCount');
   const viewBtns = document.querySelectorAll('#dirViewToggle button');
@@ -1833,6 +1829,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
   function apply() {
     const cards = [...grid.querySelectorAll('.hl-card')];
     let visible = 0;
+    const total = cards.filter(c => c.dataset.cats !== 'placeholder').length;
     cards.forEach(c => {
       if (c.dataset.cats === 'placeholder') {
         c.style.display = (activeCat === 'all' && !query) ? '' : 'none';
@@ -1840,21 +1837,29 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
       }
       const cats = c.dataset.cats || '';
       const haystack = (c.dataset.name + ' ' + c.dataset.spec + ' ' + c.dataset.tags + ' ' + (c.textContent || '')).toLowerCase();
-      const catOk = activeCat === 'all' || cats.includes(activeCat);
+      const catOk = activeCat === 'all' || cats.split(/\s+/).indexOf(activeCat) >= 0;
       const qOk = !query || haystack.includes(query);
       const show = catOk && qOk;
       c.style.display = show ? '' : 'none';
       if (show) visible++;
     });
-    count.textContent = String(visible).padStart(2,'0') + ' showing · 30 total';
+    const pad = (n) => String(n).padStart(2, '0');
+    count.setAttribute('data-zh', pad(visible) + ' 位显示 · 共 ' + pad(total));
+    count.setAttribute('data-en', pad(visible) + ' showing · ' + pad(total) + ' total');
+    if (typeof applyLang === 'function') applyLang();
+    else count.textContent = pad(visible) + ' showing · ' + pad(total) + ' total';
   }
+  window.dirFilterApply = apply;
 
-  chips.forEach(b => b.addEventListener('click', () => {
-    chips.forEach(x => x.classList.remove('on'));
+  // 事件委托：chip 是动态生成的，不能用 forEach 绑定一次
+  chipsBox.addEventListener('click', (e) => {
+    const b = e.target.closest('.dir-chip');
+    if (!b) return;
+    chipsBox.querySelectorAll('.dir-chip').forEach(x => x.classList.remove('on'));
     b.classList.add('on');
     activeCat = b.dataset.cat;
     apply();
-  }));
+  });
 
   search.addEventListener('input', () => {
     query = search.value.trim().toLowerCase();
@@ -1900,7 +1905,16 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
 <script>
 function goToHealer(id) { window.location.href = 'healer.html?id=' + encodeURIComponent(id); }
 
-// tag 字符串 → chip 分类 key（供原设计 filter 用）
+// 优先用 healers.category_ids（与 categories 表 slug 关联）；回退到 tag 字符串模糊匹配
+function healerCatsFromIds(ids) {
+  if (!ids || !ids.length) return '';
+  var lookup = {};
+  var cats = sbCache.categories || [];
+  for (var i = 0; i < cats.length; i++) lookup[cats[i].id] = cats[i].slug;
+  var out = [];
+  for (var j = 0; j < ids.length; j++) if (lookup[ids[j]]) out.push(lookup[ids[j]]);
+  return out.join(' ');
+}
 function healerCatsFromTags(tags) {
   if (!tags || !tags.length) return '';
   var blob = tags.join(' ').toLowerCase();
@@ -1911,6 +1925,28 @@ function healerCatsFromTags(tags) {
   if (/trauma|创伤|somatic|身体疗愈/i.test(blob)) cats.push('trauma');
   if (/movement|动态|舞蹈|dance/i.test(blob)) cats.push('movement');
   return cats.join(' ');
+}
+
+// 从 sbCache.categories 渲染筛选 chip（除"全部"外），由 admin"📁 疗愈方向"管理
+function renderDirChips() {
+  var cats = sbCache.categories || [];
+  var box = document.getElementById('dirChips');
+  if (!box) return;
+  // 移除现有非 'all' chip（防止重渲叠加）
+  var existing = box.querySelectorAll('.dir-chip');
+  for (var i = existing.length - 1; i >= 0; i--) {
+    if (existing[i].getAttribute('data-cat') !== 'all') existing[i].remove();
+  }
+  for (var j = 0; j < cats.length; j++) {
+    var c = cats[j];
+    var btn = document.createElement('button');
+    btn.className = 'dir-chip';
+    btn.setAttribute('data-cat', c.slug);
+    btn.setAttribute('data-zh', c.label_zh || c.slug);
+    btn.setAttribute('data-en', c.label_en || c.slug);
+    btn.textContent = c.label_zh || c.slug;
+    box.appendChild(btn);
+  }
 }
 
 // 七彩渐变循环（对照设计稿的 7 种卡片颜色）
@@ -1934,7 +1970,8 @@ function overrideHealersGrid() {
   for (var i = 0; i < items.length; i++) {
     var h = items[i];
     var num = (i + 1 < 10 ? '0' + (i + 1) : String(i + 1));
-    var cats = healerCatsFromTags(h.tags);
+    // 优先 category_ids（admin 后台维护），fallback 到 tags 模糊匹配（旧数据）
+    var cats = (h.category_ids && h.category_ids.length) ? healerCatsFromIds(h.category_ids) : healerCatsFromTags(h.tags);
     var nameEn = h.name_en || h.name_zh || '';
     var nameZh = h.name_zh || '';
     var titleZh = h.title_zh + (h.sub_zh ? ' · ' + h.sub_zh : '');
@@ -1978,23 +2015,20 @@ function overrideHealersGrid() {
       + '</div></a></article>';
   }
   grid.innerHTML = html;
-
-  // 更新 count
-  var cnt = document.getElementById('dirCount');
-  if (cnt) {
-    var n = items.length;
-    var pad = (n < 10 ? '0' + n : String(n));
-    cnt.setAttribute('data-zh', pad + ' 位显示 · 共 ' + pad);
-    cnt.setAttribute('data-en', pad + ' showing · ' + pad + ' total');
-    cnt.textContent = pad + ' showing · ' + pad + ' total';
-  }
+  // count 由 dirFilterApply 在 loadHealersData 末尾统一计算（基于真实可见卡数）
 }
 
 async function loadHealersData() {
   await loadAllSiteData();
+  renderDirChips();
   overrideHealersGrid();
+  // 注入真实疗愈师数量（替代假数字 "30+"）
+  var n = (sbCache.healers || []).length;
+  var bigEl = document.getElementById('dirStatBig');
+  if (bigEl && n > 0) bigEl.textContent = n;
   applyLang();
-  // 触发原设计 filter 脚本重新扫描卡片（若已加 init 逻辑）
+  // 重新计算 filter 显示数量（healer cards 是动态渲染的，dirCount 需基于真实卡数）
+  if (typeof window.dirFilterApply === 'function') window.dirFilterApply();
   window.dispatchEvent(new Event('resize'));
 }
 
