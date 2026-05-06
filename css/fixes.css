@@ -11,6 +11,12 @@
 .pf-portrait-caption,
 .hl-photo-meta { display: none !important; }
 
+/* 嵌套双语 span：用 <span data-lang="zh">中文</span><span data-lang="en">English</span>
+   配合 html[lang] 自动隐藏另一种语言。
+   适合含 <em>/<br> 等装饰的标题，避免 applyLang 用 textContent 破坏 DOM 结构。 */
+html[lang="zh"] [data-lang="en"] { display: none !important; }
+html[lang="en"] [data-lang="zh"] { display: none !important; }
+
 /* ──────────────────────────────────────────
    移动端适配（≤ 640px）
    ────────────────────────────────────────── */

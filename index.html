@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AwakenSphere — Where healing becomes awakening.</title>
+<title data-zh="随愈而为 AwakenSphere — 清醒疗愈，摩登修行" data-en="AwakenSphere — Where healing becomes awakening.">随愈而为 AwakenSphere — 清醒疗愈，摩登修行</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1037,7 +1037,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
 <!-- ─── HEADER ─────────────────────────── -->
 <header class="site-header">
   <div class="site-header-inner">
-    <a href="index.html" class="brand">AWAKENSPHERE</a>
+    <a href="index.html" class="brand" data-zh="随愈而为 AwakenSphere" data-en="AWAKENSPHERE">AWAKENSPHERE</a>
     <nav class="nav">
       <div class="lang">
         <button class="on" data-lang="zh">中文</button>
@@ -1096,12 +1096,6 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
 
     <!-- variant: still & motion content -->
     <div class="hero-content" id="heroContent">
-      <div class="hero-index">
-        <span>VOL. 01</span>
-        <span class="dot"></span>
-        <span>2026 · EDITION</span>
-      </div>
-
       <h1 class="hero-headline" id="heroHeadline">
         <span class="word">On</span> <span class="word">the</span> <span class="word">Journey</span> <span class="word">of</span><br>
         <em class="word">Healing</em><span class="word">,</span><br>
@@ -1147,38 +1141,17 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
   </div>
 </section>
 
-<!-- ─── RUNNING INDEX ─────────────────── -->
-<div class="running-index">
-  <div class="ri-inner" id="tickerTrack">
-    <span>N°01 · 正念冥想</span><span class="sep">◆</span>
-    <span>N°02 · 身体疗愈</span><span class="sep">◆</span>
-    <span>N°03 · 情绪释放</span><span class="sep">◆</span>
-    <span>N°04 · 芳香疗法</span><span class="sep">◆</span>
-    <span>N°05 · 声音治疗</span><span class="sep">◆</span>
-    <span>N°06 · 内在小孩</span><span class="sep">◆</span>
-    <span>N°07 · 创伤疗愈</span><span class="sep">◆</span>
-    <span>N°08 · 灵性成长</span><span class="sep">◆</span>
-    <!-- duplicate for seamless loop -->
-    <span>N°01 · 正念冥想</span><span class="sep">◆</span>
-    <span>N°02 · 身体疗愈</span><span class="sep">◆</span>
-    <span>N°03 · 情绪释放</span><span class="sep">◆</span>
-    <span>N°04 · 芳香疗法</span><span class="sep">◆</span>
-    <span>N°05 · 声音治疗</span><span class="sep">◆</span>
-    <span>N°06 · 内在小孩</span><span class="sep">◆</span>
-    <span>N°07 · 创伤疗愈</span><span class="sep">◆</span>
-    <span>N°08 · 灵性成长</span><span class="sep">◆</span>
-  </div>
-</div>
-
 
 
 <!-- ─── CONTENT LIBRARY ────────────────── -->
 <section class="container" id="content">
   <div class="section-head reveal">
-    <h2>Curated <em>readings</em><br>for the inward turn</h2>
+    <h2>
+      <span data-lang="zh">精选 <em>阅读</em><br>内省的转身</span>
+      <span data-lang="en">Curated <em>readings</em><br>for the inward turn</span>
+    </h2>
     <div class="meta-col">
-      <span>ISSUE · 2026.04</span>
-      <a href="#content">VIEW ALL READINGS →</a>
+      <a href="#content" data-zh="查看全部阅读 →" data-en="VIEW ALL READINGS →">VIEW ALL READINGS →</a>
     </div>
   </div>
 
@@ -1298,10 +1271,13 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
 <section class="healers">
   <div class="container">
     <div class="section-head reveal">
-      <h2>Meet the <em>healers</em><br>behind the practice</h2>
+      <h2>
+        <span data-lang="zh">遇见<em>疗愈师</em><br>走近真实的修行者</span>
+        <span data-lang="en">Meet the <em>healers</em><br>behind the practice</span>
+      </h2>
       <div class="meta-col">
-        <span>ONLINE · IN-PERSON · RETREAT</span>
-        <a href="healers.html">ALL HEALERS →</a>
+        <span data-zh="线上 · 面对面 · 静修营" data-en="ONLINE · IN-PERSON · RETREAT">ONLINE · IN-PERSON · RETREAT</span>
+        <a href="healers.html" data-zh="查看全部疗愈师 →" data-en="ALL HEALERS →">ALL HEALERS →</a>
       </div>
     </div>
 
@@ -1808,7 +1784,13 @@ function overrideTicker() {
 // ── 2. 内容库（有 content 表数据时才覆盖设计稿 5 篇 sample） ─────
 function overrideContent() {
   var items = sbCache.content || [];
-  if (items.length === 0) return;
+  var section = document.getElementById('content');
+  // Supabase 内容库为空时整个板块隐藏（避免展示 fallback 假文章）
+  if (items.length === 0) {
+    if (section) section.style.display = 'none';
+    return;
+  }
+  if (section) section.style.display = '';
   var list = document.getElementById('contentList');
   if (!list) return;
   var medias = ['media-a', 'media-b', 'media-c', 'media-d', 'media-e', 'media-f'];
@@ -1868,8 +1850,11 @@ function overrideHealers() {
   var html = '';
   for (var i = 0; i < items.length; i++) {
     var h = items[i];
-    var qz = h.bio_zh || '';
-    var qe = h.bio_en || h.bio_zh || '';
+    var qz = (h.bio_zh || '').trim();
+    var qe = (h.bio_en || h.bio_zh || '').trim();
+    // bio 为空或填了 TBD（不区分大小写）时不渲染引言区
+    var qzValid = qz && qz.toLowerCase() !== 'tbd';
+    var qeValid = qe && qe.toLowerCase() !== 'tbd';
     var portraitClass = portraits[i % portraits.length];
     var avatar = h.avatar_url
       ? '<img src="' + esc(h.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">'
@@ -1878,8 +1863,11 @@ function overrideHealers() {
     var nameZh = h.name_zh || '';
     var titleZh = h.title_zh || '';
     var titleEn = h.title_en || h.title_zh || '';
+    var quoteHtml = (qzValid || qeValid)
+      ? '<p class="healer-quote" data-zh="&ldquo;' + esc(qzValid ? qz : qe) + '&rdquo;" data-en="&ldquo;' + esc(qeValid ? qe : qz) + '&rdquo;">&ldquo;' + esc(qzValid ? qz : qe) + '&rdquo;</p>'
+      : '';
     html += '<article class="healer-card" onclick="goToHealer(\'' + esc(h.id) + '\')">'
-      + '<p class="healer-quote" data-zh="&ldquo;' + esc(qz) + '&rdquo;" data-en="&ldquo;' + esc(qe) + '&rdquo;">&ldquo;' + esc(qz) + '&rdquo;</p>'
+      + quoteHtml
       + '<div class="healer-portrait"><div class="healer-portrait-inner ' + portraitClass + '">' + avatar + '</div></div>'
       + '<div><div class="healer-name">' + esc(nameEn)
       + '<span class="zh" data-zh="' + esc(nameZh + ' · ' + titleZh) + '" data-en="' + esc(nameZh + ' · ' + titleEn) + '">' + esc(nameZh + ' · ' + titleZh) + '</span></div></div>'
