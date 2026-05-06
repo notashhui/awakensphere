@@ -323,16 +323,6 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
         </div>
 
         <div class="card">
-          <div class="card-title">📊 统计数字</div>
-          <div style="height:16px"></div>
-          <div class="field-row col3">
-            <div class="field"><div class="label">精选内容</div><input id="hp_stat_content" placeholder="200+"></div>
-            <div class="field"><div class="label">认证疗愈师</div><input id="hp_stat_healers" placeholder="30+"></div>
-            <div class="field"><div class="label">疗愈领域</div><input id="hp_stat_domains" placeholder="12"></div>
-          </div>
-        </div>
-
-        <div class="card">
           <div class="card-title">💬 创始人寄语</div>
           <div style="height:16px"></div>
           <div class="field-row">
@@ -762,7 +752,7 @@ async function deleteHealer(id){await sb.from('healers').delete().eq('id',id);aw
 // ══════════════════════════════════════════════════════════
 async function loadHomepage(){
   var hp=await fetchHomepage();function set(id,v){var el=document.getElementById(id);if(el)el.value=v||'';}
-  set('hp_hero_title_zh',hp.hero_title_zh);set('hp_hero_sub_en',hp.hero_sub_en);set('hp_hero_desc_zh',hp.hero_desc_zh);set('hp_hero_desc_en',hp.hero_desc_en);set('hp_stat_content',hp.stat_content);set('hp_stat_healers',hp.stat_healers);set('hp_stat_domains',hp.stat_domains);set('hp_founder_quote_zh',hp.founder_quote_zh);set('hp_founder_quote_en',hp.founder_quote_en);set('hp_founder_name_zh',hp.founder_name_zh);
+  set('hp_hero_title_zh',hp.hero_title_zh);set('hp_hero_sub_en',hp.hero_sub_en);set('hp_hero_desc_zh',hp.hero_desc_zh);set('hp_hero_desc_en',hp.hero_desc_en);set('hp_founder_quote_zh',hp.founder_quote_zh);set('hp_founder_quote_en',hp.founder_quote_en);set('hp_founder_name_zh',hp.founder_name_zh);
   set('hp_meta_title',hp.meta_title);set('hp_meta_desc',hp.meta_description);set('hp_og_image',hp.og_image);
   set('hp_hero_video_url',hp.hero_video_url);set('hp_hero_poster_url',hp.hero_poster_url);
   // 视频预览
@@ -771,7 +761,7 @@ async function loadHomepage(){
 }
 async function saveHomepage(){
   function g(id){var el=document.getElementById(id);return el?el.value:'';}
-  var{error}=await sb.from('homepage').upsert({id:1,hero_title_zh:g('hp_hero_title_zh'),hero_sub_en:g('hp_hero_sub_en'),hero_desc_zh:g('hp_hero_desc_zh'),hero_desc_en:g('hp_hero_desc_en'),stat_content:g('hp_stat_content'),stat_healers:g('hp_stat_healers'),stat_domains:g('hp_stat_domains'),founder_quote_zh:g('hp_founder_quote_zh'),founder_quote_en:g('hp_founder_quote_en'),founder_name_zh:g('hp_founder_name_zh'),meta_title:g('hp_meta_title'),meta_description:g('hp_meta_desc'),og_image:g('hp_og_image'),hero_video_url:g('hp_hero_video_url'),hero_poster_url:g('hp_hero_poster_url')});
+  var{error}=await sb.from('homepage').upsert({id:1,hero_title_zh:g('hp_hero_title_zh'),hero_sub_en:g('hp_hero_sub_en'),hero_desc_zh:g('hp_hero_desc_zh'),hero_desc_en:g('hp_hero_desc_en'),founder_quote_zh:g('hp_founder_quote_zh'),founder_quote_en:g('hp_founder_quote_en'),founder_name_zh:g('hp_founder_name_zh'),meta_title:g('hp_meta_title'),meta_description:g('hp_meta_desc'),og_image:g('hp_og_image'),hero_video_url:g('hp_hero_video_url'),hero_poster_url:g('hp_hero_poster_url')});
   if(error){alert('保存失败: '+error.message);return;}
   await logAudit('update','homepage','1','更新首页内容');
   showMsg('homepageMsg');
