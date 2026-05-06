@@ -1150,9 +1150,15 @@ section { padding: clamp(72px, 10vw, 140px) 0; }
 .dir-search input::placeholder { color: var(--muted); font-style: italic; }
 
 .dir-chips {
-  display: flex; flex-wrap: wrap; gap: 8px;
+  display: flex; flex-wrap: nowrap; gap: 8px;
   align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
 }
+.dir-chips::-webkit-scrollbar { display: none; }
+.dir-chip { flex-shrink: 0; white-space: nowrap; }
 .dir-chip {
   font-family: var(--mono); font-size: 10.5px;
   letter-spacing: .18em; text-transform: uppercase;
@@ -1514,12 +1520,12 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
   </div>
 
   <div class="dir-chips" id="dirChips">
-    <button class="dir-chip on" data-cat="all">All · 全部</button>
-    <button class="dir-chip" data-cat="massage">Massage · 按摩</button>
-    <button class="dir-chip" data-cat="mindfulness">Mindfulness · 正念</button>
-    <button class="dir-chip" data-cat="sound">Sound · 声音</button>
-    <button class="dir-chip" data-cat="trauma">Trauma · 创伤</button>
-    <button class="dir-chip" data-cat="movement">Movement · 动态</button>
+    <button class="dir-chip on" data-cat="all" data-zh="全部" data-en="All">全部</button>
+    <button class="dir-chip" data-cat="massage" data-zh="按摩" data-en="Massage">按摩</button>
+    <button class="dir-chip" data-cat="mindfulness" data-zh="正念" data-en="Mindfulness">正念</button>
+    <button class="dir-chip" data-cat="sound" data-zh="声音" data-en="Sound">声音</button>
+    <button class="dir-chip" data-cat="trauma" data-zh="创伤" data-en="Trauma">创伤</button>
+    <button class="dir-chip" data-cat="movement" data-zh="动态" data-en="Movement">动态</button>
   </div>
 
   <div class="dir-view-toggle" id="dirViewToggle">
