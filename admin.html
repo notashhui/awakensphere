@@ -286,20 +286,8 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
         <div class="page-sub">编辑首页展示的文案和数字</div>
 
         <div class="card">
-          <div class="card-title">🌱 Hero 区域</div>
-          <div style="height:16px"></div>
-          <div class="field-row">
-            <div class="field"><div class="label">主标题（中文）</div><input id="hp_hero_title_zh" placeholder="疗愈，从内而生"></div>
-            <div class="field"><div class="label">副标题（英文）</div><input id="hp_hero_sub_en" placeholder="The true healer is within you."></div>
-          </div>
-          <div class="field-row">
-            <div class="field full"><div class="label">描述（中文）</div><textarea id="hp_hero_desc_zh"></textarea></div>
-          </div>
-          <div class="field-row">
-            <div class="field full"><div class="label">描述（英文）</div><textarea id="hp_hero_desc_en"></textarea></div>
-          </div>
-          <div style="height:16px"></div>
           <div class="card-title">🎬 Hero 视频</div>
+          <div class="page-sub" style="margin-bottom:14px">主标题/副标题/描述已在代码中固定，不在此编辑</div>
           <div style="height:12px"></div>
           <div class="field-row">
             <div class="field full">
@@ -753,7 +741,7 @@ async function deleteHealer(id){await sb.from('healers').delete().eq('id',id);aw
 // ══════════════════════════════════════════════════════════
 async function loadHomepage(){
   var hp=await fetchHomepage();function set(id,v){var el=document.getElementById(id);if(el)el.value=v||'';}
-  set('hp_hero_title_zh',hp.hero_title_zh);set('hp_hero_sub_en',hp.hero_sub_en);set('hp_hero_desc_zh',hp.hero_desc_zh);set('hp_hero_desc_en',hp.hero_desc_en);set('hp_founder_quote_zh',hp.founder_quote_zh);set('hp_founder_quote_en',hp.founder_quote_en);set('hp_founder_name_zh',hp.founder_name_zh);
+  set('hp_founder_quote_zh',hp.founder_quote_zh);set('hp_founder_quote_en',hp.founder_quote_en);set('hp_founder_name_zh',hp.founder_name_zh);
   set('hp_meta_title',hp.meta_title);set('hp_meta_desc',hp.meta_description);set('hp_og_image',hp.og_image);
   set('hp_hero_video_url',hp.hero_video_url);set('hp_hero_poster_url',hp.hero_poster_url);
   // 视频预览
@@ -762,7 +750,7 @@ async function loadHomepage(){
 }
 async function saveHomepage(){
   function g(id){var el=document.getElementById(id);return el?el.value:'';}
-  var{error}=await sb.from('homepage').upsert({id:1,hero_title_zh:g('hp_hero_title_zh'),hero_sub_en:g('hp_hero_sub_en'),hero_desc_zh:g('hp_hero_desc_zh'),hero_desc_en:g('hp_hero_desc_en'),founder_quote_zh:g('hp_founder_quote_zh'),founder_quote_en:g('hp_founder_quote_en'),founder_name_zh:g('hp_founder_name_zh'),meta_title:g('hp_meta_title'),meta_description:g('hp_meta_desc'),og_image:g('hp_og_image'),hero_video_url:g('hp_hero_video_url'),hero_poster_url:g('hp_hero_poster_url')});
+  var{error}=await sb.from('homepage').upsert({id:1,founder_quote_zh:g('hp_founder_quote_zh'),founder_quote_en:g('hp_founder_quote_en'),founder_name_zh:g('hp_founder_name_zh'),meta_title:g('hp_meta_title'),meta_description:g('hp_meta_desc'),og_image:g('hp_og_image'),hero_video_url:g('hp_hero_video_url'),hero_poster_url:g('hp_hero_poster_url')});
   if(error){alert('保存失败: '+error.message);return;}
   await logAudit('update','homepage','1','更新首页内容');
   bustSiteCache();showMsg('homepageMsg');

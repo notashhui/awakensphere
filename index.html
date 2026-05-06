@@ -1097,15 +1097,21 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
     <!-- variant: still & motion content -->
     <div class="hero-content" id="heroContent">
       <h1 class="hero-headline" id="heroHeadline">
-        <span class="word">On</span> <span class="word">the</span> <span class="word">Journey</span> <span class="word">of</span><br>
-        <em class="word">Healing</em><span class="word">,</span><br>
-        <span class="word">Awaken</span> <span class="word">the</span> <span class="word">Sphere</span> <span class="word">of</span><br>
-        <span class="word">Your</span> <em class="word">Whole Self</em><span class="word">.</span>
+        <span data-lang="zh">清醒<em>疗愈</em>，<br>摩登<em>修行</em>。</span>
+        <span data-lang="en">
+          <span class="word">On</span> <span class="word">the</span> <span class="word">Journey</span> <span class="word">of</span><br>
+          <em class="word">Healing</em><span class="word">,</span><br>
+          <span class="word">Awaken</span> <span class="word">the</span> <span class="word">Sphere</span> <span class="word">of</span><br>
+          <span class="word">Your</span> <em class="word">Whole Self</em><span class="word">.</span>
+        </span>
       </h1>
 
       <div class="hero-tagline-block">
         <div class="hero-brand">AwakenSphere</div>
-        <div class="hero-sub">Where healing becomes awakening. · 疗愈，从内而生</div>
+        <div class="hero-sub">
+          <span data-lang="zh">随愈而为，独立疗愈师共创社区。让真实被遇见。</span>
+          <span data-lang="en">An independent healer co-creation community. Where the real finds you.</span>
+        </div>
       </div>
     </div>
 
@@ -1901,74 +1907,17 @@ function overrideHeroVideo() {
   }
 }
 
-// ── 6. Hero 标题 / 副标题（有 homepage 字段时覆盖；无数据保留硬编码 fallback） ──
-function overrideHero() {
-  var hp = sbCache.homepage || {};
-
-  // 标题：把中英文存到 dataset，由 renderHeroHeadline 按当前语言渲染
-  var headline = document.getElementById('heroHeadline');
-  if (headline) {
-    var titleZh = hp.hero_title_zh || '';
-    var titleEn = hp.hero_sub_en || hp.hero_title_en || '';
-    if (titleZh) headline.dataset.zhText = titleZh;
-    if (titleEn) headline.dataset.enText = titleEn;
-    if (titleZh || titleEn) renderHeroHeadline();
-  }
-
-  // 副标题：写 data-zh / data-en 让 applyLang 接管中英切换
-  var sub = document.querySelector('.hero-tagline-block .hero-sub');
-  if (sub) {
-    if (hp.hero_desc_zh) sub.setAttribute('data-zh', hp.hero_desc_zh);
-    if (hp.hero_desc_en) sub.setAttribute('data-en', hp.hero_desc_en);
-  }
-}
-
-// 把 hero 标题按当前语言渲染成 .word span（保留逐词动画的 DOM 结构）
-function renderHeroHeadline() {
-  var headline = document.getElementById('heroHeadline');
-  if (!headline) return;
-  var zh = headline.dataset.zhText || '';
-  var en = headline.dataset.enText || '';
-  if (!zh && !en) return; // 无数据则保留原硬编码 fallback
-  var lang = document.documentElement.getAttribute('data-lang') || 'zh';
-  var text = lang === 'en' ? (en || zh) : (zh || en);
-
-  // 中文按字符拆，英文按空格拆；\n 转为 <br>
-  var hasChinese = /[一-龥]/.test(text);
-  var html = '';
-  if (hasChinese) {
-    var chars = text.split('');
-    for (var i = 0; i < chars.length; i++) {
-      var c = chars[i];
-      if (c === '\n') html += '<br>';
-      else if (c === ' ') html += ' ';
-      else html += '<span class="word">' + esc(c) + '</span>';
-    }
-  } else {
-    var tokens = text.split(/(\s+)/);
-    for (var j = 0; j < tokens.length; j++) {
-      var t = tokens[j];
-      if (!t) continue;
-      if (/^\s+$/.test(t)) html += t.indexOf('\n') >= 0 ? '<br>' : ' ';
-      else html += '<span class="word">' + esc(t) + '</span>';
-    }
-  }
-  headline.innerHTML = html;
-
-  // motion variant 下重新触发逐词动画
-  var hero = document.getElementById('hero');
-  if (hero && hero.getAttribute('data-variant') === 'motion') {
-    var spans = headline.querySelectorAll('.word');
-    for (var k = 0; k < spans.length; k++) {
-      spans[k].style.animationDelay = (k * 0.06) + 's';
-    }
-  }
-}
-
-// ── 7. <title> / meta description（有 homepage.meta_* 时覆盖） ───
+// ── 6. <title> / meta description（有 homepage.meta_* 时覆盖中文版本） ───
+// 注：Hero 标题/副标题已固化为代码（v2 反馈 A-3，写死中英文双版本）。
+// SEO meta 仍走 Supabase，admin 后台可改。
 function overrideMeta() {
   var hp = sbCache.homepage || {};
-  if (hp.meta_title) document.title = hp.meta_title;
+  if (hp.meta_title) {
+    // 写入 <title> 的 data-zh，让 applyLang 在中文模式下接管。
+    // 英文模式仍用 HTML 中的 data-en fallback；要分英文 meta 时再加字段。
+    var titleEl = document.querySelector('title');
+    if (titleEl) titleEl.setAttribute('data-zh', hp.meta_title);
+  }
   if (hp.meta_description) {
     var md = document.querySelector('meta[name="description"]');
     if (md) {
@@ -1990,7 +1939,6 @@ async function loadIndexData() {
   overrideHealers();
   overrideQuote();
   overrideHeroVideo();
-  overrideHero();
   overrideMeta();
   applyLang();
   // 触发 healer drift / reveal 重新计算
@@ -1999,8 +1947,6 @@ async function loadIndexData() {
 
 // 切换语言后，Supabase 渲染出来的新节点也需要重新应用
 window.addEventListener('as:langchange', applyLang);
-// Hero 标题用 word span 结构，applyLang 处理不了 textContent 替换，单独重渲
-window.addEventListener('as:langchange', renderHeroHeadline);
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadIndexData);
