@@ -665,6 +665,8 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;'
 function escText(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function field(lbl,id,val){return'<div class="field"><div class="label">'+lbl+'</div><input id="'+id+'" value="'+esc(val)+'"></div>';}
 function showMsg(id){var el=document.getElementById(id);if(!el)return;el.classList.add('show');setTimeout(function(){el.classList.remove('show');},2500);}
+// admin 写入成功后清前台 localStorage 缓存（与 common.js 的 SBCACHE_KEY 同步）
+function bustSiteCache(){try{localStorage.removeItem('as_sbcache_v1');}catch(e){}}
 function toggleCard(bodyId){var body=document.getElementById('cb_'+bodyId);if(!body)return;body.classList.toggle('collapsed');var btn=body.previousElementSibling&&body.previousElementSibling.querySelector('.collapse-btn');if(btn)btn.textContent=body.classList.contains('collapsed')?'展开 ▼':'收起 ▲';}
 function fmtDate(iso){if(!iso)return'—';var d=new Date(iso);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
 
@@ -732,18 +734,18 @@ async function saveHealers(){
   var{error}=await sb.from('healers').upsert(updates);
   if(error){alert('保存失败: '+error.message);return;}
   await logAudit('update','healers','all','批量更新疗愈师');
-  showMsg('healerMsg');await renderHealers();updateStats();
+  bustSiteCache();showMsg('healerMsg');await renderHealers();updateStats();
 }
 
 async function openAddHealer(){['nh_id','nh_name_zh','nh_name_en','nh_title_zh','nh_title_en','nh_sub_zh','nh_sub_en','nh_bio_zh','nh_bio_en','nh_price','nh_loc_zh','nh_loc_en','nh_avail_zh','nh_avail_en','nh_day','nh_month'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('nh_avail_zh').value='线上可约';document.getElementById('nh_avail_en').value='Online available';document.getElementById('modalHealer').style.display='flex';}
 function closeAddHealer(){document.getElementById('modalHealer').style.display='none';}
-async function confirmAddHealer(){var id=(document.getElementById('nh_id').value||'').trim().replace(/\s+/g,'_').toLowerCase();if(!id){alert('请填写 ID');return;}function v(fid){return(document.getElementById(fid)||{value:''}).value;}var mx=(cache.healers||[]).reduce(function(m,h){return Math.max(m,h.sort_order||0);},0);var{error}=await sb.from('healers').insert({id:id,emoji:'🌿',bg:BG_CLASSES[(cache.healers||[]).length%BG_CLASSES.length],name_zh:v('nh_name_zh'),name_en:v('nh_name_en'),title_zh:v('nh_title_zh'),title_en:v('nh_title_en'),sub_zh:v('nh_sub_zh'),sub_en:v('nh_sub_en'),bio_zh:v('nh_bio_zh'),bio_en:v('nh_bio_en'),price:v('nh_price'),location_zh:v('nh_loc_zh'),location_en:v('nh_loc_en'),avail_zh:v('nh_avail_zh')||'线上可约',avail_en:v('nh_avail_en')||'Online available',book_day:v('nh_day'),book_month:v('nh_month'),tags:[],avatar_url:'',active:true,sort_order:mx+1,services:'[]',events:'[]',products:'[]',long_bio_zh:'',long_bio_en:''});if(error){alert('添加失败: '+error.message);return;}await logAudit('create','healer',id,'新增疗愈师: '+v('nh_name_zh'));closeAddHealer();await renderHealers();updateStats();showMsg('healerMsg');}
+async function confirmAddHealer(){var id=(document.getElementById('nh_id').value||'').trim().replace(/\s+/g,'_').toLowerCase();if(!id){alert('请填写 ID');return;}function v(fid){return(document.getElementById(fid)||{value:''}).value;}var mx=(cache.healers||[]).reduce(function(m,h){return Math.max(m,h.sort_order||0);},0);var{error}=await sb.from('healers').insert({id:id,emoji:'🌿',bg:BG_CLASSES[(cache.healers||[]).length%BG_CLASSES.length],name_zh:v('nh_name_zh'),name_en:v('nh_name_en'),title_zh:v('nh_title_zh'),title_en:v('nh_title_en'),sub_zh:v('nh_sub_zh'),sub_en:v('nh_sub_en'),bio_zh:v('nh_bio_zh'),bio_en:v('nh_bio_en'),price:v('nh_price'),location_zh:v('nh_loc_zh'),location_en:v('nh_loc_en'),avail_zh:v('nh_avail_zh')||'线上可约',avail_en:v('nh_avail_en')||'Online available',book_day:v('nh_day'),book_month:v('nh_month'),tags:[],avatar_url:'',active:true,sort_order:mx+1,services:'[]',events:'[]',products:'[]',long_bio_zh:'',long_bio_en:''});if(error){alert('添加失败: '+error.message);return;}await logAudit('create','healer',id,'新增疗愈师: '+v('nh_name_zh'));closeAddHealer();await renderHealers();updateStats();bustSiteCache();showMsg('healerMsg');}
 
 var pendingDel=null;
 function confirmDelete(t,id,name){pendingDel={type:t,id:id,name:name};document.getElementById('confirmTitle').textContent='删除「'+name+'」';document.getElementById('confirmSub').textContent='删除后无法恢复，请确认。';document.getElementById('confirmDlg').style.display='flex';}
 function closeConfirm(){pendingDel=null;document.getElementById('confirmDlg').style.display='none';}
 async function execConfirm(){if(!pendingDel)return;if(pendingDel.type==='healer')await deleteHealer(pendingDel.id);if(pendingDel.type==='content')await deleteContent(pendingDel.id);closeConfirm();}
-async function deleteHealer(id){await sb.from('healers').delete().eq('id',id);await logAudit('delete','healer',id,'删除疗愈师');delete tagState[id];await renderHealers();updateStats();showMsg('healerMsg');}
+async function deleteHealer(id){await sb.from('healers').delete().eq('id',id);await logAudit('delete','healer',id,'删除疗愈师');delete tagState[id];await renderHealers();updateStats();bustSiteCache();showMsg('healerMsg');}
 
 // ══════════════════════════════════════════════════════════
 // HOMEPAGE（含 SEO）
@@ -762,7 +764,7 @@ async function saveHomepage(){
   var{error}=await sb.from('homepage').upsert({id:1,hero_title_zh:g('hp_hero_title_zh'),hero_sub_en:g('hp_hero_sub_en'),hero_desc_zh:g('hp_hero_desc_zh'),hero_desc_en:g('hp_hero_desc_en'),founder_quote_zh:g('hp_founder_quote_zh'),founder_quote_en:g('hp_founder_quote_en'),founder_name_zh:g('hp_founder_name_zh'),meta_title:g('hp_meta_title'),meta_description:g('hp_meta_desc'),og_image:g('hp_og_image'),hero_video_url:g('hp_hero_video_url'),hero_poster_url:g('hp_hero_poster_url')});
   if(error){alert('保存失败: '+error.message);return;}
   await logAudit('update','homepage','1','更新首页内容');
-  showMsg('homepageMsg');
+  bustSiteCache();showMsg('homepageMsg');
 }
 
 // ══════════════════════════════════════════════════════════
@@ -814,13 +816,13 @@ async function saveContent(){
   var{error}=await sb.from('content').upsert(updates);
   if(error){alert('保存失败: '+error.message);return;}
   await logAudit('update','content','all','批量更新内容');
-  showMsg('contentMsg');await renderContent();updateStats();
+  bustSiteCache();showMsg('contentMsg');await renderContent();updateStats();
 }
 
 function openAddContent(){['nc_emoji','nc_title_zh','nc_title_en','nc_summary_zh','nc_author','nc_duration_zh'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('nc_type').value='article';document.getElementById('modalContent').style.display='flex';}
 function closeAddContent(){document.getElementById('modalContent').style.display='none';}
-async function confirmAddContent(){function v(id){return(document.getElementById(id)||{value:''}).value;}var mx=(cache.content||[]).reduce(function(m,c){return Math.max(m,c.sort_order||0);},0);var newId='c'+Date.now();var{error}=await sb.from('content').insert({id:newId,type:v('nc_type'),emoji:v('nc_emoji')||'📄',title_zh:v('nc_title_zh'),title_en:v('nc_title_en'),summary_zh:v('nc_summary_zh'),author:v('nc_author'),duration_zh:v('nc_duration_zh'),duration_en:'',tags:[],cover_url:'',audio_url:'',podcast_link:'',featured:false,active:true,sort_order:mx+1,body_zh:'',body_en:'',carousel_order:0});if(error){alert('添加失败: '+error.message);return;}await logAudit('create','content',newId,'新增内容: '+v('nc_title_zh'));closeAddContent();await renderContent();updateStats();showMsg('contentMsg');}
-async function deleteContent(id){await sb.from('content').delete().eq('id',id);await logAudit('delete','content',id,'删除内容');delete tagState['c_'+id];await renderContent();updateStats();showMsg('contentMsg');}
+async function confirmAddContent(){function v(id){return(document.getElementById(id)||{value:''}).value;}var mx=(cache.content||[]).reduce(function(m,c){return Math.max(m,c.sort_order||0);},0);var newId='c'+Date.now();var{error}=await sb.from('content').insert({id:newId,type:v('nc_type'),emoji:v('nc_emoji')||'📄',title_zh:v('nc_title_zh'),title_en:v('nc_title_en'),summary_zh:v('nc_summary_zh'),author:v('nc_author'),duration_zh:v('nc_duration_zh'),duration_en:'',tags:[],cover_url:'',audio_url:'',podcast_link:'',featured:false,active:true,sort_order:mx+1,body_zh:'',body_en:'',carousel_order:0});if(error){alert('添加失败: '+error.message);return;}await logAudit('create','content',newId,'新增内容: '+v('nc_title_zh'));closeAddContent();await renderContent();updateStats();bustSiteCache();showMsg('contentMsg');}
+async function deleteContent(id){await sb.from('content').delete().eq('id',id);await logAudit('delete','content',id,'删除内容');delete tagState['c_'+id];await renderContent();updateStats();bustSiteCache();showMsg('contentMsg');}
 
 // ══════════════════════════════════════════════════════════
 // TICKER
@@ -831,7 +833,7 @@ function rebuildTickerUI(){var n=tickerData.length;document.getElementById('tick
 function moveTickerItem(i,d){var j=i+d;if(j<0||j>=tickerData.length)return;var t=tickerData[i];tickerData[i]=tickerData[j];tickerData[j]=t;rebuildTickerUI();}
 function delTickerItem(i){tickerData.splice(i,1);rebuildTickerUI();}
 function addTickerTag(){var el=document.getElementById('tickerNewInput');var v=el.value.trim();if(!v||tickerData.find(function(t){return t.label===v;})){el.value='';return;}tickerData.push({id:null,label:v,sort_order:tickerData.length+1});el.value='';rebuildTickerUI();}
-async function saveTicker(){await sb.from('ticker').delete().gte('id',0);var ins=tickerData.map(function(t,i){return{label:t.label,sort_order:i+1};});if(ins.length>0){var{error}=await sb.from('ticker').insert(ins);if(error){alert('保存失败: '+error.message);return;}}await logAudit('update','ticker','all','更新标签');showMsg('tickerMsg');await renderTicker();updateStats();}
+async function saveTicker(){await sb.from('ticker').delete().gte('id',0);var ins=tickerData.map(function(t,i){return{label:t.label,sort_order:i+1};});if(ins.length>0){var{error}=await sb.from('ticker').insert(ins);if(error){alert('保存失败: '+error.message);return;}}await logAudit('update','ticker','all','更新标签');bustSiteCache();showMsg('tickerMsg');await renderTicker();updateStats();}
 
 // ══════════════════════════════════════════════════════════
 // P1: 数据统计

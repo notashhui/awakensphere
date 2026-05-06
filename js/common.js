@@ -104,8 +104,53 @@ function mdRender(md) {
   return h;
 }
 
+// ── 本地缓存层（降低 Supabase Egress 用量） ────────────
+// 一次成功 fetch 后写 localStorage，TTL 内重复访问不打网络。
+// 失效路径：(1) TTL 过期；(2) URL ?nocache=1；(3) admin 写入后调 invalidateSiteCache()。
+var SBCACHE_KEY = 'as_sbcache_v1';
+var SBCACHE_TTL_MS = 10 * 60 * 1000; // 10 分钟
+
+function loadFromCache() {
+  try {
+    if (window.location.search.indexOf('nocache=1') >= 0) return false;
+    var raw = localStorage.getItem(SBCACHE_KEY);
+    if (!raw) return false;
+    var obj = JSON.parse(raw);
+    if (!obj || !obj.ts) return false;
+    if (Date.now() - obj.ts > SBCACHE_TTL_MS) return false;
+    sbCache.healers = obj.healers || [];
+    sbCache.homepage = obj.homepage || {};
+    sbCache.content = obj.content || [];
+    sbCache.ticker = obj.ticker || [];
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function saveToCache() {
+  try {
+    localStorage.setItem(SBCACHE_KEY, JSON.stringify({
+      ts: Date.now(),
+      healers: sbCache.healers,
+      homepage: sbCache.homepage,
+      content: sbCache.content,
+      ticker: sbCache.ticker
+    }));
+  } catch (e) {
+    // localStorage 写满或被禁用，静默失败（不影响主流程）
+  }
+}
+
+function invalidateSiteCache() {
+  try { localStorage.removeItem(SBCACHE_KEY); } catch (e) {}
+}
+window.invalidateSiteCache = invalidateSiteCache;
+
 // ── 四表批量加载（首页用；其他页面可按需调用单表） ────
 async function loadAllSiteData() {
+  // 先查本地缓存，命中则跳过网络
+  if (loadFromCache()) return;
   try {
     var results = await Promise.all([
       sb.from('healers').select('*').eq('active', true).order('sort_order'),
@@ -117,6 +162,7 @@ async function loadAllSiteData() {
     sbCache.homepage = results[1].data || {};
     sbCache.content = results[2].data || [];
     sbCache.ticker = results[3].data || [];
+    saveToCache();
   } catch (e) {
     console.warn('Supabase 全站数据加载失败:', e);
   }
