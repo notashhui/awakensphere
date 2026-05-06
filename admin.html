@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cabin:wght@400;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<!-- D-1 图片裁剪 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; }
 body { font-family:'Cabin',sans-serif; background:#0f1117; color:#fff; min-height:100vh; }
@@ -609,6 +612,26 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
   </div>
 </div>
 
+<!-- D-1 图片裁剪 modal -->
+<div id="modalCrop" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeCropModal()">
+  <div class="modal-box" style="max-width:760px">
+    <div class="modal-head">
+      <div class="modal-title">📐 裁剪图片</div>
+      <button class="modal-close" onclick="closeCropModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="cropHint" style="color:#9ca3af;font-size:12px;margin-bottom:10px">建议尺寸：最低 600×800px · 最大 5 MB</div>
+      <div style="background:#0f1117;padding:8px;border-radius:6px;max-height:60vh;overflow:hidden">
+        <img id="cropImage" style="max-width:100%;display:block">
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeCropModal()">取消</button>
+      <button class="btn-save" onclick="confirmCrop()">✓ 确认并上传</button>
+    </div>
+  </div>
+</div>
+
 <!-- 删除确认 -->
 <div id="confirmDlg" class="confirm-overlay" style="display:none">
   <div class="confirm-box">
@@ -825,10 +848,24 @@ async function saveHealers(){
     if(categoriesData&&categoriesData.length)obj.category_ids=(healerCatState[h.id]||[]).slice();
     return obj;
   });
+  // 显示 loading（避免用户感觉冻结）
+  var saveBtn=document.querySelector('button.btn-save[onclick*="saveHealers"]');
+  var origLabel=saveBtn?saveBtn.textContent:'';
+  if(saveBtn){saveBtn.disabled=true;saveBtn.textContent='保存中…';}
   var{error}=await sb.from('healers').upsert(updates);
-  if(error){alert('保存失败: '+error.message);return;}
-  await logAudit('update','healers','all','批量更新疗愈师');
-  bustSiteCache();showMsg('healerMsg');await renderHealers();updateStats();
+  if(error){if(saveBtn){saveBtn.disabled=false;saveBtn.textContent=origLabel;}alert('保存失败: '+error.message);return;}
+  // D-2 性能优化：不再 await renderHealers() 全量重渲（4+ healer × 多张图片 = 30-60s 冷加载）
+  // 直接用 updates 内存覆盖 cache.healers，DOM 表单已是用户最新输入，无需重渲
+  for(var i=0;i<updates.length;i++){
+    var idx=(cache.healers||[]).findIndex(function(x){return x.id===updates[i].id;});
+    if(idx>=0)cache.healers[idx]=Object.assign({},cache.healers[idx],updates[i]);
+  }
+  // logAudit 不 await（fire-and-forget，节省 1 次 round-trip 等待）
+  logAudit('update','healers','all','批量更新疗愈师');
+  bustSiteCache();
+  if(saveBtn){saveBtn.disabled=false;saveBtn.textContent=origLabel;}
+  showMsg('healerMsg');
+  updateStats();
 }
 
 async function openAddHealer(){['nh_id','nh_name_zh','nh_name_en','nh_title_zh','nh_title_en','nh_sub_zh','nh_sub_en','nh_bio_zh','nh_bio_en','nh_price','nh_loc_zh','nh_loc_en','nh_avail_zh','nh_avail_en','nh_day','nh_month'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('nh_avail_zh').value='线上可约';document.getElementById('nh_avail_en').value='Online available';document.getElementById('modalHealer').style.display='flex';}
@@ -1222,7 +1259,71 @@ function updateStats(){var h=document.getElementById('st-healers'),c=document.ge
 // ══════════════════════════════════════════════════════════
 function previewImg(id,type,url,fe){var box=document.getElementById(type==='healer'?'hprev_'+id:'cprev_'+id);if(!box)return;var ov='<div class="img-clear" onclick="event.stopPropagation();clearImg(\''+id+'\',\''+type+'\',\''+fe+'\')">🗑</div><div class="img-upload-hint">📷</div>';if(url){box.classList.remove('no-img');box.innerHTML='<img src="'+url+'">'+ov;}else{box.classList.add('no-img');box.innerHTML=fe+ov;}}
 function clearImg(id,type,fe){var el=document.getElementById(type==='healer'?'hf_'+id+'_avatar_url':'cf_'+id+'_cover_url');if(el)el.value='';previewImg(id,type,'',fe);}
-function uploadImg(event,id,type,fe){var file=event.target.files[0];if(!file)return;var el=document.getElementById(type==='healer'?'hf_'+id+'_avatar_url':'cf_'+id+'_cover_url');var box=document.getElementById(type==='healer'?'hprev_'+id:'cprev_'+id);if(box)box.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">上传中…</div>';var fd=new FormData();fd.append('file',file);fd.append('upload_preset','awakensphere');fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/image/upload',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){if(d.secure_url){if(el)el.value=d.secure_url;previewImg(id,type,d.secure_url,fe);sb.from('media_library').insert({url:d.secure_url,filename:file.name,type:'image',size_bytes:d.bytes||0});}else{alert('上传失败');previewImg(id,type,el?el.value:'',fe);}}).catch(function(e){alert('上传出错：'+e.message);previewImg(id,type,el?el.value:'',fe);});}
+// D-1：图片上传走 Cropper 裁剪流程
+var _cropperInstance = null;
+var _cropperPending = null; // {id, type, fe, originalName}
+function uploadImg(event, id, type, fe) {
+  var file = event.target.files[0];
+  if (!file) return;
+  // 大小检查（5MB 上限）
+  if (file.size > 5 * 1024 * 1024) {
+    alert('文件过大（' + (file.size/1024/1024).toFixed(1) + ' MB）。建议小于 5 MB。');
+    event.target.value = '';
+    return;
+  }
+  _cropperPending = {id: id, type: type, fe: fe, originalName: file.name};
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = document.getElementById('cropImage');
+    img.onload = function() {
+      if (_cropperInstance) { _cropperInstance.destroy(); _cropperInstance = null; }
+      // healer 头像 1:1，content 封面 16:9
+      var aspect = type === 'healer' ? 1 : 16/9;
+      _cropperInstance = new Cropper(img, {
+        aspectRatio: aspect, viewMode: 1, autoCropArea: 1, background: false, zoomable: true, scalable: false, rotatable: false
+      });
+    };
+    img.src = e.target.result;
+    document.getElementById('modalCrop').style.display = 'flex';
+    var hint = document.getElementById('cropHint');
+    if (hint) hint.textContent = type === 'healer' ? '头像 · 1:1 方形 · 建议 ≥ 800×800px' : '封面 · 16:9 横屏 · 建议 ≥ 1280×720px';
+  };
+  reader.readAsDataURL(file);
+  event.target.value = ''; // 允许同一文件重新选择
+}
+function closeCropModal() {
+  if (_cropperInstance) { _cropperInstance.destroy(); _cropperInstance = null; }
+  document.getElementById('modalCrop').style.display = 'none';
+  _cropperPending = null;
+}
+function confirmCrop() {
+  if (!_cropperInstance || !_cropperPending) return;
+  var p = _cropperPending;
+  var canvas = _cropperInstance.getCroppedCanvas({maxWidth: 1600, maxHeight: 1600, imageSmoothingQuality: 'high'});
+  if (!canvas) { alert('裁剪失败'); return; }
+  canvas.toBlob(function(blob) {
+    closeCropModal();
+    if (!blob) { alert('裁剪失败'); return; }
+    var box = document.getElementById(p.type === 'healer' ? 'hprev_' + p.id : 'cprev_' + p.id);
+    var el = document.getElementById(p.type === 'healer' ? 'hf_' + p.id + '_avatar_url' : 'cf_' + p.id + '_cover_url');
+    if (box) box.innerHTML = '<div style="font-size:12px;color:#aaa;padding:8px">上传中…</div>';
+    var fd = new FormData();
+    fd.append('file', blob, p.originalName || 'cropped.jpg');
+    fd.append('upload_preset', 'awakensphere');
+    fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/image/upload', {method: 'POST', body: fd})
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.secure_url) {
+          if (el) el.value = d.secure_url;
+          previewImg(p.id, p.type, d.secure_url, p.fe);
+          sb.from('media_library').insert({url: d.secure_url, filename: p.originalName || 'cropped.jpg', type: 'image', size_bytes: d.bytes || 0});
+        } else {
+          alert('上传失败'); previewImg(p.id, p.type, el ? el.value : '', p.fe);
+        }
+      })
+      .catch(function(e) { alert('上传出错：' + e.message); previewImg(p.id, p.type, el ? el.value : '', p.fe); });
+  }, 'image/jpeg', 0.92);
+}
 function toggleAudioSection(id){var s=document.getElementById('cf_'+id+'_type'),sec=document.getElementById('caudio_'+id);if(s&&sec)sec.style.display=(s.value==='article')?'none':'';}
 function previewAudio(id,url){var w=document.getElementById('caudiowrap_'+id);if(w)w.innerHTML=url?'<audio controls src="'+url+'"></audio>':'';}
 function uploadAudio(event,id){var file=event.target.files[0];if(!file)return;var el=document.getElementById('cf_'+id+'_audio_url'),w=document.getElementById('caudiowrap_'+id);if(w)w.innerHTML='<div style="font-size:12px;color:#aaa;padding:8px">上传中…</div>';var fd=new FormData();fd.append('file',file);fd.append('upload_preset','awakensphere');fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/auto/upload',{method:'POST',body:fd}).then(function(r){return r.json();}).then(function(d){if(d.secure_url){if(el)el.value=d.secure_url;previewAudio(id,d.secure_url);sb.from('media_library').insert({url:d.secure_url,filename:file.name,type:'audio',size_bytes:d.bytes||0});}else{alert('上传失败');if(w)w.innerHTML='';}}).catch(function(e){alert('上传出错：'+e.message);if(w)w.innerHTML='';});}
