@@ -1066,7 +1066,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
             </span>
             <span class="dd-arrow">→</span>
           </a>
-          <a class="dd-item" role="menuitem" href="#">
+          <a class="dd-item" role="menuitem" href="javascript:void(0)">
             <span class="dd-num">03</span>
             <span class="dd-body">
               <span class="dd-title" data-zh="成长记录" data-en="Growth Journal">成长记录</span>
@@ -1178,8 +1178,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
     <h2>Curated <em>readings</em><br>for the inward turn</h2>
     <div class="meta-col">
       <span>ISSUE · 2026.04</span>
-      <span>24 ENTRIES · UPDATED WEEKLY</span>
-      <a href="#">VIEW ALL READINGS →</a>
+      <a href="#content">VIEW ALL READINGS →</a>
     </div>
   </div>
 
@@ -1301,9 +1300,8 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
     <div class="section-head reveal">
       <h2>Meet the <em>healers</em><br>behind the practice</h2>
       <div class="meta-col">
-        <span>30+ PRACTITIONERS</span>
         <span>ONLINE · IN-PERSON · RETREAT</span>
-        <a href="#">ALL HEALERS →</a>
+        <a href="healers.html">ALL HEALERS →</a>
       </div>
     </div>
 
@@ -1427,25 +1425,25 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
         <h4 class="footer-h" data-zh="疗愈师" data-en="HEALERS">疗愈师</h4>
         <ul>
           <li><a href="healers.html" data-zh="疗愈师目录" data-en="All Healers">疗愈师目录</a></li>
-          <li><a href="#" data-zh="申请加入" data-en="Apply to Join">申请加入</a></li>
-          <li><a href="#" data-zh="合作课程" data-en="Partner Courses">合作课程</a></li>
+          <li><a href="javascript:void(0)" data-zh="申请加入" data-en="Apply to Join">申请加入</a></li>
+          <li><a href="javascript:void(0)" data-zh="合作课程" data-en="Partner Courses">合作课程</a></li>
         </ul>
       </div>
       <div class="footer-col">
         <h4 class="footer-h" data-zh="关于" data-en="ABOUT">关于</h4>
         <ul>
-          <li><a href="#" data-zh="我们的故事" data-en="Our Story">我们的故事</a></li>
+          <li><a href="javascript:void(0)" data-zh="我们的故事" data-en="Our Story">我们的故事</a></li>
           <li><a href="quiz.html" data-zh="了解自己" data-en="Know Yourself">了解自己</a></li>
-          <li><a href="#" data-zh="联系我们" data-en="Contact">联系我们</a></li>
+          <li><a href="javascript:void(0)" data-zh="联系我们" data-en="Contact">联系我们</a></li>
         </ul>
       </div>
     </div>
     <div class="footer-legal">
-      <span>© 2026 · AWAKENSPHERE · WHERE HEALING BECOMES AWAKENING</span>
+      <span>© <span id="copyrightYear">2026</span> · AWAKENSPHERE · WHERE HEALING BECOMES AWAKENING</span>
       <span class="footer-social">
-        <a href="#">INSTAGRAM</a>
-        <a href="#">小红书</a>
-        <a href="#">PRIVACY</a>
+        <a href="javascript:void(0)">INSTAGRAM</a>
+        <a href="javascript:void(0)">小红书</a>
+        <a href="javascript:void(0)">PRIVACY</a>
       </span>
     </div>
   </div>
@@ -1632,9 +1630,11 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
   const prev = document.getElementById('healerPrev');
   const next = document.getElementById('healerNext');
   if (!strip) return;
-  const total = strip.querySelectorAll('.healer-card').length;
 
   function update() {
+    // 每次重新查询，处理 overrideHealers 后卡片数变化
+    const total = strip.querySelectorAll('.healer-card').length;
+    if (!total) return;
     const max = strip.scrollWidth - strip.clientWidth;
     const pct = max > 0 ? strip.scrollLeft / max : 0;
     const cardW = (strip.querySelector('.healer-card')?.offsetWidth || 300) + 28;
@@ -1913,6 +1913,87 @@ function overrideHeroVideo() {
   }
 }
 
+// ── 6. Hero 标题 / 副标题（有 homepage 字段时覆盖；无数据保留硬编码 fallback） ──
+function overrideHero() {
+  var hp = sbCache.homepage || {};
+
+  // 标题：把中英文存到 dataset，由 renderHeroHeadline 按当前语言渲染
+  var headline = document.getElementById('heroHeadline');
+  if (headline) {
+    var titleZh = hp.hero_title_zh || '';
+    var titleEn = hp.hero_sub_en || hp.hero_title_en || '';
+    if (titleZh) headline.dataset.zhText = titleZh;
+    if (titleEn) headline.dataset.enText = titleEn;
+    if (titleZh || titleEn) renderHeroHeadline();
+  }
+
+  // 副标题：写 data-zh / data-en 让 applyLang 接管中英切换
+  var sub = document.querySelector('.hero-tagline-block .hero-sub');
+  if (sub) {
+    if (hp.hero_desc_zh) sub.setAttribute('data-zh', hp.hero_desc_zh);
+    if (hp.hero_desc_en) sub.setAttribute('data-en', hp.hero_desc_en);
+  }
+}
+
+// 把 hero 标题按当前语言渲染成 .word span（保留逐词动画的 DOM 结构）
+function renderHeroHeadline() {
+  var headline = document.getElementById('heroHeadline');
+  if (!headline) return;
+  var zh = headline.dataset.zhText || '';
+  var en = headline.dataset.enText || '';
+  if (!zh && !en) return; // 无数据则保留原硬编码 fallback
+  var lang = document.documentElement.getAttribute('data-lang') || 'zh';
+  var text = lang === 'en' ? (en || zh) : (zh || en);
+
+  // 中文按字符拆，英文按空格拆；\n 转为 <br>
+  var hasChinese = /[一-龥]/.test(text);
+  var html = '';
+  if (hasChinese) {
+    var chars = text.split('');
+    for (var i = 0; i < chars.length; i++) {
+      var c = chars[i];
+      if (c === '\n') html += '<br>';
+      else if (c === ' ') html += ' ';
+      else html += '<span class="word">' + esc(c) + '</span>';
+    }
+  } else {
+    var tokens = text.split(/(\s+)/);
+    for (var j = 0; j < tokens.length; j++) {
+      var t = tokens[j];
+      if (!t) continue;
+      if (/^\s+$/.test(t)) html += t.indexOf('\n') >= 0 ? '<br>' : ' ';
+      else html += '<span class="word">' + esc(t) + '</span>';
+    }
+  }
+  headline.innerHTML = html;
+
+  // motion variant 下重新触发逐词动画
+  var hero = document.getElementById('hero');
+  if (hero && hero.getAttribute('data-variant') === 'motion') {
+    var spans = headline.querySelectorAll('.word');
+    for (var k = 0; k < spans.length; k++) {
+      spans[k].style.animationDelay = (k * 0.06) + 's';
+    }
+  }
+}
+
+// ── 7. <title> / meta description（有 homepage.meta_* 时覆盖） ───
+function overrideMeta() {
+  var hp = sbCache.homepage || {};
+  if (hp.meta_title) document.title = hp.meta_title;
+  if (hp.meta_description) {
+    var md = document.querySelector('meta[name="description"]');
+    if (md) {
+      md.setAttribute('content', hp.meta_description);
+    } else {
+      md = document.createElement('meta');
+      md.setAttribute('name', 'description');
+      md.setAttribute('content', hp.meta_description);
+      document.head.appendChild(md);
+    }
+  }
+}
+
 // ── 入口：加载 → 覆盖 → 重新应用语言 ─────────────────
 async function loadIndexData() {
   await loadAllSiteData();
@@ -1921,6 +2002,8 @@ async function loadIndexData() {
   overrideHealers();
   overrideQuote();
   overrideHeroVideo();
+  overrideHero();
+  overrideMeta();
   applyLang();
   // 触发 healer drift / reveal 重新计算
   window.dispatchEvent(new Event('resize'));
@@ -1928,6 +2011,8 @@ async function loadIndexData() {
 
 // 切换语言后，Supabase 渲染出来的新节点也需要重新应用
 window.addEventListener('as:langchange', applyLang);
+// Hero 标题用 word span 结构，applyLang 处理不了 textContent 替换，单独重渲
+window.addEventListener('as:langchange', renderHeroHeadline);
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', loadIndexData);

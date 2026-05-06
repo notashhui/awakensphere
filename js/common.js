@@ -130,6 +130,9 @@ async function loadAllSiteData() {
   function boot() {
     bindLangButtons();
     applyLang();
+    // 版权年份动态注入（footer 中 <span id="copyrightYear"> 占位）
+    var cy = document.getElementById('copyrightYear');
+    if (cy) cy.textContent = new Date().getFullYear();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
