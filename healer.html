@@ -2204,6 +2204,160 @@ function applyHealerData(h) {
       aboutEn.innerHTML = paragraphsEn.map(function(p){ return '<p>' + esc(p) + '</p>'; }).join('');
     }
   }
+
+  // ═══════════════════════════════════════════════════════
+  // C-3：联系方式 pills（根据字段是否有值决定显示）
+  // ═══════════════════════════════════════════════════════
+  var contactBox = document.querySelector('.pf-contact');
+  if (contactBox) {
+    var pills = [];
+    if (h.wechat) {
+      pills.push('<span class="pf-contact-pill" title="' + esc(h.wechat) + '"><span class="ic">💬</span><span data-lang="zh">微信</span><span data-lang="en">WeChat</span></span>');
+    }
+    if (h.whatsapp) {
+      var waLink = /^https?:/i.test(h.whatsapp) ? h.whatsapp : ('https://wa.me/' + h.whatsapp.replace(/[^\d+]/g, ''));
+      pills.push('<a class="pf-contact-pill" href="' + esc(waLink) + '" target="_blank" rel="noopener"><span class="ic">📱</span>WhatsApp</a>');
+    }
+    if (h.email) {
+      pills.push('<a class="pf-contact-pill" href="mailto:' + esc(h.email) + '"><span class="ic">✉</span><span data-lang="zh">邮件</span><span data-lang="en">Mail</span></a>');
+    }
+    if (h.xiaohongshu_url) {
+      pills.push('<a class="pf-contact-pill" href="' + esc(h.xiaohongshu_url) + '" target="_blank" rel="noopener"><span class="ic">🌸</span><span data-lang="zh">小红书</span><span data-lang="en">RedNote</span></a>');
+    }
+    if (pills.length === 0) {
+      // 完全无联系方式时隐藏整个区域
+      contactBox.style.display = 'none';
+    } else {
+      contactBox.innerHTML = pills.join('');
+      contactBox.style.display = '';
+    }
+  }
+
+  // 预约按钮 href（C-3 booking_url）
+  var bookBtnEl = document.querySelector('.pf-book');
+  if (bookBtnEl) {
+    if (h.booking_url) {
+      bookBtnEl.setAttribute('href', h.booking_url);
+      bookBtnEl.setAttribute('target', '_blank');
+      bookBtnEl.setAttribute('rel', 'noopener');
+      bookBtnEl.style.display = '';
+    } else {
+      // 没填预约链接就隐藏按钮（避免点了跳到顶部）
+      bookBtnEl.style.display = 'none';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // C-10：档案面板（pf-about-grid aside）—— 来自/认证/驻地/语言/执业
+  // ═══════════════════════════════════════════════════════
+  var aboutSide = document.querySelector('.pf-about-grid aside');
+  if (aboutSide) {
+    var sideHtml = '';
+    if (h.origin_city) {
+      sideHtml += '<div class="pf-about-eyebrow"><span data-lang="zh">来自</span><span data-lang="en">From</span></div>';
+      sideHtml += '<p style="font-family:var(--serif);font-size:26px;line-height:1.2;color:var(--ink);margin:6px 0 4px;">' + esc(h.origin_city) + '</p>';
+      var natParts = [];
+      if (h.nationality) natParts.push(h.nationality);
+      if (h.birth_year) natParts.push(String(h.birth_year));
+      if (natParts.length) {
+        sideHtml += '<p style="font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;color:var(--muted);text-transform:uppercase;">' + esc(natParts.join(' · ')) + '</p>';
+      }
+    }
+    var facts = [];
+    (h.certifications || []).forEach(function(c){
+      if (!c || !c.name) return;
+      var valZh = c.year ? esc(c.year) + ' 年认证' : '已认证';
+      var valEn = c.year ? 'Certified ' + esc(c.year) : 'Certified';
+      facts.push('<li><span class="lbl">' + esc(c.name) + '</span><span class="val"><span data-lang="zh">' + valZh + '</span><span data-lang="en">' + valEn + '</span></span></li>');
+    });
+    if (h.location_zh || h.location_en) {
+      facts.push('<li><span class="lbl"><span data-lang="zh">驻地</span><span data-lang="en">Base</span></span><span class="val"><span data-lang="zh">' + esc(h.location_zh || h.location_en || '') + '</span><span data-lang="en">' + esc(h.location_en || h.location_zh || '') + '</span></span></li>');
+    }
+    if (h.languages) {
+      facts.push('<li><span class="lbl"><span data-lang="zh">语言</span><span data-lang="en">Languages</span></span><span class="val">' + esc(h.languages) + '</span></li>');
+    }
+    if (h.practice_since) {
+      facts.push('<li><span class="lbl"><span data-lang="zh">执业</span><span data-lang="en">Practice</span></span><span class="val"><span data-lang="zh">自 ' + esc(h.practice_since) + ' 年起</span><span data-lang="en">Since ' + esc(h.practice_since) + '</span></span></li>');
+    }
+    if (facts.length) {
+      sideHtml += '<ul class="pf-about-facts">' + facts.join('') + '</ul>';
+    }
+    if (sideHtml) aboutSide.innerHTML = sideHtml;
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // C-11：服务区（h.services 数组）
+  // ═══════════════════════════════════════════════════════
+  var SVC_GRADIENTS = [
+    'linear-gradient(160deg,#E8D2B8,#C89F75)',
+    'linear-gradient(160deg,#CAD3B7,#8FA67E)',
+    'linear-gradient(160deg,#CCD5DF,#8CA0B9)',
+    'linear-gradient(160deg,#D4C4AE,#B39D7E)',
+    'linear-gradient(160deg,#D9CAB9,#B59A7E)'
+  ];
+  var svcContainer = document.querySelector('.pf-services');
+  if (svcContainer) {
+    if (h.services && h.services.length) {
+      svcContainer.innerHTML = h.services.map(function(s, i){
+        var idx = i + 1;
+        var num = 'S · ' + (idx < 10 ? '0' + idx : idx);
+        var nameZh = s.name_zh || '';
+        var nameEn = s.name_en || s.name_zh || '';
+        var detail = [];
+        if (s.duration) detail.push(s.duration);
+        if (s.price) detail.push(s.price);
+        var swatch = s.image_url
+          ? '<div class="pf-service-swatch" style="background-image:url(' + esc(s.image_url) + ');background-size:cover;background-position:center;"></div>'
+          : '<div class="pf-service-swatch" style="background:' + SVC_GRADIENTS[i % SVC_GRADIENTS.length] + ';"></div>';
+        var href = h.booking_url || '#';
+        var target = h.booking_url ? ' target="_blank" rel="noopener"' : '';
+        return '<a class="pf-service" href="' + esc(href) + '"' + target + '>'
+          + swatch
+          + '<div class="pf-service-num">' + num + '</div>'
+          + '<h3 class="pf-service-name"><span data-lang="zh">' + esc(nameZh) + '</span><span data-lang="en">' + esc(nameEn) + '</span></h3>'
+          + (detail.length ? '<div class="pf-service-detail">' + esc(detail.join(' · ')) + '</div>' : '')
+          + '<p class="pf-service-desc"><span data-lang="zh">' + esc(s.description_zh || '') + '</span><span data-lang="en">' + esc(s.description_en || s.description_zh || '') + '</span></p>'
+          + '<div class="pf-service-cta"><span data-lang="zh">预约</span><span data-lang="en">Book</span><span class="arr">→</span></div>'
+          + '</a>';
+      }).join('');
+    } else {
+      // healer 没填服务时隐藏整个 Services section
+      var svcSection = svcContainer.closest('section.pf-section');
+      if (svcSection) svcSection.style.display = 'none';
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // 产品区（h.products）—— 当前 healer 没产品就隐藏整个 Touch Soul 硬编码区
+  // ═══════════════════════════════════════════════════════
+  if (!h.products || !h.products.length) {
+    var allSecs = document.querySelectorAll('section');
+    allSecs.forEach(function(sec){
+      // 通过 Touch Soul 文本识别产品区（设计稿原硬编码）
+      if (sec.textContent.indexOf('Touch Soul') >= 0) sec.style.display = 'none';
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // C-9：底部特色引言（pf-quote）
+  // ═══════════════════════════════════════════════════════
+  var quoteText = document.querySelector('.pf-quote-text');
+  var quoteCite = document.querySelector('.pf-quote-cite');
+  if (h.featured_quote_zh || h.featured_quote_en) {
+    if (quoteText) {
+      quoteText.innerHTML = '<span data-lang="zh">' + esc(h.featured_quote_zh || h.featured_quote_en) + '</span>'
+        + '<span data-lang="en">' + esc(h.featured_quote_en || h.featured_quote_zh) + '</span>';
+    }
+    if (quoteCite) {
+      var ctxStr = h.quote_context ? ' · ' + h.quote_context : '';
+      quoteCite.innerHTML = '<span data-lang="zh">— ' + esc(pureZh) + esc(ctxStr) + '</span>'
+        + '<span data-lang="en">— ' + esc(nameEn) + esc(ctxStr) + '</span>';
+    }
+  } else {
+    // 没填特色引言就隐藏整个引言 section
+    var qSec = quoteText && quoteText.closest('section.pf-quote');
+    if (qSec) qSec.style.display = 'none';
+  }
 }
 
 window.addEventListener('as:langchange', applyLang);

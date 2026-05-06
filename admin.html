@@ -740,6 +740,11 @@ function refreshTagEditor(k){var te=document.getElementById('te_'+k);if(!te)retu
 // ── JSONB 编辑器（服务/活动/产品）─────────────────────────
 function getJson(k){return jsonState[k]||[];}function setJson(k,a){jsonState[k]=a;}
 function renderServicesList(hid){var k='svc_'+hid,items=getJson(k);return'<div class="label">💆 服务列表</div><div id="jl_'+k+'">'+items.map(function(s,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('服务名称（中文）','j_'+k+'_'+i+'_name_zh',s.name_zh)+field('服务名称（英文）','j_'+k+'_'+i+'_name_en',s.name_en)+'</div><div class="field-row"><div class="field full"><div class="label">描述</div><input id="j_'+k+'_'+i+'_desc" value="'+esc(s.description_zh)+'"></div></div><div class="field-row">'+field('价格','j_'+k+'_'+i+'_price',s.price)+field('时长','j_'+k+'_'+i+'_duration',s.duration)+'</div><div class="field-row"><div class="field full"><div class="label">服务图片</div><div style="display:flex;gap:10px;align-items:center;"><input class="img-url-inp" id="j_'+k+'_'+i+'_image" value="'+esc(s.image_url||'')+'" placeholder="粘贴图片 URL 或上传" style="flex:1;"><label class="img-upload-label" style="flex-shrink:0;">📷 上传<input type="file" accept="image/*" style="display:none" onchange="uploadSvcImg(event,\''+k+'\','+i+')"></label></div>'+(s.image_url?'<img src="'+esc(s.image_url)+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:6px;border:1px solid #374151;">':'')+'</div></div></div>';}).join('')+'</div><button class="json-add" onclick="addService(\''+hid+'\')">＋ 添加服务</button>';}
+
+// 认证列表（C-10 档案面板用）：[{name, year}]
+function renderCertificationsList(hid){var k='cert_'+hid,items=getJson(k);return'<div class="label">🏅 认证列表</div><div id="jl_'+k+'">'+items.map(function(c,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('认证名称','j_'+k+'_'+i+'_name',c.name||'')+field('年份','j_'+k+'_'+i+'_year',c.year||'')+'</div></div>';}).join('')+'</div><button class="json-add" onclick="addCertification(\''+hid+'\')">＋ 添加认证</button>';}
+function addCertification(hid){var k='cert_'+hid;getJson(k).push({name:'',year:''});refreshJsonSection(k,hid,'certifications');}
+function collectCertifications(hid){var k='cert_'+hid;return getJson(k).map(function(c,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{name:g('name'),year:g('year')};});}
 function addService(hid){var k='svc_'+hid;getJson(k).push({name_zh:'',name_en:'',description_zh:'',price:'',duration:''});refreshJsonSection(k,hid,'services');}
 function collectServices(hid){var k='svc_'+hid;return getJson(k).map(function(s,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{name_zh:g('name_zh'),name_en:g('name_en'),description_zh:g('desc'),price:g('price'),duration:g('duration'),image_url:g('image')};});}
 function renderEventsList(hid){var k='evt_'+hid,items=getJson(k);return'<div class="label">📅 活动日程</div><div id="jl_'+k+'">'+items.map(function(e,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('活动名称（中文）','j_'+k+'_'+i+'_title_zh',e.title_zh)+field('活动名称（英文）','j_'+k+'_'+i+'_title_en',e.title_en)+'</div><div class="field-row">'+field('日期','j_'+k+'_'+i+'_date',e.date)+field('时间','j_'+k+'_'+i+'_time',e.time)+'</div><div class="field-row">'+field('地点','j_'+k+'_'+i+'_loc',e.location_zh)+field('描述','j_'+k+'_'+i+'_desc',e.description_zh)+'</div></div>';}).join('')+'</div><button class="json-add" onclick="addEvent(\''+hid+'\')">＋ 添加活动</button>';}
@@ -749,7 +754,7 @@ function renderProductsList(hid){var k='prd_'+hid,items=getJson(k);return'<div c
 function addProduct(hid){var k='prd_'+hid;getJson(k).push({name_zh:'',name_en:'',price:'',image_url:'',description_zh:''});refreshJsonSection(k,hid,'products');}
 function collectProducts(hid){var k='prd_'+hid;return getJson(k).map(function(p,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{name_zh:g('name_zh'),name_en:'',price:g('price'),image_url:'',description_zh:g('desc')};});}
 function delJsonItem(k,idx){getJson(k).splice(idx,1);var pts=k.split('_'),type=pts[0],hid=pts.slice(1).join('_');var map={svc:'services',evt:'events',prd:'products'};refreshJsonSection(k,hid,map[type]);}
-function refreshJsonSection(k,hid,st){var c=document.getElementById('jsec_'+k);if(!c)return;var h='';if(st==='services')h=renderServicesList(hid);else if(st==='events')h=renderEventsList(hid);else if(st==='products')h=renderProductsList(hid);c.innerHTML=h;}
+function refreshJsonSection(k,hid,st){var c=document.getElementById('jsec_'+k);if(!c)return;var h='';if(st==='services')h=renderServicesList(hid);else if(st==='events')h=renderEventsList(hid);else if(st==='products')h=renderProductsList(hid);else if(st==='certifications')h=renderCertificationsList(hid);c.innerHTML=h;}
 
 // ── Markdown 预览 ────────────────────────────────────────
 function mdToHtml(md){if(!md)return'<span style="color:#6b7280;font-style:italic">（暂无内容）</span>';var h=esc(md);h=h.replace(/^### (.+)$/gm,'<h3>$1</h3>');h=h.replace(/^## (.+)$/gm,'<h2>$1</h2>');h=h.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');h=h.replace(/^&gt; (.+)$/gm,'<blockquote>$1</blockquote>');h=h.replace(/^\d+\. (.+)$/gm,'<li>$1</li>');h=h.replace(/^- (.+)$/gm,'<li>$1</li>');h=h.replace(/(<li>.*<\/li>\n?)+/g,function(m){return'<ul>'+m+'</ul>';});h=h.replace(/\n\n/g,'</p><p>');h='<p>'+h+'</p>';h=h.replace(/<p><h([23])>/g,'<h$1>').replace(/<\/h([23])><\/p>/g,'</h$1>');h=h.replace(/<p><blockquote>/g,'<blockquote>').replace(/<\/blockquote><\/p>/g,'</blockquote>');h=h.replace(/<p><ul>/g,'<ul>').replace(/<\/ul><\/p>/g,'</ul>');return h;}
@@ -758,7 +763,7 @@ function updateMdPreview(srcId,previewId){var s=document.getElementById(srcId),p
 // ══════════════════════════════════════════════════════════
 // HEALERS（含 SEO 字段）
 // ══════════════════════════════════════════════════════════
-async function renderHealers(){if(!categoriesData||!categoriesData.length)await renderCategories();var healers=await fetchHealers();document.getElementById('healersList').innerHTML=healers.map(function(h){tagState[h.id]=(h.tags||[]).slice();healerCatState[h.id]=(h.category_ids||[]).slice();jsonState['svc_'+h.id]=(h.services||[]).slice();jsonState['evt_'+h.id]=(h.events||[]).slice();jsonState['prd_'+h.id]=(h.products||[]).slice();return healerCard(h);}).join('');}
+async function renderHealers(){if(!categoriesData||!categoriesData.length)await renderCategories();var healers=await fetchHealers();document.getElementById('healersList').innerHTML=healers.map(function(h){tagState[h.id]=(h.tags||[]).slice();healerCatState[h.id]=(h.category_ids||[]).slice();jsonState['svc_'+h.id]=(h.services||[]).slice();jsonState['evt_'+h.id]=(h.events||[]).slice();jsonState['prd_'+h.id]=(h.products||[]).slice();jsonState['cert_'+h.id]=(h.certifications||[]).slice();return healerCard(h);}).join('');}
 
 function healerCard(h){
   var chk=h.active!==false?'checked':'',off=h.active===false?' <span style="font-size:11px;color:#ef4444;font-weight:400">· 已下线</span>':'';
@@ -777,6 +782,24 @@ function healerCard(h){
     '<div class="field-row">',field('预约日期','hf_'+h.id+'_book_day',h.book_day),field('预约月份','hf_'+h.id+'_book_month',h.book_month),'</div>',
     '<div class="field" style="margin-bottom:14px"><div class="label">所属分类 <small>（疗愈师目录页 chip 筛选用，可多选）</small></div>',categoriesEditor(h.id),'</div>',
     '<div class="field" style="margin-bottom:14px"><div class="label">细标签 <small>（个人主页展示，自由文本，逗号或回车分隔）</small></div>',tagEditor(h.id),'</div>',
+    // ─── C-10 档案面板（详情页左侧）───
+    '<div class="seo-section"><div class="label">📋 个人档案 <small>（详情页左侧"档案"信息块）</small></div><div style="height:8px"></div>',
+    '<div class="field-row col3">',field('来自城市（中文）','hf_'+h.id+'_origin_city',h.origin_city),field('国籍代码','hf_'+h.id+'_nationality',h.nationality||''),field('出生年份','hf_'+h.id+'_birth_year',h.birth_year||''),'</div>',
+    '<div class="field-row">',field('语言 <small>（用 · 或逗号分隔，如 "中 · EN · FR"）</small>','hf_'+h.id+'_languages',h.languages),field('执业开始年份','hf_'+h.id+'_practice_since',h.practice_since||''),'</div>',
+    '<div class="field" style="margin-bottom:14px" id="jsec_cert_'+h.id+'">',renderCertificationsList(h.id),'</div>',
+    '</div>',
+    // ─── C-3 联系方式（前台按钮根据是否有值显示）───
+    '<div class="seo-section"><div class="label">📞 联系方式 <small>（有值时前台按钮显示，否则隐藏）</small></div><div style="height:8px"></div>',
+    '<div class="field-row">',field('微信号','hf_'+h.id+'_wechat',h.wechat),field('WhatsApp <small>（号码或链接）</small>','hf_'+h.id+'_whatsapp',h.whatsapp),'</div>',
+    '<div class="field-row">',field('邮箱','hf_'+h.id+'_email',h.email),field('小红书链接','hf_'+h.id+'_xiaohongshu_url',h.xiaohongshu_url),'</div>',
+    '<div class="field-row"><div class="field full"><div class="label">预约链接 <small>（外部表单 / Calendly 等）</small></div><input id="hf_'+h.id+'_booking_url" value="'+esc(h.booking_url||'')+'"></div></div>',
+    '</div>',
+    // ─── C-9 特色引言（详情页底部大引言）───
+    '<div class="seo-section"><div class="label">💬 特色引言 <small>（详情页底部大字摘录）</small></div><div style="height:8px"></div>',
+    '<div class="field-row"><div class="field full"><div class="label">引言（中文）</div><textarea id="hf_'+h.id+'_featured_quote_zh">'+escText(h.featured_quote_zh)+'</textarea></div></div>',
+    '<div class="field-row"><div class="field full"><div class="label">引言（英文）</div><textarea id="hf_'+h.id+'_featured_quote_en">'+escText(h.featured_quote_en)+'</textarea></div></div>',
+    '<div class="field-row"><div class="field full"><div class="label">引言来源说明 <small>（如 "谈 Esalen® 实践"）</small></div><input id="hf_'+h.id+'_quote_context" value="'+esc(h.quote_context||'')+'"></div></div>',
+    '</div>',
     '<div class="field" style="margin-bottom:14px" id="jsec_svc_'+h.id+'">',renderServicesList(h.id),'</div>',
     '<div class="field" style="margin-bottom:14px" id="jsec_evt_'+h.id+'">',renderEventsList(h.id),'</div>',
     '<div class="field" style="margin-bottom:14px" id="jsec_prd_'+h.id+'">',renderProductsList(h.id),'</div>',
@@ -785,11 +808,19 @@ function healerCard(h){
 
 async function saveHealers(){
   var healers=cache.healers||[];
-  healers.forEach(function(h){jsonState['svc_'+h.id]=collectServices(h.id);jsonState['evt_'+h.id]=collectEvents(h.id);jsonState['prd_'+h.id]=collectProducts(h.id);});
+  healers.forEach(function(h){jsonState['svc_'+h.id]=collectServices(h.id);jsonState['evt_'+h.id]=collectEvents(h.id);jsonState['prd_'+h.id]=collectProducts(h.id);jsonState['cert_'+h.id]=collectCertifications(h.id);});
   var updates=healers.map(function(h){
     function g(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.value:(h[f]||'');}
     function cb(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.checked:!!h[f];}
-    var obj={id:h.id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[h.id]||[]).slice(),avatar_url:g('avatar_url'),active:cb('active'),services:jsonState['svc_'+h.id],events:jsonState['evt_'+h.id],products:jsonState['prd_'+h.id]};
+    function intOrNull(s){var v=parseInt(s,10);return isNaN(v)?null:v;}
+    var obj={id:h.id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[h.id]||[]).slice(),avatar_url:g('avatar_url'),active:cb('active'),services:jsonState['svc_'+h.id],events:jsonState['evt_'+h.id],products:jsonState['prd_'+h.id],
+      // C-3 联系方式
+      wechat:g('wechat'),whatsapp:g('whatsapp'),email:g('email'),xiaohongshu_url:g('xiaohongshu_url'),booking_url:g('booking_url'),
+      // C-9 特色引言
+      featured_quote_zh:g('featured_quote_zh'),featured_quote_en:g('featured_quote_en'),quote_context:g('quote_context'),
+      // C-10 个人档案
+      origin_city:g('origin_city'),nationality:g('nationality'),birth_year:intOrNull(g('birth_year')),certifications:jsonState['cert_'+h.id]||[],languages:g('languages'),practice_since:intOrNull(g('practice_since'))
+    };
     // 仅当 categories 表就绪时才写 category_ids（避免 SQL 迁移未执行时 schema cache 报错）
     if(categoriesData&&categoriesData.length)obj.category_ids=(healerCatState[h.id]||[]).slice();
     return obj;
