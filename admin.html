@@ -796,6 +796,7 @@ function healerCard(h){
     '<div class="field-row">',field('中文名字','hf_'+h.id+'_name_zh',h.name_zh),field('英文名字','hf_'+h.id+'_name_en',h.name_en),'</div>',
     '<div class="field-row">',field('职称（中文）','hf_'+h.id+'_title_zh',h.title_zh),field('职称（英文）','hf_'+h.id+'_title_en',h.title_en),'</div>',
     '<div class="field-row">',field('副标题（中文）','hf_'+h.id+'_sub_zh',h.sub_zh),field('副标题（英文）','hf_'+h.id+'_sub_en',h.sub_en),'</div>',
+    '<div class="field-row">',field('职称补充（中文） <small>（可选第三个职称/方向）</small>','hf_'+h.id+'_title_extra_zh',h.title_extra_zh),field('职称补充（英文）','hf_'+h.id+'_title_extra_en',h.title_extra_en),'</div>',
     '<div class="field-row"><div class="field full"><div class="label">简介（中文）</div><textarea id="hf_'+h.id+'_bio_zh">'+escText(h.bio_zh)+'</textarea></div></div>',
     '<div class="field-row"><div class="field full"><div class="label">简介（英文）</div><textarea id="hf_'+h.id+'_bio_en">'+escText(h.bio_en)+'</textarea></div></div>',
     '<div class="field-row"><div class="field full"><div class="label">📝 完整简介（中文）</div><textarea id="hf_'+h.id+'_long_bio_zh" style="min-height:120px">'+escText(h.long_bio_zh)+'</textarea></div></div>',
@@ -836,7 +837,7 @@ async function saveHealers(){
     function g(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.value:(h[f]||'');}
     function cb(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.checked:!!h[f];}
     function intOrNull(s){var v=parseInt(s,10);return isNaN(v)?null:v;}
-    var obj={id:h.id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[h.id]||[]).slice(),avatar_url:g('avatar_url'),active:cb('active'),services:jsonState['svc_'+h.id],events:jsonState['evt_'+h.id],products:jsonState['prd_'+h.id],
+    var obj={id:h.id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),title_extra_zh:g('title_extra_zh'),title_extra_en:g('title_extra_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[h.id]||[]).slice(),avatar_url:g('avatar_url'),active:cb('active'),services:jsonState['svc_'+h.id],events:jsonState['evt_'+h.id],products:jsonState['prd_'+h.id],
       // C-3 联系方式
       wechat:g('wechat'),whatsapp:g('whatsapp'),email:g('email'),xiaohongshu_url:g('xiaohongshu_url'),booking_url:g('booking_url'),
       // C-9 特色引言

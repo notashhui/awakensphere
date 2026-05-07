@@ -2121,8 +2121,10 @@ function applyHealerData(h) {
   var nameEn = h.name_en || h.name_zh || '';
   // 去重：如果 name_zh 里已含 name_en，则拆分
   var pureZh = nameZh.replace(nameEn, '').trim() || nameZh;
-  var titleZh = (h.title_zh || '') + (h.sub_zh ? ' · ' + h.sub_zh : '');
-  var titleEn = (h.title_en || h.title_zh || '') + (h.sub_en ? ' · ' + h.sub_en : h.sub_zh ? ' · ' + h.sub_zh : '');
+  // 职称：title + sub + title_extra 三段（C-7），过滤空值后用 · 拼接
+  function _join(parts){return parts.filter(function(p){return p&&String(p).trim();}).join(' · ');}
+  var titleZh = _join([h.title_zh, h.sub_zh, h.title_extra_zh]);
+  var titleEn = _join([h.title_en||h.title_zh, h.sub_en||h.sub_zh, h.title_extra_en||h.title_extra_zh]);
 
   // 文档标题
   document.title = (pureZh ? pureZh + ' ' + nameEn : nameEn) + ' — AwakenSphere';

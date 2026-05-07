@@ -1974,8 +1974,11 @@ function overrideHealersGrid() {
     var cats = (h.category_ids && h.category_ids.length) ? healerCatsFromIds(h.category_ids) : healerCatsFromTags(h.tags);
     var nameEn = h.name_en || h.name_zh || '';
     var nameZh = h.name_zh || '';
-    var titleZh = h.title_zh + (h.sub_zh ? ' · ' + h.sub_zh : '');
-    var titleEn = (h.title_en || h.title_zh) + (h.sub_en ? ' · ' + h.sub_en : h.sub_zh ? ' · ' + h.sub_zh : '');
+    // 职称：title + sub + title_extra 三段（C-7），过滤空值后用 · 拼接
+    var _tzh = [h.title_zh, h.sub_zh, h.title_extra_zh].filter(function(p){return p&&String(p).trim();}).join(' · ');
+    var _ten = [h.title_en||h.title_zh, h.sub_en||h.sub_zh, h.title_extra_en||h.title_extra_zh].filter(function(p){return p&&String(p).trim();}).join(' · ');
+    var titleZh = _tzh;
+    var titleEn = _ten;
     var locZh = h.location_zh || '';
     var locEn = h.location_en || h.location_zh || '';
     var bioZh = h.bio_zh || '';
