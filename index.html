@@ -96,9 +96,10 @@ img { max-width:100%; display:block; }
 .brand {
   font-family: var(--sans);
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: .32em;
+  font-size: 14px;
+  letter-spacing: 0.04em; /* G-1：从 .32em 改窄，统一品牌字距规范 */
   color: var(--ink);
+  text-decoration: none;
 }
 .nav {
   display: flex; align-items: center; gap: 28px;
@@ -214,6 +215,8 @@ img { max-width:100%; display:block; }
   min-height: calc(100vh - 72px);
   padding: 0;
   overflow: hidden;
+  /* G-6：Hero 父容器背景兜底，防视频未加载/缩放时露黑灰 */
+  background: #ede0d0;
 }
 .hero-stage {
   position: relative;
@@ -1041,7 +1044,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
 <!-- ─── HEADER ─────────────────────────── -->
 <header class="site-header">
   <div class="site-header-inner">
-    <a href="index.html" class="brand" data-zh="随愈而为 AwakenSphere" data-en="AWAKENSPHERE">AWAKENSPHERE</a>
+    <a href="index.html" class="brand" data-zh="随愈而为 Awaken Sphere" data-en="Awaken Sphere">Awaken Sphere</a>
     <nav class="nav">
       <div class="lang">
         <button class="on" data-lang="zh">中文</button>
@@ -1090,7 +1093,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
 
     <!-- ambient bg (photo slot) -->
     <div class="hero-bg" id="heroBg">
-      <video class="hero-video" autoplay muted loop playsinline preload="auto">
+      <video class="hero-video" autoplay muted loop playsinline preload="auto" style="background:#ede0d0">
         <!-- 兼容提示：文件实际是 QuickTime 容器，去掉 type 让浏览器嗅探 -->
         <source src="hero-ambient.mp4">
       </video>
@@ -1104,10 +1107,10 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
         <!-- A-4①：跳色从"疗愈/修行"改为"清醒/修行" -->
         <span data-lang="zh"><em>清醒</em>疗愈，<br>摩登<em>修行</em>。</span>
         <span data-lang="en">
-          <span class="word">On</span> <span class="word">the</span> <span class="word">Journey</span> <span class="word">of</span><br>
-          <em class="word">Healing</em><span class="word">,</span><br>
-          <span class="word">Awaken</span> <span class="word">the</span> <span class="word">Sphere</span> <span class="word">of</span><br>
-          <span class="word">Your</span> <em class="word">Whole Self</em><span class="word">.</span>
+          <!-- G-5：重排避免 of 孤词行 -->
+          <span class="word">On</span> <span class="word">the</span> <span class="word">Journey</span> <span class="word">of</span> <em class="word">Healing</em><span class="word">,</span><br>
+          <span class="word">Awaken</span> <span class="word">the</span> <span class="word">Sphere</span><br>
+          <span class="word">of</span> <span class="word">Your</span> <em class="word">Whole Self</em><span class="word">.</span>
         </span>
       </h1>
 
@@ -1146,17 +1149,13 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
       <span class="photo-slot-label">/photo — hero_ambient.jpg · portrait crop</span>
     </div>
 
-    <div class="scroll-cue">
-      <span>SCROLL</span>
-      <span class="line"></span>
-    </div>
   </div>
 </section>
 
 
 
 <!-- ─── CONTENT LIBRARY ────────────────── -->
-<section class="container" id="content">
+<section class="container" id="content" style="padding-top:clamp(60px,8vw,100px)">
   <div class="section-head reveal">
     <h2>
       <!-- 内容架构升级 v1：从「精选阅读」改为「内容探索」（覆盖文章/播客/视频三格式） -->
@@ -1169,12 +1168,10 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
     </div>
   </div>
 
-  <!-- 格式筛选 chip（v1 内容架构升级） -->
+  <!-- 主题筛选 chip：v5 G-4 改为按疗愈主题（从后台 ticker 表动态读取），格式标签作为卡片角标 -->
   <div class="content-filter reveal" id="contentFilter">
     <button class="cf-chip on" data-cf="all" data-zh="全部" data-en="ALL">全部</button>
-    <button class="cf-chip" data-cf="article" data-zh="📖 文章" data-en="📖 ARTICLE">📖 文章</button>
-    <button class="cf-chip" data-cf="podcast" data-zh="🎙 播客" data-en="🎙 PODCAST">🎙 播客</button>
-    <button class="cf-chip" data-cf="video" data-zh="▶ 视频" data-en="▶ VIDEO">▶ 视频</button>
+    <!-- 其他 chip 由 renderContentFilterChips() 从 sbCache.ticker 注入 -->
   </div>
 
   <div class="content-list reveal-stagger" id="contentList">
@@ -1294,7 +1291,8 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
   <div class="container">
     <div class="section-head reveal">
       <h2>
-        <span data-lang="zh">遇见<em>疗愈师</em><br>走近真实的修行者</span>
+        <!-- G-3：删"者"字 -->
+        <span data-lang="zh">遇见<em>疗愈师</em><br>走近真实的修行</span>
         <span data-lang="en">Meet the <em>healers</em><br>behind the practice</span>
       </h2>
       <div class="meta-col">
@@ -1397,7 +1395,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
       真正的疗愈，不是修复破碎，<br>
       而是重新记起自己 <em>本来的完整</em>。
     </p>
-    <p class="quote-cite" id="founderCite">— CARRIE YANG · FOUNDER · AWAKENSPHERE</p>
+    <p class="quote-cite" id="founderCite">— CARRIE YANG · FOUNDER · AWAKEN SPHERE</p>
   </div>
 </section>
 
@@ -1437,7 +1435,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
       </div>
     </div>
     <div class="footer-legal">
-      <span>© <span id="copyrightYear">2026</span> · AWAKENSPHERE · WHERE HEALING BECOMES AWAKENING</span>
+      <span>© <span id="copyrightYear">2026</span> · AWAKEN SPHERE · WHERE HEALING BECOMES AWAKENING</span>
       <span class="footer-social">
         <a href="javascript:void(0)">INSTAGRAM</a>
         <a href="javascript:void(0)">小红书</a>
@@ -1852,7 +1850,8 @@ function overrideContent() {
     var typeChipClass = c.type === 'podcast' ? 'tc-podcast' : c.type === 'video' ? 'tc-video' : 'tc-article';
     var typeChip = '<div class="entry-type-chip ' + typeChipClass + '" data-zh="' + typeIcon + ' ' + esc(tl.zh) + '" data-en="' + typeIcon + ' ' + esc(tl.en) + '">' + typeIcon + ' ' + esc(tl.zh) + '</div>';
     var videoOverlayCls = c.type === 'video' ? ' tc-video-cover' : '';
-    html += '<article class="entry' + (isFeatured ? ' featured' : '') + '" data-content-type="' + esc(c.type || 'article') + '" onclick="goToArticle(\'' + esc(c.id) + '\')">'
+    var tagsAttr = (c.tags || []).join('|');
+    html += '<article class="entry' + (isFeatured ? ' featured' : '') + '" data-content-type="' + esc(c.type || 'article') + '" data-tags="' + esc(tagsAttr) + '" onclick="goToArticle(\'' + esc(c.id) + '\')">'
       + '<div class="entry-media">' + typeChip + '<div class="entry-media-inner ' + mediaClass + videoOverlayCls + '">' + cover
       + '<div class="entry-meta-top"><span data-zh="' + esc(metaZh) + '" data-en="' + esc(metaEn) + '">' + esc(metaZh) + '</span>'
       + '<span data-zh="' + esc(dz) + '" data-en="' + esc(de) + '">' + esc(dz) + '</span></div></div></div>'
@@ -1912,7 +1911,7 @@ function overrideQuote() {
     if (hp.founder_quote_en) qEl.setAttribute('data-en', hp.founder_quote_en);
   }
   var cite = document.getElementById('founderCite');
-  if (cite && hp.founder_name_zh) cite.textContent = '— ' + hp.founder_name_zh + ' · FOUNDER · AWAKENSPHERE';
+  if (cite && hp.founder_name_zh) cite.textContent = '— ' + hp.founder_name_zh + ' · FOUNDER · AWAKEN SPHERE';
 }
 
 // ── 5. Hero 视频 URL（可覆盖；migration 未执行时静默跳过） ─
@@ -1952,7 +1951,28 @@ function overrideMeta() {
   }
 }
 
-// 内容架构升级 v1：格式筛选 chip click handler
+// v5 G-4：内容筛选 chip 改为从 sbCache.ticker 动态读取（按主题，不是按格式）
+function renderContentFilterChips() {
+  var box = document.getElementById('contentFilter');
+  if (!box) return;
+  var ticker = sbCache.ticker || [];
+  // 移除非 'all' chip
+  var existing = box.querySelectorAll('.cf-chip');
+  for (var i = existing.length - 1; i >= 0; i--) {
+    if (existing[i].getAttribute('data-cf') !== 'all') existing[i].remove();
+  }
+  for (var j = 0; j < ticker.length; j++) {
+    var t = ticker[j];
+    var btn = document.createElement('button');
+    btn.className = 'cf-chip';
+    btn.setAttribute('data-cf', t.label);
+    btn.setAttribute('data-zh', t.label);
+    btn.setAttribute('data-en', t.label); // ticker 表无中英分版，沿用同 label
+    btn.textContent = t.label;
+    box.appendChild(btn);
+  }
+}
+
 function initContentFilter() {
   var box = document.getElementById('contentFilter');
   if (!box) return;
@@ -1964,7 +1984,9 @@ function initContentFilter() {
     var cf = b.getAttribute('data-cf');
     document.querySelectorAll('#contentList > article').forEach(function(art){
       if (cf === 'all') { art.style.display = ''; return; }
-      art.style.display = (art.getAttribute('data-content-type') === cf) ? '' : 'none';
+      // 按 content.tags 数组是否包含此主题
+      var tags = (art.getAttribute('data-tags') || '').split('|').filter(Boolean);
+      art.style.display = tags.indexOf(cf) >= 0 ? '' : 'none';
     });
   });
 }
@@ -1978,6 +2000,7 @@ async function loadIndexData() {
   overrideQuote();
   overrideHeroVideo();
   overrideMeta();
+  renderContentFilterChips();
   initContentFilter();
   applyLang();
   // 触发 healer drift / reveal 重新计算

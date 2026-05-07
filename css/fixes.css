@@ -81,7 +81,7 @@ html[lang="en"] [data-lang="zh"] { display: none !important; }
 
   /* ── HEADER ── */
   .site-header-inner { padding: 14px 18px !important; }
-  .site-header .brand { font-size: 11px !important; letter-spacing: .22em !important; }
+  .site-header .brand { font-size: 12px !important; letter-spacing: 0.04em !important; }
   .site-header .nav { gap: 10px !important; }
   .site-header .lang { font-size: 11px !important; gap: 6px !important; }
   .site-header .lang button[data-lang] { padding: 2px 3px !important; font-size: 11px !important; }
