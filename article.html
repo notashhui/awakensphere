@@ -1584,14 +1584,60 @@ function applyArticleData(c) {
     }
   }
 
-  // 音频（播客/冥想）
-  if ((c.type === 'podcast' || c.type === 'meditation') && c.audio_url) {
-    var audio = document.createElement('audio');
-    audio.controls = true;
-    audio.src = c.audio_url;
-    audio.style.cssText = 'width:100%;margin:32px 0;';
-    var firstSection = document.querySelector('.art-body, main');
-    if (firstSection) firstSection.insertBefore(audio, firstSection.firstChild);
+  // 音频（播客/冥想）—— 优先 embed iframe，否则 audio_url HTML5 player
+  if (c.type === 'podcast' || c.type === 'meditation') {
+    var bodyWrap = document.querySelector('.art-body-wrap');
+    var insertBefore = bodyWrap || document.querySelector('main') || document.body;
+    if (c.audio_embed) {
+      var embedBox = document.createElement('div');
+      embedBox.className = 'art-audio-embed';
+      embedBox.style.cssText = 'max-width:1280px;margin:24px auto 0;padding:0 clamp(32px,6vw,80px)';
+      embedBox.innerHTML = c.audio_embed;
+      insertBefore.parentNode.insertBefore(embedBox, insertBefore);
+    } else if (c.audio_url) {
+      var audio = document.createElement('audio');
+      audio.controls = true;
+      audio.src = c.audio_url;
+      audio.style.cssText = 'width:calc(100% - 64px);max-width:1216px;margin:24px auto;display:block;';
+      insertBefore.parentNode.insertBefore(audio, insertBefore);
+    }
+  }
+  // 视频：用 video_embed iframe 替换封面区
+  if (c.type === 'video' && c.video_embed) {
+    var coverFig = document.querySelector('.art-cover');
+    if (coverFig) {
+      coverFig.innerHTML = '<div class="art-video-embed" style="max-width:1280px;margin:0 auto;aspect-ratio:16/9;background:#000;border-radius:6px;overflow:hidden;position:relative">' + c.video_embed + '</div>';
+      // iframe 需要 100% 充满
+      var iframe = coverFig.querySelector('iframe');
+      if (iframe) {
+        iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;';
+      }
+    }
+  }
+  // 顶部格式标签 chip
+  var typeMap = {podcast:{icon:'🎙',zh:'播客',en:'PODCAST',cls:'tc-podcast'},video:{icon:'▶',zh:'视频',en:'VIDEO',cls:'tc-video'},meditation:{icon:'🧘',zh:'引导冥想',en:'GUIDED',cls:'tc-podcast'},article:{icon:'📖',zh:'文章',en:'ARTICLE',cls:'tc-article'}};
+  var t = typeMap[c.type] || typeMap.article;
+  var existingChip = document.querySelector('.art-format-chip');
+  if (!existingChip) {
+    var chip = document.createElement('div');
+    chip.className = 'art-format-chip ' + t.cls;
+    chip.style.cssText = 'display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:6px 12px;border-radius:3px;font-weight:600;background:'+(c.type==='podcast'?'#d4a448':c.type==='video'?'#35845D':'rgba(42,38,32,.08)')+';color:'+(c.type==='article'?'#2a2620':'#fff')+';margin-bottom:18px';
+    chip.innerHTML = '<span data-lang="zh">'+t.icon+' '+t.zh+'</span><span data-lang="en">'+t.icon+' '+t.en+'</span>';
+    var titleEl2 = document.querySelector('.art-title');
+    if (titleEl2 && titleEl2.parentNode) titleEl2.parentNode.insertBefore(chip, titleEl2);
+  }
+  // 嘉宾 + 文字稿（podcast/video）
+  if ((c.type === 'podcast' || c.type === 'video' || c.type === 'meditation') && (c.guest_name || c.transcript)) {
+    var extraHtml = '';
+    if (c.guest_name) {
+      extraHtml += '<p style="font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin:32px 0 4px">嘉宾 / Guest</p>';
+      extraHtml += '<p style="font-family:var(--serif);font-size:20px;color:var(--ink);margin:0 0 20px">'+esc(c.guest_name)+'</p>';
+    }
+    if (c.transcript) {
+      extraHtml += '<details style="margin-top:32px;border-top:1px solid var(--rule);padding-top:18px"><summary style="cursor:pointer;font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)"><span data-lang="zh">📝 展开文字稿</span><span data-lang="en">📝 Show transcript</span></summary><div class="art-transcript" style="margin-top:16px;font-size:15px;line-height:1.8;color:var(--ink)"><div data-lang="zh">'+mdRender(c.transcript)+'</div></div></details>';
+    }
+    var bodyEl = document.querySelector('.art-prose');
+    if (bodyEl) bodyEl.insertAdjacentHTML('beforeend', extraHtml);
   }
 }
 

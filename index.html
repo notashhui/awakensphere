@@ -1159,13 +1159,22 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
 <section class="container" id="content">
   <div class="section-head reveal">
     <h2>
-      <!-- A-5：中文改"入内求真：精选阅读"（删原副标题"内省的转身"），英文保留 -->
-      <span data-lang="zh">入内求真：<em>精选阅读</em></span>
-      <span data-lang="en">Curated <em>readings</em><br>for the inward turn</span>
+      <!-- 内容架构升级 v1：从「精选阅读」改为「内容探索」（覆盖文章/播客/视频三格式） -->
+      <span data-lang="zh"><em>内容</em>探索</span>
+      <span data-lang="en"><em>Explore</em></span>
     </h2>
     <div class="meta-col">
-      <a href="#content" data-zh="查看全部阅读 →" data-en="VIEW ALL READINGS →">VIEW ALL READINGS →</a>
+      <!-- 格式筛选 chip 由 JS 注入到 contentList 上方 -->
+      <a href="#content" data-zh="探索全部内容 →" data-en="EXPLORE ALL →">EXPLORE ALL →</a>
     </div>
+  </div>
+
+  <!-- 格式筛选 chip（v1 内容架构升级） -->
+  <div class="content-filter reveal" id="contentFilter">
+    <button class="cf-chip on" data-cf="all" data-zh="全部" data-en="ALL">全部</button>
+    <button class="cf-chip" data-cf="article" data-zh="📖 文章" data-en="📖 ARTICLE">📖 文章</button>
+    <button class="cf-chip" data-cf="podcast" data-zh="🎙 播客" data-en="🎙 PODCAST">🎙 播客</button>
+    <button class="cf-chip" data-cf="video" data-zh="▶ 视频" data-en="▶ VIDEO">▶ 视频</button>
   </div>
 
   <div class="content-list reveal-stagger" id="contentList">
@@ -1838,8 +1847,13 @@ function overrideContent() {
       : '<div class="entry-media-shape">' + svgShapes[i % svgShapes.length] + '</div>';
     var catZh = tl.zh + (c.category_zh ? ' · ' + c.category_zh : '');
     var catEn = tl.en + (c.category_en ? ' · ' + c.category_en : '');
-    html += '<article class="entry' + (isFeatured ? ' featured' : '') + '" onclick="goToArticle(\'' + esc(c.id) + '\')">'
-      + '<div class="entry-media"><div class="entry-media-inner ' + mediaClass + '">' + cover
+    // v1 内容架构升级：格式标签 + 视频播放图标
+    var typeIcon = c.type === 'podcast' ? '🎙' : c.type === 'video' ? '▶' : '📖';
+    var typeChipClass = c.type === 'podcast' ? 'tc-podcast' : c.type === 'video' ? 'tc-video' : 'tc-article';
+    var typeChip = '<div class="entry-type-chip ' + typeChipClass + '" data-zh="' + typeIcon + ' ' + esc(tl.zh) + '" data-en="' + typeIcon + ' ' + esc(tl.en) + '">' + typeIcon + ' ' + esc(tl.zh) + '</div>';
+    var videoOverlayCls = c.type === 'video' ? ' tc-video-cover' : '';
+    html += '<article class="entry' + (isFeatured ? ' featured' : '') + '" data-content-type="' + esc(c.type || 'article') + '" onclick="goToArticle(\'' + esc(c.id) + '\')">'
+      + '<div class="entry-media">' + typeChip + '<div class="entry-media-inner ' + mediaClass + videoOverlayCls + '">' + cover
       + '<div class="entry-meta-top"><span data-zh="' + esc(metaZh) + '" data-en="' + esc(metaEn) + '">' + esc(metaZh) + '</span>'
       + '<span data-zh="' + esc(dz) + '" data-en="' + esc(de) + '">' + esc(dz) + '</span></div></div></div>'
       + '<div class="entry-category ' + colorClass + '" data-zh="' + esc(catZh) + '" data-en="' + esc(catEn) + '">' + esc(catZh) + '</div>'
@@ -1938,6 +1952,23 @@ function overrideMeta() {
   }
 }
 
+// 内容架构升级 v1：格式筛选 chip click handler
+function initContentFilter() {
+  var box = document.getElementById('contentFilter');
+  if (!box) return;
+  box.addEventListener('click', function(e){
+    var b = e.target.closest('.cf-chip');
+    if (!b) return;
+    box.querySelectorAll('.cf-chip').forEach(function(x){x.classList.remove('on');});
+    b.classList.add('on');
+    var cf = b.getAttribute('data-cf');
+    document.querySelectorAll('#contentList > article').forEach(function(art){
+      if (cf === 'all') { art.style.display = ''; return; }
+      art.style.display = (art.getAttribute('data-content-type') === cf) ? '' : 'none';
+    });
+  });
+}
+
 // ── 入口：加载 → 覆盖 → 重新应用语言 ─────────────────
 async function loadIndexData() {
   await loadAllSiteData();
@@ -1947,6 +1978,7 @@ async function loadIndexData() {
   overrideQuote();
   overrideHeroVideo();
   overrideMeta();
+  initContentFilter();
   applyLang();
   // 触发 healer drift / reveal 重新计算
   window.dispatchEvent(new Event('resize'));
