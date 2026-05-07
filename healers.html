@@ -1985,8 +1985,10 @@ function overrideHealersGrid() {
     var bioEn = h.bio_en || h.bio_zh || '';
     var availZh = h.avail_zh || '线上可约';
     var availEn = h.avail_en || 'Online available';
-    var photoStyle = h.avatar_url
-      ? 'background-image:url(' + esc(h.avatar_url) + ');background-size:cover;background-position:center;'
+    // F-5：目录页卡片优先用横版 4:3，fallback 到 1:1
+    var photoUrl = h.avatar_landscape || h.avatar_url;
+    var photoStyle = photoUrl
+      ? 'background-image:url(' + esc(photoUrl) + ');background-size:cover;background-position:center;'
       : 'background:' + HL_GRADIENTS[i % HL_GRADIENTS.length] + ';';
     var tagsHtml = '';
     if (h.tags && h.tags.length) {

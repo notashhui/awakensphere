@@ -1882,8 +1882,10 @@ function overrideHealers() {
     var qzValid = qz && qz.toLowerCase() !== 'tbd';
     var qeValid = qe && qe.toLowerCase() !== 'tbd';
     var portraitClass = portraits[i % portraits.length];
-    var avatar = h.avatar_url
-      ? '<img src="' + esc(h.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">'
+    // F-5：首页疗愈师横幅卡片优先用横版 4:3，fallback 1:1
+    var avatarUrl = h.avatar_landscape || h.avatar_url;
+    var avatar = avatarUrl
+      ? '<img src="' + esc(avatarUrl) + '" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;">'
       : '';
     var nameEn = h.name_en || h.name_zh || '';
     var nameZh = h.name_zh || '';

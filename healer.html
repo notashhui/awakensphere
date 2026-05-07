@@ -2173,11 +2173,12 @@ function applyHealerData(h) {
     bookBtn.querySelector('[data-lang="en"]').textContent = 'Book ' + firstName;
   }
 
-  // 肖像背景：若有 avatar_url 则用图片
-  if (h.avatar_url) {
+  // 肖像背景：F-5 详情页优先用竖版 3:4，fallback 到 1:1
+  var portraitImg = h.avatar_portrait || h.avatar_url;
+  if (portraitImg) {
     var portraitBg = document.querySelector('.pf-portrait-bg');
     if (portraitBg) {
-      portraitBg.style.backgroundImage = 'url(' + h.avatar_url + ')';
+      portraitBg.style.backgroundImage = 'url(' + portraitImg + ')';
       portraitBg.style.backgroundSize = 'cover';
       portraitBg.style.backgroundPosition = 'center';
     }

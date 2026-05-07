@@ -933,7 +933,10 @@ function healerCard(h){
   var chk=h.active!==false?'checked':'',off=h.active===false?' <span style="font-size:11px;color:#ef4444;font-weight:400">· 已下线</span>':'';
   return['<div class="card" id="hcard_'+h.id+'"><div class="card-header"><div class="card-title"><span style="font-size:22px">'+esc(h.emoji||'🌿')+'</span> '+esc(h.name_zh)+off+'</div><div class="card-actions"><button class="btn-save" style="font-size:12px;padding:6px 12px" onclick="saveOneHealer(\''+esc(h.id)+'\',this)">💾 保存此疗愈师</button><button class="collapse-btn" onclick="toggleCard(\'h_'+h.id+'\')">收起 ▲</button><button class="delete-btn" onclick="confirmDelete(\'healer\',\''+h.id+'\',\''+esc(h.name_zh)+'\')">删除</button></div></div><div class="card-body" id="cb_h_'+h.id+'">',
     '<div class="field-row"><div class="field" style="justify-content:flex-end;padding-top:4px"><label class="toggle-wrap"><input type="checkbox" '+chk+' id="hf_'+h.id+'_active"><div class="toggle-track"></div><span class="toggle-lbl">上线显示</span></label></div></div>',
-    '<div class="field" style="margin-bottom:14px"><div class="label">头像</div><div class="img-edit-row"><div class="img-preview-box '+(h.avatar_url?'':'no-img')+'" id="hprev_'+h.id+'" onclick="document.getElementById(\'hfile_'+h.id+'\').click()">'+(h.avatar_url?'<img src="'+esc(h.avatar_url)+'" onerror="this.parentNode.classList.add(\'no-img\');this.remove()">':esc(h.emoji||'🌿'))+'<div class="img-clear" onclick="event.stopPropagation();clearImg(\''+h.id+'\',\'healer\',\''+esc(h.emoji||'🌿')+'\')">🗑</div><div class="img-upload-hint">📷</div></div><div class="img-controls"><input class="img-url-inp" id="hf_'+h.id+'_avatar_url" value="'+esc(h.avatar_url||'')+'" placeholder="粘贴图片 URL" oninput="previewImg(\''+h.id+'\',\'healer\',this.value,\''+esc(h.emoji||'🌿')+'\')"><label class="img-upload-label">📷 从本地上传<input type="file" id="hfile_'+h.id+'" accept="image/*" onchange="uploadImg(event,\''+h.id+'\',\'healer\',\''+esc(h.emoji||'🌿')+'\')"></label></div></div></div>',
+    '<div class="field" style="margin-bottom:14px"><div class="label">头像 <small>（点上传后会依次裁三种比例：1:1 / 4:3 / 3:4）</small></div><div class="img-edit-row"><div class="img-preview-box '+(h.avatar_url?'':'no-img')+'" id="hprev_'+h.id+'" onclick="document.getElementById(\'hfile_'+h.id+'\').click()">'+(h.avatar_url?'<img src="'+esc(h.avatar_url)+'" onerror="this.parentNode.classList.add(\'no-img\');this.remove()">':esc(h.emoji||'🌿'))+'<div class="img-clear" onclick="event.stopPropagation();clearImg(\''+h.id+'\',\'healer\',\''+esc(h.emoji||'🌿')+'\')">🗑</div><div class="img-upload-hint">📷</div></div><div class="img-controls"><input class="img-url-inp" id="hf_'+h.id+'_avatar_url" value="'+esc(h.avatar_url||'')+'" placeholder="方形 1:1 URL" oninput="previewImg(\''+h.id+'\',\'healer\',this.value,\''+esc(h.emoji||'🌿')+'\')"><label class="img-upload-label">📷 从本地上传（三连裁）<input type="file" id="hfile_'+h.id+'" accept="image/*" onchange="uploadImg(event,\''+h.id+'\',\'healer\',\''+esc(h.emoji||'🌿')+'\')"></label></div></div>'
+    +'<details style="margin-top:10px"><summary style="cursor:pointer;color:#6b7280;font-size:12px">🖼 横版 4:3 / 竖版 3:4 URL（自动填，可手动改）</summary>'
+    +'<div class="field-row" style="margin-top:8px"><div class="field"><div class="label">横版 4:3 <small>（首页卡片用）</small></div><input class="img-url-inp" id="hf_'+h.id+'_avatar_landscape" value="'+esc(h.avatar_landscape||'')+'" placeholder="https://..."></div><div class="field"><div class="label">竖版 3:4 <small>（详情页用）</small></div><input class="img-url-inp" id="hf_'+h.id+'_avatar_portrait" value="'+esc(h.avatar_portrait||'')+'" placeholder="https://..."></div></div></details>'
+    +'</div>',
     '<div class="field-row">',field('中文名字','hf_'+h.id+'_name_zh',h.name_zh),field('英文名字','hf_'+h.id+'_name_en',h.name_en),'</div>',
     '<div class="field-row">',field('职称（中文）','hf_'+h.id+'_title_zh',h.title_zh),field('职称（英文）','hf_'+h.id+'_title_en',h.title_en),'</div>',
     '<div class="field-row">',field('副标题（中文）','hf_'+h.id+'_sub_zh',h.sub_zh),field('副标题（英文）','hf_'+h.id+'_sub_en',h.sub_en),'</div>',
@@ -978,7 +981,7 @@ async function saveHealers(){
     function g(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.value:(h[f]||'');}
     function cb(f){var el=document.getElementById('hf_'+h.id+'_'+f);return el?el.checked:!!h[f];}
     function intOrNull(s){var v=parseInt(s,10);return isNaN(v)?null:v;}
-    var obj={id:h.id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),title_extra_zh:g('title_extra_zh'),title_extra_en:g('title_extra_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[h.id]||[]).slice(),avatar_url:g('avatar_url'),active:cb('active'),services:jsonState['svc_'+h.id],events:jsonState['evt_'+h.id],products:jsonState['prd_'+h.id],
+    var obj={id:h.id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),title_extra_zh:g('title_extra_zh'),title_extra_en:g('title_extra_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[h.id]||[]).slice(),avatar_url:g('avatar_url'),avatar_landscape:g('avatar_landscape'),avatar_portrait:g('avatar_portrait'),active:cb('active'),services:jsonState['svc_'+h.id],events:jsonState['evt_'+h.id],products:jsonState['prd_'+h.id],
       // C-3 联系方式
       wechat:g('wechat'),whatsapp:g('whatsapp'),email:g('email'),xiaohongshu_url:g('xiaohongshu_url'),booking_url:g('booking_url'),
       // C-9 特色引言
@@ -1029,7 +1032,7 @@ async function saveOneHealer(id, btn){
   function g(f){var el=document.getElementById('hf_'+id+'_'+f);return el?el.value:(h[f]||'');}
   function cb(f){var el=document.getElementById('hf_'+id+'_'+f);return el?el.checked:!!h[f];}
   function intOrNull(s){var v=parseInt(s,10);return isNaN(v)?null:v;}
-  var obj={id:id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),title_extra_zh:g('title_extra_zh'),title_extra_en:g('title_extra_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[id]||[]).slice(),avatar_url:g('avatar_url'),active:cb('active'),services:jsonState['svc_'+id],events:jsonState['evt_'+id],products:jsonState['prd_'+id],wechat:g('wechat'),whatsapp:g('whatsapp'),email:g('email'),xiaohongshu_url:g('xiaohongshu_url'),booking_url:g('booking_url'),featured_quote_zh:g('featured_quote_zh'),featured_quote_en:g('featured_quote_en'),quote_context:g('quote_context'),origin_city:g('origin_city'),nationality:g('nationality'),birth_year:intOrNull(g('birth_year')),certifications:jsonState['cert_'+id]||[],languages:g('languages'),practice_since:intOrNull(g('practice_since'))};
+  var obj={id:id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),title_extra_zh:g('title_extra_zh'),title_extra_en:g('title_extra_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[id]||[]).slice(),avatar_url:g('avatar_url'),avatar_landscape:g('avatar_landscape'),avatar_portrait:g('avatar_portrait'),active:cb('active'),services:jsonState['svc_'+id],events:jsonState['evt_'+id],products:jsonState['prd_'+id],wechat:g('wechat'),whatsapp:g('whatsapp'),email:g('email'),xiaohongshu_url:g('xiaohongshu_url'),booking_url:g('booking_url'),featured_quote_zh:g('featured_quote_zh'),featured_quote_en:g('featured_quote_en'),quote_context:g('quote_context'),origin_city:g('origin_city'),nationality:g('nationality'),birth_year:intOrNull(g('birth_year')),certifications:jsonState['cert_'+id]||[],languages:g('languages'),practice_since:intOrNull(g('practice_since'))};
   if(categoriesData&&categoriesData.length)obj.category_ids=(healerCatState[id]||[]).slice();
   var orig = btn ? btn.textContent : '';
   if(btn){btn.disabled=true;btn.textContent='保存中…';}
@@ -1596,44 +1599,104 @@ function updateStats(){var h=document.getElementById('st-healers'),c=document.ge
 // ══════════════════════════════════════════════════════════
 function previewImg(id,type,url,fe){var box=document.getElementById(type==='healer'?'hprev_'+id:'cprev_'+id);if(!box)return;var ov='<div class="img-clear" onclick="event.stopPropagation();clearImg(\''+id+'\',\''+type+'\',\''+fe+'\')">🗑</div><div class="img-upload-hint">📷</div>';if(url){box.classList.remove('no-img');box.innerHTML='<img src="'+url+'">'+ov;}else{box.classList.add('no-img');box.innerHTML=fe+ov;}}
 function clearImg(id,type,fe){var el=document.getElementById(type==='healer'?'hf_'+id+'_avatar_url':'cf_'+id+'_cover_url');if(el)el.value='';previewImg(id,type,'',fe);}
-// D-1：图片上传走 Cropper 裁剪流程
+// D-1 + F-5：图片上传走 Cropper 裁剪流程
+// healer 头像走三连裁剪（1:1 → 4:3 → 3:4），各裁剪结果分别上传到 Cloudinary 并写入对应字段
+// content 封面单次裁剪（16:9）
 var _cropperInstance = null;
-var _cropperPending = null; // {id, type, fe, originalName}
+var _cropperPending = null; // 单次模式：{id, type, fe, originalName}
+var _multiCropPending = null; // 多步模式：{id, fe, originalName, originalDataUrl, stepIdx, steps:[...]}
+
+var HEALER_CROP_STEPS = [
+  { aspect: 1,    label: '步骤 1/3：方形头像 · 1:1（admin 列表 / 圆形头像用）',     field: 'avatar_url',       hint: '建议 ≥ 800×800px' },
+  { aspect: 4/3,  label: '步骤 2/3：横版 · 4:3（首页疗愈师卡片用）',                field: 'avatar_landscape', hint: '建议 ≥ 1200×900px' },
+  { aspect: 3/4,  label: '步骤 3/3：竖版 · 3:4（详情页头部大图用）',                field: 'avatar_portrait',  hint: '建议 ≥ 900×1200px' }
+];
+
 function uploadImg(event, id, type, fe) {
   var file = event.target.files[0];
   if (!file) return;
-  // 大小检查（5MB 上限）
   if (file.size > 5 * 1024 * 1024) {
     alert('文件过大（' + (file.size/1024/1024).toFixed(1) + ' MB）。建议小于 5 MB。');
     event.target.value = '';
     return;
   }
-  _cropperPending = {id: id, type: type, fe: fe, originalName: file.name};
   var reader = new FileReader();
   reader.onload = function(e) {
-    var img = document.getElementById('cropImage');
-    img.onload = function() {
-      if (_cropperInstance) { _cropperInstance.destroy(); _cropperInstance = null; }
-      // healer 头像 1:1，content 封面 16:9
-      var aspect = type === 'healer' ? 1 : 16/9;
-      _cropperInstance = new Cropper(img, {
-        aspectRatio: aspect, viewMode: 1, autoCropArea: 1, background: false, zoomable: true, scalable: false, rotatable: false
-      });
-    };
-    img.src = e.target.result;
-    document.getElementById('modalCrop').style.display = 'flex';
-    var hint = document.getElementById('cropHint');
-    if (hint) hint.textContent = type === 'healer' ? '头像 · 1:1 方形 · 建议 ≥ 800×800px' : '封面 · 16:9 横屏 · 建议 ≥ 1280×720px';
+    if (type === 'healer') {
+      // F-5 三连模式
+      _multiCropPending = {
+        id: id, fe: fe, originalName: file.name,
+        originalDataUrl: e.target.result,
+        stepIdx: 0,
+        steps: HEALER_CROP_STEPS
+      };
+      _cropperPending = null;
+      startNextCropStep();
+    } else {
+      // content 单次（16:9）
+      _cropperPending = { id: id, type: type, fe: fe, originalName: file.name };
+      _multiCropPending = null;
+      var img = document.getElementById('cropImage');
+      img.onload = function() {
+        if (_cropperInstance) { _cropperInstance.destroy(); _cropperInstance = null; }
+        _cropperInstance = new Cropper(img, {
+          aspectRatio: 16/9, viewMode: 1, autoCropArea: 1, background: false, zoomable: true, scalable: false, rotatable: false
+        });
+      };
+      img.src = e.target.result;
+      document.getElementById('modalCrop').style.display = 'flex';
+      var hint = document.getElementById('cropHint');
+      if (hint) hint.textContent = '封面 · 16:9 横屏 · 建议 ≥ 1280×720px';
+    }
   };
   reader.readAsDataURL(file);
-  event.target.value = ''; // 允许同一文件重新选择
+  event.target.value = '';
 }
+
+function startNextCropStep() {
+  var p = _multiCropPending;
+  if (!p) return;
+  if (p.stepIdx >= p.steps.length) {
+    // 完成所有步骤
+    closeCropModal();
+    return;
+  }
+  var step = p.steps[p.stepIdx];
+  var img = document.getElementById('cropImage');
+  img.onload = function() {
+    if (_cropperInstance) { _cropperInstance.destroy(); _cropperInstance = null; }
+    _cropperInstance = new Cropper(img, {
+      aspectRatio: step.aspect, viewMode: 1, autoCropArea: 1, background: false, zoomable: true, scalable: false, rotatable: false
+    });
+  };
+  img.src = p.originalDataUrl;
+  document.getElementById('modalCrop').style.display = 'flex';
+  var hint = document.getElementById('cropHint');
+  if (hint) hint.textContent = step.label + ' · ' + step.hint;
+}
+
 function closeCropModal() {
   if (_cropperInstance) { _cropperInstance.destroy(); _cropperInstance = null; }
   document.getElementById('modalCrop').style.display = 'none';
   _cropperPending = null;
+  _multiCropPending = null;
 }
+
 function confirmCrop() {
+  // F-5 多步模式
+  if (_multiCropPending) {
+    var mp = _multiCropPending;
+    var step = mp.steps[mp.stepIdx];
+    if (!_cropperInstance) return;
+    var canvas = _cropperInstance.getCroppedCanvas({maxWidth: 1600, maxHeight: 1600, imageSmoothingQuality: 'high'});
+    if (!canvas) { alert('裁剪失败'); return; }
+    canvas.toBlob(function(blob) {
+      if (!blob) { alert('裁剪失败'); return; }
+      uploadCroppedBlob(blob, step.field, mp);
+    }, 'image/jpeg', 0.92);
+    return;
+  }
+  // 单次模式（content）
   if (!_cropperInstance || !_cropperPending) return;
   var p = _cropperPending;
   var canvas = _cropperInstance.getCroppedCanvas({maxWidth: 1600, maxHeight: 1600, imageSmoothingQuality: 'high'});
@@ -1654,12 +1717,50 @@ function confirmCrop() {
           if (el) el.value = d.secure_url;
           previewImg(p.id, p.type, d.secure_url, p.fe);
           sb.from('media_library').insert({url: d.secure_url, filename: p.originalName || 'cropped.jpg', type: 'image', size_bytes: d.bytes || 0});
-        } else {
-          alert('上传失败'); previewImg(p.id, p.type, el ? el.value : '', p.fe);
-        }
+        } else { alert('上传失败'); previewImg(p.id, p.type, el ? el.value : '', p.fe); }
       })
       .catch(function(e) { alert('上传出错：' + e.message); previewImg(p.id, p.type, el ? el.value : '', p.fe); });
   }, 'image/jpeg', 0.92);
+}
+
+// F-5：上传单步裁剪的 blob 到 Cloudinary，写入对应字段，进入下一步
+function uploadCroppedBlob(blob, fieldName, pending) {
+  var box = document.getElementById('hprev_' + pending.id);
+  // 第一步（avatar_url）才更新 preview
+  if (fieldName === 'avatar_url' && box) {
+    box.innerHTML = '<div style="font-size:11px;color:#aaa;padding:8px">上传中… (1/3)</div>';
+  }
+  // 在 modal 顶部显示进度提示
+  var hint = document.getElementById('cropHint');
+  if (hint) hint.textContent = '正在上传第 ' + (pending.stepIdx+1) + ' 张（' + fieldName + '）…';
+  var fd = new FormData();
+  fd.append('file', blob, pending.originalName || (fieldName + '.jpg'));
+  fd.append('upload_preset', 'awakensphere');
+  fetch('https://api.cloudinary.com/v1_1/dvufhc3ee/image/upload', {method: 'POST', body: fd})
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d.secure_url) { alert('第 '+(pending.stepIdx+1)+' 步上传失败'); closeCropModal(); return; }
+      // 写入对应隐藏 / 可见 input
+      var el = document.getElementById('hf_' + pending.id + '_' + fieldName);
+      if (el) el.value = d.secure_url;
+      // 写入 healers cache（若存在），方便后续 saveOneHealer 等读取
+      var hs = (cache.healers || []);
+      var idx = hs.findIndex(function(x){return x.id===pending.id;});
+      if (idx >= 0) hs[idx][fieldName] = d.secure_url;
+      // media_library 记录
+      sb.from('media_library').insert({url: d.secure_url, filename: pending.originalName || fieldName + '.jpg', type: 'image', size_bytes: d.bytes || 0});
+      // 第一步同步 preview（admin 卡片头像缩略图）
+      if (fieldName === 'avatar_url') previewImg(pending.id, 'healer', d.secure_url, pending.fe);
+      // 进下一步
+      pending.stepIdx++;
+      if (pending.stepIdx >= pending.steps.length) {
+        closeCropModal();
+        alert('✅ 三种比例头像全部上传完成（方形 + 横版 + 竖版），别忘了点「💾 保存此疗愈师」存到数据库');
+      } else {
+        startNextCropStep();
+      }
+    })
+    .catch(function(e) { alert('上传出错：' + e.message); closeCropModal(); });
 }
 function toggleAudioSection(id){toggleContentSections(id);} // 兼容旧引用
 function toggleContentSections(id){
