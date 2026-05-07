@@ -16,6 +16,9 @@
    适合含 <em>/<br> 等装饰的标题，避免 applyLang 用 textContent 破坏 DOM 结构。 */
 html[lang="zh"] [data-lang="en"] { display: none !important; }
 html[lang="en"] [data-lang="zh"] { display: none !important; }
+/* A-1 例外：.lang 容器内的语言切换按钮始终显示（用 .on 高亮区分活跃语言）；
+   不被嵌套双语切换规则误隐藏 */
+.lang button[data-lang] { display: inline-block !important; }
 
 /* ──────────────────────────────────────────
    移动端适配（≤ 640px）

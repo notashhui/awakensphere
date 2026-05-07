@@ -39,6 +39,17 @@ body { font-family:'Cabin',sans-serif; background:#0f1117; color:#fff; min-heigh
 .nav-item { display:flex; align-items:center; gap:10px; padding:10px 20px; color:#9ca3af; cursor:pointer; font-size:14px; font-weight:500; transition:all .15s; border-left:3px solid transparent; user-select:none; }
 .nav-item:hover { color:#fff; background:#111827; }
 .nav-item.active { color:#fff; background:rgba(53,132,93,.12); border-left-color:#35845D; }
+/* B-1：二级折叠菜单 */
+.nav-group { position:relative; }
+.nav-toggle { justify-content:space-between; }
+.nav-caret { font-size:10px; opacity:.5; transition:transform .2s; }
+.nav-group.collapsed .nav-caret { transform:rotate(-90deg); }
+.nav-sub { max-height:600px; overflow:hidden; transition:max-height .25s ease; }
+.nav-group.collapsed .nav-sub { max-height:0; }
+.nav-subitem { display:block; padding:6px 20px 6px 50px; color:#6b7280; font-size:12.5px; cursor:pointer; transition:all .15s; border-left:3px solid transparent; user-select:none; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nav-subitem:hover { color:#fff; background:#111827; }
+.nav-subitem.active { color:#fff; border-left-color:#35845D; }
+.nav-sub-empty { padding:6px 20px 8px 50px; color:#4b5563; font-size:11px; font-style:italic; }
 .sidebar-bottom { margin-top:auto; padding:16px 20px; border-top:1px solid #2d3548; }
 .logout-btn { display:flex; align-items:center; gap:8px; color:#6b7280; background:none; border:none; cursor:pointer; font-size:13px; padding:8px 12px; border-radius:8px; transition:all .15s; width:100%; font-family:inherit; }
 .logout-btn:hover { color:#ef4444; background:rgba(239,68,68,.08); }
@@ -253,9 +264,23 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
         <span>🌿 AwakenSphere</span>
         <small>内容管理后台</small>
       </div>
-      <div class="nav-item active" onclick="goPage('healers',this)">👤 疗愈师管理</div>
+      <!-- B-1：疗愈师管理 + 二级折叠子菜单 -->
+      <div class="nav-group" id="nav-group-healers">
+        <div class="nav-item nav-toggle active" onclick="goPage('healers',this);toggleNavGroup('healers')">
+          <span>👤 疗愈师管理</span>
+          <span class="nav-caret">▾</span>
+        </div>
+        <div class="nav-sub" id="navSub_healers"></div>
+      </div>
       <div class="nav-item" onclick="goPage('homepage',this)">🏠 首页内容</div>
-      <div class="nav-item" onclick="goPage('content',this)">📚 内容库</div>
+      <!-- B-1：内容库 + 二级折叠子菜单 -->
+      <div class="nav-group" id="nav-group-content">
+        <div class="nav-item nav-toggle" onclick="goPage('content',this);toggleNavGroup('content')">
+          <span>📚 内容库</span>
+          <span class="nav-caret">▾</span>
+        </div>
+        <div class="nav-sub" id="navSub_content"></div>
+      </div>
       <div class="nav-item" onclick="goPage('ticker',this)">🏷️ 分类标签</div>
       <div class="nav-item" onclick="goPage('categories',this)">📁 疗愈方向</div>
       <div class="nav-item" onclick="goPage('stats',this)">📊 数据统计</div>
@@ -692,9 +717,9 @@ function toggleHealerCat(healerId, catId, btn) {
 var currentUserEmail='';
 
 // ── 数据读取 ─────────────────────────────────────────────
-async function fetchHealers(){var{data,error}=await sb.from('healers').select('*').order('sort_order');if(error){console.error(error);return cache.healers||[];}cache.healers=data;return data;}
+async function fetchHealers(){var{data,error}=await sb.from('healers').select('*').order('sort_order');if(error){console.error(error);return cache.healers||[];}cache.healers=data;if(typeof renderHealersSidebar==='function')renderHealersSidebar();return data;}
 async function fetchHomepage(){var{data,error}=await sb.from('homepage').select('*').eq('id',1).single();if(error){console.error(error);return cache.homepage||{};}cache.homepage=data;return data;}
-async function fetchContent(){var{data,error}=await sb.from('content').select('*').order('sort_order');if(error){console.error(error);return cache.content||[];}cache.content=data;return data;}
+async function fetchContent(){var{data,error}=await sb.from('content').select('*').order('sort_order');if(error){console.error(error);return cache.content||[];}cache.content=data;if(typeof renderContentSidebar==='function')renderContentSidebar();return data;}
 async function fetchTicker(){var{data,error}=await sb.from('ticker').select('*').order('sort_order');if(error){console.error(error);return cache.ticker||[];}cache.ticker=data;return data;}
 
 // ── 操作日志 ─────────────────────────────────────────────
@@ -721,7 +746,7 @@ async function doLogout(){await sb.auth.signOut();location.reload();}
 var loadedPages={};
 function goPage(name,el){
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
-  el.classList.add('active');
+  if(el)el.classList.add('active');
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.getElementById('page-'+name).classList.add('active');
   // 懒加载
@@ -737,8 +762,59 @@ function goPage(name,el){
   }
 }
 
+// B-1：二级菜单展开/折叠
+function toggleNavGroup(key){
+  var g=document.getElementById('nav-group-'+key);
+  if(g)g.classList.toggle('collapsed');
+}
+// B-1：填充二级 healer 列表
+function renderHealersSidebar(){
+  var sub=document.getElementById('navSub_healers');
+  if(!sub)return;
+  var hs=cache.healers||[];
+  if(!hs.length){sub.innerHTML='<div class="nav-sub-empty">暂无疗愈师</div>';return;}
+  sub.innerHTML=hs.map(function(h){
+    return '<div class="nav-subitem" onclick="goHealerCard(\''+esc(h.id)+'\',event)">'+esc(h.name_zh||h.id)+'</div>';
+  }).join('');
+}
+// B-1：填充二级 content 列表
+function renderContentSidebar(){
+  var sub=document.getElementById('navSub_content');
+  if(!sub)return;
+  var cs=cache.content||[];
+  if(!cs.length){sub.innerHTML='<div class="nav-sub-empty">暂无内容</div>';return;}
+  sub.innerHTML=cs.slice(0,30).map(function(c){
+    return '<div class="nav-subitem" onclick="goContentCard(\''+esc(c.id)+'\',event)">'+esc(c.title_zh||c.id)+'</div>';
+  }).join('');
+}
+// B-1：点二级 → 切到 healers 页 + scrollIntoView 到对应卡片
+function goHealerCard(id,e){
+  if(e){e.stopPropagation();}
+  var navItem=document.querySelector('#nav-group-healers .nav-toggle');
+  goPage('healers',navItem);
+  document.querySelectorAll('#navSub_healers .nav-subitem').forEach(function(n){n.classList.remove('active');});
+  if(e&&e.currentTarget)e.currentTarget.classList.add('active');
+  setTimeout(function(){
+    var card=document.getElementById('hcard_'+id);
+    if(card){card.scrollIntoView({behavior:'smooth',block:'start'});}
+  },80);
+}
+function goContentCard(id,e){
+  if(e){e.stopPropagation();}
+  var navItem=document.querySelector('#nav-group-content .nav-toggle');
+  goPage('content',navItem);
+  document.querySelectorAll('#navSub_content .nav-subitem').forEach(function(n){n.classList.remove('active');});
+  if(e&&e.currentTarget)e.currentTarget.classList.add('active');
+  setTimeout(function(){
+    var card=document.getElementById('ccard_'+id);
+    if(card){card.scrollIntoView({behavior:'smooth',block:'start'});}
+  },80);
+}
+
 async function initDashboard(){
   await Promise.all([renderHealers(),loadHomepage(),renderContent(),renderTicker(),renderCategories()]);
+  renderHealersSidebar();
+  renderContentSidebar();
   updateStats();
 }
 
@@ -864,6 +940,7 @@ async function saveHealers(){
   // logAudit 不 await（fire-and-forget，节省 1 次 round-trip 等待）
   logAudit('update','healers','all','批量更新疗愈师');
   bustSiteCache();
+  renderHealersSidebar(); // B-1：保存后名字可能变，刷新侧边栏
   if(saveBtn){saveBtn.disabled=false;saveBtn.textContent=origLabel;}
   showMsg('healerMsg');
   updateStats();

@@ -221,7 +221,8 @@ img { max-width:100%; display:block; }
   min-height: 600px;
   border-radius: 0;
   overflow: hidden;
-  background: var(--bg-alt);
+  /* A-2：暖米色（与视频主色调一致），避免响应式断点视频未填满时露黑/灰 */
+  background: #ede0d0;
 }
 
 /* video layer on top of sand gradient */
@@ -231,7 +232,8 @@ img { max-width:100%; display:block; }
   object-fit: cover;
   object-position: center;
   z-index: 1;
-  background: var(--bg-alt);
+  /* A-2：与 hero-stage 同暖米色，视频加载/缩放间隙也不漏黑 */
+  background: #ede0d0;
   /* zoom to crop out the letterbox bars baked into the source file */
   transform: scale(1.14);
   transform-origin: center;
@@ -301,12 +303,14 @@ img { max-width:100%; display:block; }
 .hero-headline {
   font-family: var(--serif);
   font-weight: 400;
-  font-size: var(--h1);
-  line-height: 1.02;
-  letter-spacing: -.015em;
+  font-size: clamp(40px, 6.5vw, 96px); /* A-3：自适应 320px ~ 2560px，避免临界尺寸文字消失 */
+  line-height: 1.05;
+  letter-spacing: 0.05em;             /* A-4②：从 -0.015em 加大到 0.05em，更大气 */
   color: var(--ink);
-  max-width: 15ch;
+  max-width: min(100%, 18ch);         /* A-3：放宽 max-width 避免裁切 */
   text-wrap: balance;
+  word-break: keep-all;               /* 中文不在词中断 */
+  overflow-wrap: break-word;
 }
 .hero-headline em {
   font-style: italic;
@@ -323,7 +327,7 @@ img { max-width:100%; display:block; }
 .hero-brand {
   font-family: var(--serif);
   font-size: 20px;
-  letter-spacing: -.01em;
+  letter-spacing: 0.15em;       /* A-4⑤：拉开字间距更品质感 */
   color: var(--ink);
   margin-bottom: 4px;
 }
@@ -1097,7 +1101,8 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
     <!-- variant: still & motion content -->
     <div class="hero-content" id="heroContent">
       <h1 class="hero-headline" id="heroHeadline">
-        <span data-lang="zh">清醒<em>疗愈</em>，<br>摩登<em>修行</em>。</span>
+        <!-- A-4①：跳色从"疗愈/修行"改为"清醒/修行" -->
+        <span data-lang="zh"><em>清醒</em>疗愈，<br>摩登<em>修行</em>。</span>
         <span data-lang="en">
           <span class="word">On</span> <span class="word">the</span> <span class="word">Journey</span> <span class="word">of</span><br>
           <em class="word">Healing</em><span class="word">,</span><br>
@@ -1109,8 +1114,9 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
       <div class="hero-tagline-block">
         <div class="hero-brand">AwakenSphere</div>
         <div class="hero-sub">
-          <span data-lang="zh">随愈而为，独立疗愈师共创社区。让真实被遇见。</span>
-          <span data-lang="en">An independent healer co-creation community. Where the real finds you.</span>
+          <!-- A-4③④：副标题分两行（中英都改），英文第二行换文案 -->
+          <span data-lang="zh">随愈而为，独立疗愈师共创社区。<br>让真实被遇见。</span>
+          <span data-lang="en">An independent healer co-creation community.<br>Where healing becomes awakening.</span>
         </div>
       </div>
     </div>
@@ -1153,7 +1159,8 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
 <section class="container" id="content">
   <div class="section-head reveal">
     <h2>
-      <span data-lang="zh">精选 <em>阅读</em><br>内省的转身</span>
+      <!-- A-5：中文改"入内求真：精选阅读"（删原副标题"内省的转身"），英文保留 -->
+      <span data-lang="zh">入内求真：<em>精选阅读</em></span>
       <span data-lang="en">Curated <em>readings</em><br>for the inward turn</span>
     </h2>
     <div class="meta-col">
