@@ -381,6 +381,7 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
         <div style="display:flex;gap:10px;flex-wrap:wrap">
           <button class="add-btn" onclick="openAddContent()">＋ 新增内容</button>
           <button class="add-btn" style="background:#1e3a52" onclick="openBulkImport()">📂 批量导入（JSON）</button>
+          <button class="add-btn" style="background:#3a3528" onclick="bulkExport()">📤 批量导出（JSON）</button>
         </div>
         <div id="contentList"></div>
         <div class="save-bar">
@@ -1165,6 +1166,35 @@ function bulkImportPreview(){
   var btn = document.getElementById('bulkImportConfirmBtn');
   if (valid.length > 0) { btn.disabled = false; btn.style.opacity = '1'; }
 }
+// 批量导出 content 为 JSON 文件（备份 / 跨环境迁移用）
+async function bulkExport(){
+  var btn = event && event.target;
+  if (btn) { btn.disabled = true; btn.textContent = '导出中…'; }
+  // 全表读取（不限 active）
+  var {data, error} = await sb.from('content').select('*').order('sort_order');
+  if (error) { alert('导出失败：' + error.message); if (btn) { btn.disabled = false; btn.textContent = '📤 批量导出（JSON）'; } return; }
+  // 去掉 id / sort_order（导入时自动生成）+ 保留所有可编辑字段
+  var clean = (data || []).map(function(c){
+    var copy = Object.assign({}, c);
+    delete copy.id;          // 导入时自动生成新 id
+    delete copy.sort_order;  // 导入时自动递增
+    delete copy.created_at;  // DB 自动维护
+    return copy;
+  });
+  var json = JSON.stringify(clean, null, 2);
+  // 触发下载
+  var blob = new Blob([json], {type: 'application/json;charset=utf-8'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  var ts = new Date().toISOString().slice(0,10); // YYYY-MM-DD
+  a.href = url;
+  a.download = 'awakensphere-content-' + ts + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  if (btn) { btn.disabled = false; btn.textContent = '📤 批量导出（JSON）'; }
+  alert('✅ 已导出 ' + clean.length + ' 条内容到 ' + a.download);
+}
+
 async function bulkImportConfirm(){
   if (!_bulkImportParsed || !_bulkImportParsed.length) { alert('请先点"预览"验证 JSON'); return; }
   var btn = document.getElementById('bulkImportConfirmBtn');
