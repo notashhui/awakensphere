@@ -238,6 +238,31 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
 .copy-url:hover { border-color:#35845D; }
 .empty-state { text-align:center; padding:40px 20px; color:#6b7280; font-size:14px; }
 .badge-count { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; background:rgba(53,132,93,.25); color:#4ade80; border-radius:9px; font-size:10px; font-weight:700; margin-left:6px; padding:0 5px; }
+
+/* H-3 列表卡片视图 + 面包屑（点列表卡片进入独立编辑页） */
+.entity-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-top:16px; }
+.entity-card { position:relative; background:#1e2330; border:1px solid #2d3548; border-radius:10px; padding:18px 16px 14px; cursor:pointer; transition:all .15s; display:flex; flex-direction:column; align-items:center; text-align:center; }
+.entity-card:hover { border-color:#35845D; transform:translateY(-2px); box-shadow:0 4px 14px rgba(0,0,0,.25); }
+.entity-card-actions { position:absolute; top:8px; right:8px; display:flex; gap:4px; z-index:2; }
+.entity-card-actions .sort-btns { display:flex; flex-direction:column; gap:2px; }
+.entity-mini-btn { background:#0f1117; color:#9ca3af; border:1px solid #2d3548; border-radius:4px; width:22px; height:22px; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; }
+.entity-mini-btn:hover { background:#374151; color:#fff; }
+.entity-mini-btn.del { color:#ef4444; }
+.entity-mini-btn.del:hover { background:#ef4444; color:#fff; border-color:#ef4444; }
+.entity-mini-btn:disabled { opacity:.3; cursor:not-allowed; }
+.entity-avatar { width:64px; height:64px; border-radius:50%; background-size:cover; background-position:center; background-color:#0f1117; margin-bottom:10px; border:2px solid #2d3548; }
+.entity-emoji { width:64px; height:64px; border-radius:50%; background:#0f1117; display:flex; align-items:center; justify-content:center; font-size:30px; margin-bottom:10px; border:2px solid #2d3548; }
+.entity-cover { width:100%; height:90px; border-radius:6px; background-size:cover; background-position:center; background-color:#0f1117; margin-bottom:10px; }
+.entity-name { color:#fff; font-size:14px; font-weight:600; margin-bottom:4px; word-break:break-word; }
+.entity-sub { color:#9ca3af; font-size:12px; margin-bottom:12px; min-height:14px; line-height:1.4; }
+.entity-edit-cta { color:#35845D; font-size:12px; font-weight:600; margin-top:auto; }
+.entity-card .off-badge { font-size:10px; color:#ef4444; background:rgba(239,68,68,.12); padding:2px 6px; border-radius:3px; margin-left:4px; vertical-align:middle; }
+.entity-card .type-badge { font-size:10px; padding:2px 6px; vertical-align:middle; }
+.crumb { padding:12px 16px; background:#1e2330; border:1px solid #2d3548; border-radius:8px; margin-bottom:14px; font-size:13px; color:#9ca3af; display:flex; align-items:center; flex-wrap:wrap; gap:6px; }
+.crumb a { color:#35845D; text-decoration:none; font-weight:600; }
+.crumb a:hover { text-decoration:underline; }
+.crumb-sep { color:#374151; }
+.crumb-current { color:#fff; font-weight:600; }
 </style>
 </head>
 <body>
@@ -813,12 +838,27 @@ async function doLogout(){await sb.auth.signOut();location.reload();}
 
 // ── Nav（懒加载页面数据）─────────────────────────────────
 var loadedPages={};
-function goPage(name,el){
+// H-3：当前编辑模式状态（null = 列表视图，id = 编辑该条）
+var currentHealerEdit=null;
+var currentContentEdit=null;
+function goPage(name,el,fromHash){
   document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
   if(el)el.classList.add('active');
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
-  document.getElementById('page-'+name).classList.add('active');
-  // 懒加载
+  var pg=document.getElementById('page-'+name);
+  if(pg)pg.classList.add('active');
+  // 用户从侧边栏点击（fromHash=false）：清 edit 状态 + 同步 hash
+  if(!fromHash){
+    if(name==='healers')currentHealerEdit=null;
+    if(name==='content')currentContentEdit=null;
+    var th='#/'+name;
+    if(location.hash!==th){location.hash=th;}
+    else{
+      if(name==='healers'&&typeof paintHealers==='function')paintHealers();
+      if(name==='content'&&typeof paintContent==='function')paintContent();
+    }
+  }
+  // 懒加载（与 fromHash 无关）
   if(!loadedPages[name]){
     loadedPages[name]=true;
     if(name==='stats')loadStats();
@@ -831,60 +871,112 @@ function goPage(name,el){
   }
 }
 
+// H-3：解析 hash → 进入对应视图
+function handleHashRoute(){
+  var raw=(location.hash||'').replace(/^#\/?/,'').split('/').filter(Boolean);
+  var seg=raw[0]||'';var sub=raw[1]?decodeURIComponent(raw[1]):'';
+  if((seg==='healer'||seg==='healers')&&sub){
+    currentHealerEdit=sub;currentContentEdit=null;
+    var nv=document.querySelector('#nav-group-healers .nav-toggle');
+    goPage('healers',nv,true);
+    if(typeof paintHealers==='function')paintHealers();
+    return;
+  }
+  if(seg==='content'&&sub){
+    currentContentEdit=sub;currentHealerEdit=null;
+    var nv2=document.querySelector('#nav-group-content .nav-toggle');
+    goPage('content',nv2,true);
+    if(typeof paintContent==='function')paintContent();
+    return;
+  }
+  if(seg==='healer'||seg==='healers'){
+    currentHealerEdit=null;currentContentEdit=null;
+    var nv3=document.querySelector('#nav-group-healers .nav-toggle');
+    goPage('healers',nv3,true);
+    if(typeof paintHealers==='function')paintHealers();
+    return;
+  }
+  if(seg==='content'){
+    currentHealerEdit=null;currentContentEdit=null;
+    var nv4=document.querySelector('#nav-group-content .nav-toggle');
+    goPage('content',nv4,true);
+    if(typeof paintContent==='function')paintContent();
+    return;
+  }
+  if(seg){
+    currentHealerEdit=null;currentContentEdit=null;
+    var nv5=document.querySelector('.nav-item[onclick*="goPage(\''+seg+'\'"]');
+    if(nv5)goPage(seg,nv5,true);
+  }
+}
+window.addEventListener('hashchange',handleHashRoute);
+
+// H-3：进入/退出编辑视图
+function enterHealerEdit(id,e){
+  if(e){e.stopPropagation();e.preventDefault?e.preventDefault():null;}
+  currentHealerEdit=id;currentContentEdit=null;
+  var newHash='#/healer/'+encodeURIComponent(id);
+  if(location.hash!==newHash){location.hash=newHash;return;}
+  paintHealers();
+}
+function exitHealerEdit(e){
+  if(e){e.preventDefault();e.stopPropagation();}
+  currentHealerEdit=null;
+  if(location.hash!=='#/healers'){location.hash='#/healers';return;}
+  paintHealers();
+}
+function enterContentEdit(id,e){
+  if(e){e.stopPropagation();e.preventDefault?e.preventDefault():null;}
+  currentContentEdit=id;currentHealerEdit=null;
+  var newHash='#/content/'+encodeURIComponent(id);
+  if(location.hash!==newHash){location.hash=newHash;return;}
+  paintContent();
+}
+function exitContentEdit(e){
+  if(e){e.preventDefault();e.stopPropagation();}
+  currentContentEdit=null;
+  if(location.hash!=='#/content'){location.hash='#/content';return;}
+  paintContent();
+}
+
 // B-1：二级菜单展开/折叠
 function toggleNavGroup(key){
   var g=document.getElementById('nav-group-'+key);
   if(g)g.classList.toggle('collapsed');
 }
-// B-1：填充二级 healer 列表
+// B-1：填充二级 healer 列表（H-3：点 → 直接进入独立编辑页）
 function renderHealersSidebar(){
   var sub=document.getElementById('navSub_healers');
   if(!sub)return;
   var hs=cache.healers||[];
   if(!hs.length){sub.innerHTML='<div class="nav-sub-empty">暂无疗愈师</div>';return;}
   sub.innerHTML=hs.map(function(h){
-    return '<div class="nav-subitem" onclick="goHealerCard(\''+esc(h.id)+'\',event)">'+esc(h.name_zh||h.id)+'</div>';
+    var on=currentHealerEdit===h.id?' active':'';
+    return '<div class="nav-subitem'+on+'" onclick="enterHealerEdit(\''+esc(h.id)+'\',event)">'+esc(h.name_zh||h.id)+'</div>';
   }).join('');
 }
-// B-1：填充二级 content 列表
+// B-1：填充二级 content 列表（H-3：点 → 直接进入独立编辑页）
 function renderContentSidebar(){
   var sub=document.getElementById('navSub_content');
   if(!sub)return;
   var cs=cache.content||[];
   if(!cs.length){sub.innerHTML='<div class="nav-sub-empty">暂无内容</div>';return;}
   sub.innerHTML=cs.slice(0,30).map(function(c){
-    return '<div class="nav-subitem" onclick="goContentCard(\''+esc(c.id)+'\',event)">'+esc(c.title_zh||c.id)+'</div>';
+    var on=currentContentEdit===c.id?' active':'';
+    return '<div class="nav-subitem'+on+'" onclick="enterContentEdit(\''+esc(c.id)+'\',event)">'+esc(c.title_zh||c.id)+'</div>';
   }).join('');
 }
-// B-1：点二级 → 切到 healers 页 + scrollIntoView 到对应卡片
-function goHealerCard(id,e){
-  if(e){e.stopPropagation();}
-  var navItem=document.querySelector('#nav-group-healers .nav-toggle');
-  goPage('healers',navItem);
-  document.querySelectorAll('#navSub_healers .nav-subitem').forEach(function(n){n.classList.remove('active');});
-  if(e&&e.currentTarget)e.currentTarget.classList.add('active');
-  setTimeout(function(){
-    var card=document.getElementById('hcard_'+id);
-    if(card){card.scrollIntoView({behavior:'smooth',block:'start'});}
-  },80);
-}
-function goContentCard(id,e){
-  if(e){e.stopPropagation();}
-  var navItem=document.querySelector('#nav-group-content .nav-toggle');
-  goPage('content',navItem);
-  document.querySelectorAll('#navSub_content .nav-subitem').forEach(function(n){n.classList.remove('active');});
-  if(e&&e.currentTarget)e.currentTarget.classList.add('active');
-  setTimeout(function(){
-    var card=document.getElementById('ccard_'+id);
-    if(card){card.scrollIntoView({behavior:'smooth',block:'start'});}
-  },80);
-}
+// 老的 goHealerCard / goContentCard 保留为 enterHealerEdit / enterContentEdit 别名（兼容旧调用）
+function goHealerCard(id,e){enterHealerEdit(id,e);}
+function goContentCard(id,e){enterContentEdit(id,e);}
 
 async function initDashboard(){
   await Promise.all([renderHealers(),loadHomepage(),renderContent(),renderTicker(),renderCategories()]);
   renderHealersSidebar();
   renderContentSidebar();
   updateStats();
+  // H-3：初始 hash 决定进入哪个视图（直接打开 #/healer/zoe 等情况）
+  if(location.hash)handleHashRoute();
 }
 
 // ── Helpers ──────────────────────────────────────────────
@@ -931,7 +1023,44 @@ function updateMdPreview(srcId,previewId){var s=document.getElementById(srcId),p
 // ══════════════════════════════════════════════════════════
 // HEALERS（含 SEO 字段）
 // ══════════════════════════════════════════════════════════
-async function renderHealers(){if(!categoriesData||!categoriesData.length)await renderCategories();var healers=await fetchHealers();document.getElementById('healersList').innerHTML=healers.map(function(h){tagState[h.id]=(h.tags||[]).slice();healerCatState[h.id]=(h.category_ids||[]).slice();jsonState['svc_'+h.id]=(h.services||[]).slice();jsonState['evt_'+h.id]=(h.events||[]).slice();jsonState['prd_'+h.id]=(h.products||[]).slice();jsonState['cert_'+h.id]=(h.certifications||[]).slice();return healerCard(h);}).join('');}
+async function renderHealers(){if(!categoriesData||!categoriesData.length)await renderCategories();await fetchHealers();paintHealers();}
+// H-3：根据 currentHealerEdit 决定渲染 list / edit 视图
+function paintHealers(){
+  var healers=cache.healers||[];
+  healers.forEach(function(h){tagState[h.id]=(h.tags||[]).slice();healerCatState[h.id]=(h.category_ids||[]).slice();jsonState['svc_'+h.id]=(h.services||[]).slice();jsonState['evt_'+h.id]=(h.events||[]).slice();jsonState['prd_'+h.id]=(h.products||[]).slice();jsonState['cert_'+h.id]=(h.certifications||[]).slice();});
+  var listEl=document.getElementById('healersList');
+  var saveBar=document.querySelector('#page-healers .save-bar');
+  var addBtn=document.querySelector('#page-healers .add-btn');
+  if(currentHealerEdit){
+    var h=healers.find(function(x){return x.id===currentHealerEdit;});
+    var crumb='<div class="crumb"><a href="#/healers" onclick="exitHealerEdit(event)">← 返回疗愈师列表</a><span class="crumb-sep">/</span><span class="crumb-current">'+esc((h&&h.name_zh)||currentHealerEdit)+'</span></div>';
+    if(!h){listEl.innerHTML=crumb+'<div style="padding:30px;text-align:center;color:#9ca3af;">未找到疗愈师 "'+esc(currentHealerEdit)+'"</div>';}
+    else{listEl.innerHTML=crumb+healerCard(h);}
+    if(saveBar)saveBar.style.display='none';
+    if(addBtn)addBtn.style.display='none';
+  } else {
+    listEl.innerHTML=renderHealersListView(healers);
+    if(saveBar)saveBar.style.display='';
+    if(addBtn)addBtn.style.display='';
+  }
+  if(typeof renderHealersSidebar==='function')renderHealersSidebar();
+}
+function renderHealersListView(hs){
+  if(!hs.length)return '<div class="empty-state">暂无疗愈师，点上方"＋ 新增疗愈师"开始</div>';
+  return '<div class="entity-grid">'+hs.map(function(h){
+    var off=h.active===false?'<span class="off-badge">已下线</span>':'';
+    var avatar=h.avatar_url
+      ?'<div class="entity-avatar" style="background-image:url('+esc(h.avatar_url)+')"></div>'
+      :'<div class="entity-emoji">'+esc(h.emoji||'🌿')+'</div>';
+    return '<div class="entity-card" onclick="enterHealerEdit(\''+esc(h.id)+'\')">'
+      +'<div class="entity-card-actions"><button class="entity-mini-btn del" title="删除" onclick="event.stopPropagation();confirmDelete(\'healer\',\''+esc(h.id)+'\',\''+esc(h.name_zh||h.id)+'\')">×</button></div>'
+      +avatar
+      +'<div class="entity-name">'+esc(h.name_zh||h.id)+' '+off+'</div>'
+      +'<div class="entity-sub">'+esc(h.title_zh||'')+'</div>'
+      +'<div class="entity-edit-cta">编辑 →</div>'
+      +'</div>';
+  }).join('')+'</div>';
+}
 
 function healerCard(h){
   var chk=h.active!==false?'checked':'',off=h.active===false?' <span style="font-size:11px;color:#ef4444;font-weight:400">· 已下线</span>':'';
@@ -1020,13 +1149,13 @@ async function saveHealers(){
 
 async function openAddHealer(){['nh_id','nh_name_zh','nh_name_en','nh_title_zh','nh_title_en','nh_sub_zh','nh_sub_en','nh_bio_zh','nh_bio_en','nh_price','nh_loc_zh','nh_loc_en','nh_avail_zh','nh_avail_en','nh_day','nh_month'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('nh_avail_zh').value='线上可约';document.getElementById('nh_avail_en').value='Online available';document.getElementById('modalHealer').style.display='flex';}
 function closeAddHealer(){document.getElementById('modalHealer').style.display='none';}
-async function confirmAddHealer(){var id=(document.getElementById('nh_id').value||'').trim().replace(/\s+/g,'_').toLowerCase();if(!id){alert('请填写 ID');return;}function v(fid){return(document.getElementById(fid)||{value:''}).value;}var mx=(cache.healers||[]).reduce(function(m,h){return Math.max(m,h.sort_order||0);},0);var{error}=await sb.from('healers').insert({id:id,emoji:'🌿',bg:BG_CLASSES[(cache.healers||[]).length%BG_CLASSES.length],name_zh:v('nh_name_zh'),name_en:v('nh_name_en'),title_zh:v('nh_title_zh'),title_en:v('nh_title_en'),sub_zh:v('nh_sub_zh'),sub_en:v('nh_sub_en'),bio_zh:v('nh_bio_zh'),bio_en:v('nh_bio_en'),price:v('nh_price'),location_zh:v('nh_loc_zh'),location_en:v('nh_loc_en'),avail_zh:v('nh_avail_zh')||'线上可约',avail_en:v('nh_avail_en')||'Online available',book_day:v('nh_day'),book_month:v('nh_month'),tags:[],avatar_url:'',active:true,sort_order:mx+1,services:'[]',events:'[]',products:'[]',long_bio_zh:'',long_bio_en:''});if(error){alert('添加失败: '+error.message);return;}await logAudit('create','healer',id,'新增疗愈师: '+v('nh_name_zh'));closeAddHealer();await renderHealers();updateStats();bustSiteCache();showMsg('healerMsg');}
+async function confirmAddHealer(){var id=(document.getElementById('nh_id').value||'').trim().replace(/\s+/g,'_').toLowerCase();if(!id){alert('请填写 ID');return;}function v(fid){return(document.getElementById(fid)||{value:''}).value;}var mx=(cache.healers||[]).reduce(function(m,h){return Math.max(m,h.sort_order||0);},0);var{error}=await sb.from('healers').insert({id:id,emoji:'🌿',bg:BG_CLASSES[(cache.healers||[]).length%BG_CLASSES.length],name_zh:v('nh_name_zh'),name_en:v('nh_name_en'),title_zh:v('nh_title_zh'),title_en:v('nh_title_en'),sub_zh:v('nh_sub_zh'),sub_en:v('nh_sub_en'),bio_zh:v('nh_bio_zh'),bio_en:v('nh_bio_en'),price:v('nh_price'),location_zh:v('nh_loc_zh'),location_en:v('nh_loc_en'),avail_zh:v('nh_avail_zh')||'线上可约',avail_en:v('nh_avail_en')||'Online available',book_day:v('nh_day'),book_month:v('nh_month'),tags:[],avatar_url:'',active:true,sort_order:mx+1,services:'[]',events:'[]',products:'[]',long_bio_zh:'',long_bio_en:''});if(error){alert('添加失败: '+error.message);return;}await logAudit('create','healer',id,'新增疗愈师: '+v('nh_name_zh'));closeAddHealer();await renderHealers();updateStats();bustSiteCache();showMsg('healerMsg');enterHealerEdit(id);}
 
 var pendingDel=null;
 function confirmDelete(t,id,name){pendingDel={type:t,id:id,name:name};document.getElementById('confirmTitle').textContent='删除「'+name+'」';document.getElementById('confirmSub').textContent='删除后无法恢复，请确认。';document.getElementById('confirmDlg').style.display='flex';}
 function closeConfirm(){pendingDel=null;document.getElementById('confirmDlg').style.display='none';}
 async function execConfirm(){if(!pendingDel)return;if(pendingDel.type==='healer')await deleteHealer(pendingDel.id);if(pendingDel.type==='content')await deleteContent(pendingDel.id);if(pendingDel.type==='category')await deleteCategory(pendingDel.id);closeConfirm();}
-async function deleteHealer(id){await sb.from('healers').delete().eq('id',id);await logAudit('delete','healer',id,'删除疗愈师');delete tagState[id];await renderHealers();updateStats();bustSiteCache();showMsg('healerMsg');}
+async function deleteHealer(id){await sb.from('healers').delete().eq('id',id);await logAudit('delete','healer',id,'删除疗愈师');delete tagState[id];if(currentHealerEdit===id){currentHealerEdit=null;if(location.hash!=='#/healers')location.hash='#/healers';}await renderHealers();updateStats();bustSiteCache();showMsg('healerMsg');}
 
 // F-1：单条 healer 保存
 async function saveOneHealer(id, btn){
@@ -1074,7 +1203,50 @@ async function saveHomepage(){
 // CONTENT（含 SEO + 预览 + 排序）
 // ══════════════════════════════════════════════════════════
 var TYPE_INFO={article:{label:'📄 文章',cls:'badge-article'},podcast:{label:'🎧 播客',cls:'badge-podcast'},meditation:{label:'🧘 冥想引导',cls:'badge-meditation'}};
-async function renderContent(){var items=await fetchContent();document.getElementById('contentList').innerHTML=items.map(function(c,idx){tagState['c_'+c.id]=(c.tags||[]).slice();return contentCard(c,idx,items.length);}).join('');}
+async function renderContent(){await fetchContent();paintContent();}
+// H-3：根据 currentContentEdit 决定渲染 list / edit 视图
+function paintContent(){
+  var items=cache.content||[];
+  items.forEach(function(c){tagState['c_'+c.id]=(c.tags||[]).slice();});
+  var listEl=document.getElementById('contentList');
+  var saveBar=document.querySelector('#page-content .save-bar');
+  var btnRow=document.querySelector('#page-content > div[style*="display:flex"]');
+  if(currentContentEdit){
+    var idx=items.findIndex(function(x){return x.id===currentContentEdit;});
+    var c=idx>=0?items[idx]:null;
+    var crumb='<div class="crumb"><a href="#/content" onclick="exitContentEdit(event)">← 返回内容库</a><span class="crumb-sep">/</span><span class="crumb-current">'+esc((c&&c.title_zh)||currentContentEdit)+'</span></div>';
+    if(!c){listEl.innerHTML=crumb+'<div style="padding:30px;text-align:center;color:#9ca3af;">未找到内容 "'+esc(currentContentEdit)+'"</div>';}
+    else{listEl.innerHTML=crumb+contentCard(c,idx,items.length);}
+    if(saveBar)saveBar.style.display='none';
+    if(btnRow)btnRow.style.display='none';
+  } else {
+    listEl.innerHTML=renderContentListView(items);
+    if(saveBar)saveBar.style.display='';
+    if(btnRow)btnRow.style.display='';
+  }
+  if(typeof renderContentSidebar==='function')renderContentSidebar();
+}
+function renderContentListView(items){
+  if(!items.length)return '<div class="empty-state">暂无内容，点上方按钮新增或导入</div>';
+  return '<div class="entity-grid">'+items.map(function(c,idx){
+    var info=(typeof TYPE_INFO!=='undefined'&&TYPE_INFO[c.type])?TYPE_INFO[c.type]:{cls:'badge-article',label:c.type||'article'};
+    var off=c.active===false?'<span class="off-badge">已下线</span>':'';
+    var feat=c.featured?' ⭐':'';
+    var cover=c.cover_url?'<div class="entity-cover" style="background-image:url('+esc(c.cover_url)+')"></div>':'<div class="entity-cover" style="background:#0f1117;display:flex;align-items:center;justify-content:center;font-size:34px;">'+esc(c.emoji||'📄')+'</div>';
+    var prevDis=idx===0?'disabled':'';
+    var nextDis=idx===items.length-1?'disabled':'';
+    return '<div class="entity-card" onclick="enterContentEdit(\''+esc(c.id)+'\')">'
+      +'<div class="entity-card-actions">'
+        +'<div class="sort-btns"><button class="entity-mini-btn" '+prevDis+' title="上移" onclick="event.stopPropagation();moveContent(\''+esc(c.id)+'\',-1)">▲</button><button class="entity-mini-btn" '+nextDis+' title="下移" onclick="event.stopPropagation();moveContent(\''+esc(c.id)+'\',1)">▼</button></div>'
+        +'<button class="entity-mini-btn del" title="删除" onclick="event.stopPropagation();confirmDelete(\'content\',\''+esc(c.id)+'\',\''+esc(c.title_zh||c.id)+'\')">×</button>'
+      +'</div>'
+      +cover
+      +'<div class="entity-name"><span class="type-badge '+info.cls+'">'+info.label+'</span> '+esc(c.title_zh||'（无标题）')+feat+' '+off+'</div>'
+      +'<div class="entity-sub">'+esc(c.author||'')+(c.duration_zh?' · '+esc(c.duration_zh):'')+'</div>'
+      +'<div class="entity-edit-cta">编辑 →</div>'
+      +'</div>';
+  }).join('')+'</div>';
+}
 
 function contentCard(c,idx,total){
   var info=TYPE_INFO[c.type]||TYPE_INFO.article,activeChk=c.active!==false?'checked':'',featuredChk=c.featured?'checked':'';
@@ -1132,8 +1304,8 @@ async function saveContent(){
 
 function openAddContent(){['nc_emoji','nc_title_zh','nc_title_en','nc_summary_zh','nc_summary_en','nc_author','nc_duration_zh'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('nc_type').value='article';document.getElementById('modalContent').style.display='flex';}
 function closeAddContent(){document.getElementById('modalContent').style.display='none';}
-async function confirmAddContent(){function v(id){return(document.getElementById(id)||{value:''}).value;}var mx=(cache.content||[]).reduce(function(m,c){return Math.max(m,c.sort_order||0);},0);var newId='c'+Date.now();var{error}=await sb.from('content').insert({id:newId,type:v('nc_type'),emoji:v('nc_emoji')||'📄',title_zh:v('nc_title_zh'),title_en:v('nc_title_en'),summary_zh:v('nc_summary_zh'),summary_en:v('nc_summary_en'),author:v('nc_author'),duration_zh:v('nc_duration_zh'),duration_en:'',tags:[],cover_url:'',audio_url:'',podcast_link:'',featured:false,active:true,sort_order:mx+1,body_zh:'',body_en:'',carousel_order:0});if(error){alert('添加失败: '+error.message);return;}await logAudit('create','content',newId,'新增内容: '+v('nc_title_zh'));closeAddContent();await renderContent();updateStats();bustSiteCache();showMsg('contentMsg');}
-async function deleteContent(id){await sb.from('content').delete().eq('id',id);await logAudit('delete','content',id,'删除内容');delete tagState['c_'+id];await renderContent();updateStats();bustSiteCache();showMsg('contentMsg');}
+async function confirmAddContent(){function v(id){return(document.getElementById(id)||{value:''}).value;}var mx=(cache.content||[]).reduce(function(m,c){return Math.max(m,c.sort_order||0);},0);var newId='c'+Date.now();var{error}=await sb.from('content').insert({id:newId,type:v('nc_type'),emoji:v('nc_emoji')||'📄',title_zh:v('nc_title_zh'),title_en:v('nc_title_en'),summary_zh:v('nc_summary_zh'),summary_en:v('nc_summary_en'),author:v('nc_author'),duration_zh:v('nc_duration_zh'),duration_en:'',tags:[],cover_url:'',audio_url:'',podcast_link:'',featured:false,active:true,sort_order:mx+1,body_zh:'',body_en:'',carousel_order:0});if(error){alert('添加失败: '+error.message);return;}await logAudit('create','content',newId,'新增内容: '+v('nc_title_zh'));closeAddContent();await renderContent();updateStats();bustSiteCache();showMsg('contentMsg');enterContentEdit(newId);}
+async function deleteContent(id){await sb.from('content').delete().eq('id',id);await logAudit('delete','content',id,'删除内容');delete tagState['c_'+id];if(currentContentEdit===id){currentContentEdit=null;if(location.hash!=='#/content')location.hash='#/content';}await renderContent();updateStats();bustSiteCache();showMsg('contentMsg');}
 
 // F-2：单条 content 保存
 async function saveOneContent(id, btn){
