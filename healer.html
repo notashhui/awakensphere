@@ -2328,10 +2328,14 @@ function applyHealerData(h) {
     }
     var facts = [];
     (h.certifications || []).forEach(function(c){
-      if (!c || !c.name) return;
+      if (!c) return;
+      var nzh = c.name_zh || c.name || '';
+      var nen = c.name_en || c.name_zh || c.name || '';
+      if (!nzh && !nen) return;
       var valZh = c.year ? esc(c.year) + ' 年认证' : '已认证';
       var valEn = c.year ? 'Certified ' + esc(c.year) : 'Certified';
-      facts.push('<li><span class="lbl">' + esc(c.name) + '</span><span class="val"><span data-lang="zh">' + valZh + '</span><span data-lang="en">' + valEn + '</span></span></li>');
+      var lbl = '<span data-lang="zh">' + esc(nzh) + '</span><span data-lang="en">' + esc(nen) + '</span>';
+      facts.push('<li><span class="lbl">' + lbl + '</span><span class="val"><span data-lang="zh">' + valZh + '</span><span data-lang="en">' + valEn + '</span></span></li>');
     });
     if (h.location_zh || h.location_en) {
       facts.push('<li><span class="lbl"><span data-lang="zh">驻地</span><span data-lang="en">Base</span></span><span class="val"><span data-lang="zh">' + esc(h.location_zh || h.location_en || '') + '</span><span data-lang="en">' + esc(h.location_en || h.location_zh || '') + '</span></span></li>');
@@ -2410,9 +2414,12 @@ function applyHealerData(h) {
         + '<span data-lang="en">' + esc(h.featured_quote_en || h.featured_quote_zh) + '</span>';
     }
     if (quoteCite) {
-      var ctxStr = h.quote_context ? ' · ' + h.quote_context : '';
-      quoteCite.innerHTML = '<span data-lang="zh">— ' + esc(pureZh) + esc(ctxStr) + '</span>'
-        + '<span data-lang="en">— ' + esc(nameEn) + esc(ctxStr) + '</span>';
+      var ctxZh = h.quote_context_zh || h.quote_context || '';
+      var ctxEn = h.quote_context_en || h.quote_context_zh || h.quote_context || '';
+      var ctxZhStr = ctxZh ? ' · ' + ctxZh : '';
+      var ctxEnStr = ctxEn ? ' · ' + ctxEn : '';
+      quoteCite.innerHTML = '<span data-lang="zh">— ' + esc(pureZh) + esc(ctxZhStr) + '</span>'
+        + '<span data-lang="en">— ' + esc(nameEn) + esc(ctxEnStr) + '</span>';
     }
   } else {
     // 没填特色引言就隐藏整个引言 section

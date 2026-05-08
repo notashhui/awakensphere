@@ -406,6 +406,7 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
     "title_zh": "中文标题",        // 必填
     "title_en": "English Title",
     "summary_zh": "一句话摘要",
+    "summary_en": "One-line summary",
     "body_zh": "中文 Markdown 正文",
     "body_en": "English markdown body",
     "author": "作者名",
@@ -691,6 +692,9 @@ p { line-height:1.8; color:#9ca3af; font-size:14px; margin-bottom:6px; }
         <div class="field full"><div class="label">摘要（中文）</div><textarea id="nc_summary_zh" style="min-height:60px"></textarea></div>
       </div>
       <div class="field-row">
+        <div class="field full"><div class="label">摘要（英文）</div><textarea id="nc_summary_en" style="min-height:60px"></textarea></div>
+      </div>
+      <div class="field-row">
         <div class="field"><div class="label">作者</div><input id="nc_author"></div>
         <div class="field"><div class="label">时长（中文）</div><input id="nc_duration_zh" placeholder="20 分钟"></div>
       </div>
@@ -903,17 +907,17 @@ function refreshTagEditor(k){var te=document.getElementById('te_'+k);if(!te)retu
 
 // ── JSONB 编辑器（服务/活动/产品）─────────────────────────
 function getJson(k){return jsonState[k]||[];}function setJson(k,a){jsonState[k]=a;}
-function renderServicesList(hid){var k='svc_'+hid,items=getJson(k);return'<div class="label">💆 服务列表</div><div id="jl_'+k+'">'+items.map(function(s,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('服务名称（中文）','j_'+k+'_'+i+'_name_zh',s.name_zh)+field('服务名称（英文）','j_'+k+'_'+i+'_name_en',s.name_en)+'</div><div class="field-row"><div class="field full"><div class="label">描述</div><input id="j_'+k+'_'+i+'_desc" value="'+esc(s.description_zh)+'"></div></div><div class="field-row">'+field('价格','j_'+k+'_'+i+'_price',s.price)+field('时长','j_'+k+'_'+i+'_duration',s.duration)+'</div><div class="field-row"><div class="field full"><div class="label">服务图片</div><div style="display:flex;gap:10px;align-items:center;"><input class="img-url-inp" id="j_'+k+'_'+i+'_image" value="'+esc(s.image_url||'')+'" placeholder="粘贴图片 URL 或上传" style="flex:1;"><label class="img-upload-label" style="flex-shrink:0;">📷 上传<input type="file" accept="image/*" style="display:none" onchange="uploadSvcImg(event,\''+k+'\','+i+')"></label></div>'+(s.image_url?'<img src="'+esc(s.image_url)+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:6px;border:1px solid #374151;">':'')+'</div></div></div>';}).join('')+'</div><button class="json-add" onclick="addService(\''+hid+'\')">＋ 添加服务</button>';}
+function renderServicesList(hid){var k='svc_'+hid,items=getJson(k);return'<div class="label">💆 服务列表</div><div id="jl_'+k+'">'+items.map(function(s,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('服务名称（中文）','j_'+k+'_'+i+'_name_zh',s.name_zh)+field('服务名称（英文）','j_'+k+'_'+i+'_name_en',s.name_en)+'</div><div class="field-row">'+field('描述（中文）','j_'+k+'_'+i+'_desc_zh',s.description_zh)+field('描述（英文）','j_'+k+'_'+i+'_desc_en',s.description_en||'')+'</div><div class="field-row">'+field('价格','j_'+k+'_'+i+'_price',s.price)+field('时长','j_'+k+'_'+i+'_duration',s.duration)+'</div><div class="field-row"><div class="field full"><div class="label">服务图片</div><div style="display:flex;gap:10px;align-items:center;"><input class="img-url-inp" id="j_'+k+'_'+i+'_image" value="'+esc(s.image_url||'')+'" placeholder="粘贴图片 URL 或上传" style="flex:1;"><label class="img-upload-label" style="flex-shrink:0;">📷 上传<input type="file" accept="image/*" style="display:none" onchange="uploadSvcImg(event,\''+k+'\','+i+')"></label></div>'+(s.image_url?'<img src="'+esc(s.image_url)+'" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:6px;border:1px solid #374151;">':'')+'</div></div></div>';}).join('')+'</div><button class="json-add" onclick="addService(\''+hid+'\')">＋ 添加服务</button>';}
 
 // 认证列表（C-10 档案面板用）：[{name, year}]
-function renderCertificationsList(hid){var k='cert_'+hid,items=getJson(k);return'<div class="label">🏅 认证列表</div><div id="jl_'+k+'">'+items.map(function(c,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('认证名称','j_'+k+'_'+i+'_name',c.name||'')+field('年份','j_'+k+'_'+i+'_year',c.year||'')+'</div></div>';}).join('')+'</div><button class="json-add" onclick="addCertification(\''+hid+'\')">＋ 添加认证</button>';}
-function addCertification(hid){var k='cert_'+hid;getJson(k).push({name:'',year:''});refreshJsonSection(k,hid,'certifications');}
-function collectCertifications(hid){var k='cert_'+hid;return getJson(k).map(function(c,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{name:g('name'),year:g('year')};});}
-function addService(hid){var k='svc_'+hid;getJson(k).push({name_zh:'',name_en:'',description_zh:'',price:'',duration:''});refreshJsonSection(k,hid,'services');}
-function collectServices(hid){var k='svc_'+hid;return getJson(k).map(function(s,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{name_zh:g('name_zh'),name_en:g('name_en'),description_zh:g('desc'),price:g('price'),duration:g('duration'),image_url:g('image')};});}
-function renderEventsList(hid){var k='evt_'+hid,items=getJson(k);return'<div class="label">📅 活动日程</div><div id="jl_'+k+'">'+items.map(function(e,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('活动名称（中文）','j_'+k+'_'+i+'_title_zh',e.title_zh)+field('活动名称（英文）','j_'+k+'_'+i+'_title_en',e.title_en)+'</div><div class="field-row">'+field('日期','j_'+k+'_'+i+'_date',e.date)+field('时间','j_'+k+'_'+i+'_time',e.time)+'</div><div class="field-row">'+field('地点','j_'+k+'_'+i+'_loc',e.location_zh)+field('描述','j_'+k+'_'+i+'_desc',e.description_zh)+'</div></div>';}).join('')+'</div><button class="json-add" onclick="addEvent(\''+hid+'\')">＋ 添加活动</button>';}
-function addEvent(hid){var k='evt_'+hid;getJson(k).push({title_zh:'',title_en:'',date:'',time:'',location_zh:'',description_zh:''});refreshJsonSection(k,hid,'events');}
-function collectEvents(hid){var k='evt_'+hid;return getJson(k).map(function(e,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{title_zh:g('title_zh'),title_en:g('title_en'),date:g('date'),time:g('time'),location_zh:g('loc'),description_zh:g('desc')};});}
+function renderCertificationsList(hid){var k='cert_'+hid,items=getJson(k);return'<div class="label">🏅 认证列表</div><div id="jl_'+k+'">'+items.map(function(c,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('认证名称（中文）','j_'+k+'_'+i+'_name_zh',c.name_zh||c.name||'')+field('认证名称（英文）','j_'+k+'_'+i+'_name_en',c.name_en||'')+'</div><div class="field-row">'+field('年份','j_'+k+'_'+i+'_year',c.year||'')+'<div class="field"></div></div></div>';}).join('')+'</div><button class="json-add" onclick="addCertification(\''+hid+'\')">＋ 添加认证</button>';}
+function addCertification(hid){var k='cert_'+hid;getJson(k).push({name_zh:'',name_en:'',year:''});refreshJsonSection(k,hid,'certifications');}
+function collectCertifications(hid){var k='cert_'+hid;return getJson(k).map(function(c,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{name_zh:g('name_zh'),name_en:g('name_en'),year:g('year')};});}
+function addService(hid){var k='svc_'+hid;getJson(k).push({name_zh:'',name_en:'',description_zh:'',description_en:'',price:'',duration:''});refreshJsonSection(k,hid,'services');}
+function collectServices(hid){var k='svc_'+hid;return getJson(k).map(function(s,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{name_zh:g('name_zh'),name_en:g('name_en'),description_zh:g('desc_zh'),description_en:g('desc_en'),price:g('price'),duration:g('duration'),image_url:g('image')};});}
+function renderEventsList(hid){var k='evt_'+hid,items=getJson(k);return'<div class="label">📅 活动日程</div><div id="jl_'+k+'">'+items.map(function(e,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('活动名称（中文）','j_'+k+'_'+i+'_title_zh',e.title_zh)+field('活动名称（英文）','j_'+k+'_'+i+'_title_en',e.title_en)+'</div><div class="field-row">'+field('日期','j_'+k+'_'+i+'_date',e.date)+field('时间','j_'+k+'_'+i+'_time',e.time)+'</div><div class="field-row">'+field('地点（中文）','j_'+k+'_'+i+'_loc_zh',e.location_zh)+field('地点（英文）','j_'+k+'_'+i+'_loc_en',e.location_en||'')+'</div><div class="field-row">'+field('描述（中文）','j_'+k+'_'+i+'_desc_zh',e.description_zh)+field('描述（英文）','j_'+k+'_'+i+'_desc_en',e.description_en||'')+'</div></div>';}).join('')+'</div><button class="json-add" onclick="addEvent(\''+hid+'\')">＋ 添加活动</button>';}
+function addEvent(hid){var k='evt_'+hid;getJson(k).push({title_zh:'',title_en:'',date:'',time:'',location_zh:'',location_en:'',description_zh:'',description_en:''});refreshJsonSection(k,hid,'events');}
+function collectEvents(hid){var k='evt_'+hid;return getJson(k).map(function(e,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{title_zh:g('title_zh'),title_en:g('title_en'),date:g('date'),time:g('time'),location_zh:g('loc_zh'),location_en:g('loc_en'),description_zh:g('desc_zh'),description_en:g('desc_en')};});}
 function renderProductsList(hid){var k='prd_'+hid,items=getJson(k);return'<div class="label">🛍️ 品牌产品</div><div id="jl_'+k+'">'+items.map(function(p,i){return'<div class="json-item"><button class="json-item-del" onclick="delJsonItem(\''+k+'\','+i+')">×</button><div class="field-row">'+field('产品名称','j_'+k+'_'+i+'_name_zh',p.name_zh)+field('价格','j_'+k+'_'+i+'_price',p.price)+'</div><div class="field-row"><div class="field full"><div class="label">描述</div><input id="j_'+k+'_'+i+'_desc" value="'+esc(p.description_zh)+'"></div></div></div>';}).join('')+'</div><button class="json-add" onclick="addProduct(\''+hid+'\')">＋ 添加产品</button>';}
 function addProduct(hid){var k='prd_'+hid;getJson(k).push({name_zh:'',name_en:'',price:'',image_url:'',description_zh:''});refreshJsonSection(k,hid,'products');}
 function collectProducts(hid){var k='prd_'+hid;return getJson(k).map(function(p,i){function g(f){var el=document.getElementById('j_'+k+'_'+i+'_'+f);return el?el.value:'';}return{name_zh:g('name_zh'),name_en:'',price:g('price'),image_url:'',description_zh:g('desc')};});}
@@ -966,7 +970,7 @@ function healerCard(h){
     '<div class="seo-section"><div class="label">💬 特色引言 <small>（详情页底部大字摘录）</small></div><div style="height:8px"></div>',
     '<div class="field-row"><div class="field full"><div class="label">引言（中文）</div><textarea id="hf_'+h.id+'_featured_quote_zh">'+escText(h.featured_quote_zh)+'</textarea></div></div>',
     '<div class="field-row"><div class="field full"><div class="label">引言（英文）</div><textarea id="hf_'+h.id+'_featured_quote_en">'+escText(h.featured_quote_en)+'</textarea></div></div>',
-    '<div class="field-row"><div class="field full"><div class="label">引言来源说明 <small>（如 "谈 Esalen® 实践"）</small></div><input id="hf_'+h.id+'_quote_context" value="'+esc(h.quote_context||'')+'"></div></div>',
+    '<div class="field-row">'+field('引言来源（中文）','hf_'+h.id+'_quote_context_zh',h.quote_context_zh||h.quote_context||'')+field('引言来源（英文）','hf_'+h.id+'_quote_context_en',h.quote_context_en||'')+'</div>',
     '</div>',
     '<div class="field" style="margin-bottom:14px" id="jsec_svc_'+h.id+'">',renderServicesList(h.id),'</div>',
     '<div class="field" style="margin-bottom:14px" id="jsec_evt_'+h.id+'">',renderEventsList(h.id),'</div>',
@@ -985,7 +989,7 @@ async function saveHealers(){
       // C-3 联系方式
       wechat:g('wechat'),whatsapp:g('whatsapp'),email:g('email'),xiaohongshu_url:g('xiaohongshu_url'),booking_url:g('booking_url'),
       // C-9 特色引言
-      featured_quote_zh:g('featured_quote_zh'),featured_quote_en:g('featured_quote_en'),quote_context:g('quote_context'),
+      featured_quote_zh:g('featured_quote_zh'),featured_quote_en:g('featured_quote_en'),quote_context:g('quote_context_zh'),quote_context_zh:g('quote_context_zh'),quote_context_en:g('quote_context_en'),
       // C-10 个人档案
       origin_city:g('origin_city'),nationality:g('nationality'),birth_year:intOrNull(g('birth_year')),certifications:jsonState['cert_'+h.id]||[],languages:g('languages'),practice_since:intOrNull(g('practice_since'))
     };
@@ -1032,7 +1036,7 @@ async function saveOneHealer(id, btn){
   function g(f){var el=document.getElementById('hf_'+id+'_'+f);return el?el.value:(h[f]||'');}
   function cb(f){var el=document.getElementById('hf_'+id+'_'+f);return el?el.checked:!!h[f];}
   function intOrNull(s){var v=parseInt(s,10);return isNaN(v)?null:v;}
-  var obj={id:id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),title_extra_zh:g('title_extra_zh'),title_extra_en:g('title_extra_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[id]||[]).slice(),avatar_url:g('avatar_url'),avatar_landscape:g('avatar_landscape'),avatar_portrait:g('avatar_portrait'),active:cb('active'),services:jsonState['svc_'+id],events:jsonState['evt_'+id],products:jsonState['prd_'+id],wechat:g('wechat'),whatsapp:g('whatsapp'),email:g('email'),xiaohongshu_url:g('xiaohongshu_url'),booking_url:g('booking_url'),featured_quote_zh:g('featured_quote_zh'),featured_quote_en:g('featured_quote_en'),quote_context:g('quote_context'),origin_city:g('origin_city'),nationality:g('nationality'),birth_year:intOrNull(g('birth_year')),certifications:jsonState['cert_'+id]||[],languages:g('languages'),practice_since:intOrNull(g('practice_since'))};
+  var obj={id:id,emoji:h.emoji,bg:h.bg,sort_order:h.sort_order,name_zh:g('name_zh'),name_en:g('name_en'),title_zh:g('title_zh'),title_en:g('title_en'),sub_zh:g('sub_zh'),sub_en:g('sub_en'),title_extra_zh:g('title_extra_zh'),title_extra_en:g('title_extra_en'),bio_zh:g('bio_zh'),bio_en:g('bio_en'),long_bio_zh:g('long_bio_zh'),long_bio_en:g('long_bio_en'),price:g('price'),location_zh:g('location_zh'),location_en:g('location_en'),avail_zh:g('avail_zh'),avail_en:g('avail_en'),book_day:g('book_day'),book_month:g('book_month'),tags:(tagState[id]||[]).slice(),avatar_url:g('avatar_url'),avatar_landscape:g('avatar_landscape'),avatar_portrait:g('avatar_portrait'),active:cb('active'),services:jsonState['svc_'+id],events:jsonState['evt_'+id],products:jsonState['prd_'+id],wechat:g('wechat'),whatsapp:g('whatsapp'),email:g('email'),xiaohongshu_url:g('xiaohongshu_url'),booking_url:g('booking_url'),featured_quote_zh:g('featured_quote_zh'),featured_quote_en:g('featured_quote_en'),quote_context:g('quote_context_zh'),quote_context_zh:g('quote_context_zh'),quote_context_en:g('quote_context_en'),origin_city:g('origin_city'),nationality:g('nationality'),birth_year:intOrNull(g('birth_year')),certifications:jsonState['cert_'+id]||[],languages:g('languages'),practice_since:intOrNull(g('practice_since'))};
   if(categoriesData&&categoriesData.length)obj.category_ids=(healerCatState[id]||[]).slice();
   var orig = btn ? btn.textContent : '';
   if(btn){btn.disabled=true;btn.textContent='保存中…';}
@@ -1093,6 +1097,7 @@ function contentCard(c,idx,total){
     '<div class="field-row"><div class="field full"><div class="label">标题（中文）</div><input id="cf_'+c.id+'_title_zh" value="'+esc(c.title_zh||'')+'"></div></div>',
     '<div class="field-row"><div class="field full"><div class="label">标题（英文）</div><input id="cf_'+c.id+'_title_en" value="'+esc(c.title_en||'')+'"></div></div>',
     '<div class="field-row"><div class="field full"><div class="label">摘要（中文）</div><textarea id="cf_'+c.id+'_summary_zh" style="min-height:60px">'+escText(c.summary_zh||'')+'</textarea></div></div>',
+    '<div class="field-row"><div class="field full"><div class="label">摘要（英文）</div><textarea id="cf_'+c.id+'_summary_en" style="min-height:60px">'+escText(c.summary_en||'')+'</textarea></div></div>',
     '<div class="field-row">',field('分类（中文）<small>如：正念冥想 / 身体疗愈 / 引导冥想</small>','cf_'+c.id+'_category_zh',c.category_zh),field('分类（英文）<small>如：MINDFULNESS / SOMATIC / GUIDED</small>','cf_'+c.id+'_category_en',c.category_en),'</div>',
     '<div class="field-row col3">',field('作者','cf_'+c.id+'_author',c.author),field('时长（中文）','cf_'+c.id+'_duration_zh',c.duration_zh),field('时长（英文）','cf_'+c.id+'_duration_en',c.duration_en),'</div>',
     // Markdown 正文（仅文章显示；播客/视频用 transcript / show notes）
@@ -1117,7 +1122,7 @@ async function saveContent(){
     function cb(f){var el=document.getElementById('cf_'+c.id+'_'+f);return el?el.checked:!!c[f];}
     var co=document.getElementById('cf_'+c.id+'_carousel');
     var pd=g('publish_date'); // YYYY-MM-DD 字符串
-    return{id:c.id,sort_order:c.sort_order,type:g('type'),emoji:g('emoji'),title_zh:g('title_zh'),title_en:g('title_en'),summary_zh:g('summary_zh'),author:g('author'),duration_zh:g('duration_zh'),duration_en:g('duration_en'),category_zh:g('category_zh'),category_en:g('category_en'),tags:(tagState['c_'+c.id]||[]).slice(),cover_url:g('cover_url'),audio_url:g('audio_url'),podcast_link:g('podcast_link'),audio_embed:g('audio_embed'),video_embed:g('video_embed'),guest_name:g('guest_name'),transcript:g('transcript'),publish_date:pd||null,active:cb('active'),featured:cb('featured'),body_zh:g('body_zh'),body_en:g('body_en'),carousel_order:co?parseInt(co.value)||0:0};
+    return{id:c.id,sort_order:c.sort_order,type:g('type'),emoji:g('emoji'),title_zh:g('title_zh'),title_en:g('title_en'),summary_zh:g('summary_zh'),summary_en:g('summary_en'),author:g('author'),duration_zh:g('duration_zh'),duration_en:g('duration_en'),category_zh:g('category_zh'),category_en:g('category_en'),tags:(tagState['c_'+c.id]||[]).slice(),cover_url:g('cover_url'),audio_url:g('audio_url'),podcast_link:g('podcast_link'),audio_embed:g('audio_embed'),video_embed:g('video_embed'),guest_name:g('guest_name'),transcript:g('transcript'),publish_date:pd||null,active:cb('active'),featured:cb('featured'),body_zh:g('body_zh'),body_en:g('body_en'),carousel_order:co?parseInt(co.value)||0:0};
   });
   var{error}=await sb.from('content').upsert(updates);
   if(error){alert('保存失败: '+error.message);return;}
@@ -1125,9 +1130,9 @@ async function saveContent(){
   bustSiteCache();showMsg('contentMsg');await renderContent();updateStats();
 }
 
-function openAddContent(){['nc_emoji','nc_title_zh','nc_title_en','nc_summary_zh','nc_author','nc_duration_zh'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('nc_type').value='article';document.getElementById('modalContent').style.display='flex';}
+function openAddContent(){['nc_emoji','nc_title_zh','nc_title_en','nc_summary_zh','nc_summary_en','nc_author','nc_duration_zh'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('nc_type').value='article';document.getElementById('modalContent').style.display='flex';}
 function closeAddContent(){document.getElementById('modalContent').style.display='none';}
-async function confirmAddContent(){function v(id){return(document.getElementById(id)||{value:''}).value;}var mx=(cache.content||[]).reduce(function(m,c){return Math.max(m,c.sort_order||0);},0);var newId='c'+Date.now();var{error}=await sb.from('content').insert({id:newId,type:v('nc_type'),emoji:v('nc_emoji')||'📄',title_zh:v('nc_title_zh'),title_en:v('nc_title_en'),summary_zh:v('nc_summary_zh'),author:v('nc_author'),duration_zh:v('nc_duration_zh'),duration_en:'',tags:[],cover_url:'',audio_url:'',podcast_link:'',featured:false,active:true,sort_order:mx+1,body_zh:'',body_en:'',carousel_order:0});if(error){alert('添加失败: '+error.message);return;}await logAudit('create','content',newId,'新增内容: '+v('nc_title_zh'));closeAddContent();await renderContent();updateStats();bustSiteCache();showMsg('contentMsg');}
+async function confirmAddContent(){function v(id){return(document.getElementById(id)||{value:''}).value;}var mx=(cache.content||[]).reduce(function(m,c){return Math.max(m,c.sort_order||0);},0);var newId='c'+Date.now();var{error}=await sb.from('content').insert({id:newId,type:v('nc_type'),emoji:v('nc_emoji')||'📄',title_zh:v('nc_title_zh'),title_en:v('nc_title_en'),summary_zh:v('nc_summary_zh'),summary_en:v('nc_summary_en'),author:v('nc_author'),duration_zh:v('nc_duration_zh'),duration_en:'',tags:[],cover_url:'',audio_url:'',podcast_link:'',featured:false,active:true,sort_order:mx+1,body_zh:'',body_en:'',carousel_order:0});if(error){alert('添加失败: '+error.message);return;}await logAudit('create','content',newId,'新增内容: '+v('nc_title_zh'));closeAddContent();await renderContent();updateStats();bustSiteCache();showMsg('contentMsg');}
 async function deleteContent(id){await sb.from('content').delete().eq('id',id);await logAudit('delete','content',id,'删除内容');delete tagState['c_'+id];await renderContent();updateStats();bustSiteCache();showMsg('contentMsg');}
 
 // F-2：单条 content 保存
@@ -1138,7 +1143,7 @@ async function saveOneContent(id, btn){
   function cb(f){var el=document.getElementById('cf_'+id+'_'+f);return el?el.checked:!!c[f];}
   var co=document.getElementById('cf_'+id+'_carousel');
   var pd=g('publish_date');
-  var obj={id:id,sort_order:c.sort_order,type:g('type'),emoji:g('emoji'),title_zh:g('title_zh'),title_en:g('title_en'),summary_zh:g('summary_zh'),author:g('author'),duration_zh:g('duration_zh'),duration_en:g('duration_en'),category_zh:g('category_zh'),category_en:g('category_en'),tags:(tagState['c_'+id]||[]).slice(),cover_url:g('cover_url'),audio_url:g('audio_url'),podcast_link:g('podcast_link'),audio_embed:g('audio_embed'),video_embed:g('video_embed'),guest_name:g('guest_name'),transcript:g('transcript'),publish_date:pd||null,active:cb('active'),featured:cb('featured'),body_zh:g('body_zh'),body_en:g('body_en'),carousel_order:co?parseInt(co.value)||0:0};
+  var obj={id:id,sort_order:c.sort_order,type:g('type'),emoji:g('emoji'),title_zh:g('title_zh'),title_en:g('title_en'),summary_zh:g('summary_zh'),summary_en:g('summary_en'),author:g('author'),duration_zh:g('duration_zh'),duration_en:g('duration_en'),category_zh:g('category_zh'),category_en:g('category_en'),tags:(tagState['c_'+id]||[]).slice(),cover_url:g('cover_url'),audio_url:g('audio_url'),podcast_link:g('podcast_link'),audio_embed:g('audio_embed'),video_embed:g('video_embed'),guest_name:g('guest_name'),transcript:g('transcript'),publish_date:pd||null,active:cb('active'),featured:cb('featured'),body_zh:g('body_zh'),body_en:g('body_en'),carousel_order:co?parseInt(co.value)||0:0};
   var orig = btn ? btn.textContent : '';
   if(btn){btn.disabled=true;btn.textContent='保存中…';}
   var {error} = await sb.from('content').upsert(obj);
@@ -1258,6 +1263,7 @@ async function bulkImportConfirm(){
       title_zh: item.title_zh || '',
       title_en: item.title_en || '',
       summary_zh: item.summary_zh || '',
+      summary_en: item.summary_en || '',
       author: item.author || '',
       duration_zh: item.duration_zh || '',
       duration_en: item.duration_en || '',
