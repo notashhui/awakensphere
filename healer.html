@@ -96,9 +96,10 @@ img { max-width:100%; display:block; }
 .brand {
   font-family: var(--sans);
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: .32em;
+  font-size: 14px;
+  letter-spacing: 0.04em; /* I-3 v6：全站统一品牌字距 */
   color: var(--ink);
+  text-decoration: none;
 }
 .nav {
   display: flex; align-items: center; gap: 28px;
@@ -2116,6 +2117,58 @@ async function loadHealerProfile() {
   applyLang();
 }
 
+// I-1 v6：微信弹窗（二维码 + 文本 + 复制）—— 全页面共用
+function showWechatPopup(wechatId, qrUrl, healerName) {
+  var box = document.getElementById('wechatPopup');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'wechatPopup';
+    box.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(4px)';
+    box.innerHTML = '<div style="background:#fff;border-radius:8px;padding:32px 28px;max-width:340px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:var(--sans)">'
+      + '<div id="wxPopupTitle" style="font-family:var(--serif);font-size:20px;color:var(--ink);margin-bottom:6px"></div>'
+      + '<div style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;margin-bottom:20px"><span data-lang="zh">添加微信</span><span data-lang="en">Add WeChat</span></div>'
+      + '<div id="wxPopupQr" style="margin:0 auto 16px"></div>'
+      + '<div style="font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px"><span data-lang="zh">微信号</span><span data-lang="en">WeChat ID</span></div>'
+      + '<div id="wxPopupId" style="font-family:var(--serif);font-size:22px;color:var(--ink);margin-bottom:16px;user-select:all"></div>'
+      + '<button id="wxPopupCopyBtn" type="button" style="background:var(--ink);color:var(--paper);border:none;padding:10px 24px;border-radius:3px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;margin-right:8px"><span data-lang="zh">复制微信号</span><span data-lang="en">Copy ID</span></button>'
+      + '<button type="button" onclick="document.getElementById(\'wechatPopup\').style.display=\'none\'" style="background:transparent;color:var(--muted);border:1px solid var(--rule);padding:10px 24px;border-radius:3px;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;cursor:pointer"><span data-lang="zh">关闭</span><span data-lang="en">Close</span></button>'
+      + '</div>';
+    box.addEventListener('click', function(e){ if(e.target===box) box.style.display='none'; });
+    document.body.appendChild(box);
+  }
+  document.getElementById('wxPopupTitle').textContent = healerName || '';
+  document.getElementById('wxPopupId').textContent = wechatId;
+  var qrBox = document.getElementById('wxPopupQr');
+  if (qrUrl) {
+    qrBox.innerHTML = '<img src="' + qrUrl.replace(/"/g,'&quot;') + '" style="width:200px;height:200px;border-radius:6px;border:1px solid var(--rule)" alt="WeChat QR">';
+  } else {
+    qrBox.innerHTML = '<div style="width:200px;height:200px;border:2px dashed var(--rule);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px;margin:0 auto;font-family:var(--mono);letter-spacing:.12em">手动添加 / Add manually</div>';
+  }
+  var btn = document.getElementById('wxPopupCopyBtn');
+  btn.onclick = function() {
+    var doneZh = btn.querySelector('[data-lang="zh"]');
+    var doneEn = btn.querySelector('[data-lang="en"]');
+    var origZh = doneZh.textContent, origEn = doneEn.textContent;
+    function done() {
+      doneZh.textContent = '已复制 ✓'; doneEn.textContent = 'Copied ✓';
+      setTimeout(function(){ doneZh.textContent = origZh; doneEn.textContent = origEn; }, 2000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(wechatId).then(done, function(){ /* fallback */
+        var ta = document.createElement('textarea'); ta.value = wechatId; document.body.appendChild(ta);
+        ta.select(); try { document.execCommand('copy'); done(); } catch(e){}
+        document.body.removeChild(ta);
+      });
+    } else {
+      var ta = document.createElement('textarea'); ta.value = wechatId; document.body.appendChild(ta);
+      ta.select(); try { document.execCommand('copy'); done(); } catch(e){}
+      document.body.removeChild(ta);
+    }
+  };
+  box.style.display = 'flex';
+  applyLang(); // 应用当前语言到新生成的 popup 内 [data-lang] span
+}
+
 function applyHealerData(h) {
   var nameZh = h.name_zh || '';
   var nameEn = h.name_en || h.name_zh || '';
@@ -2148,12 +2201,18 @@ function applyHealerData(h) {
     titleEl.innerHTML = '<span data-lang="zh">' + esc(titleZh) + '</span><span data-lang="en">' + esc(titleEn) + '</span>';
   }
 
-  // 副标（个人简介一句话，复用 bio 或 sub 字段）
+  // H-1（v6）：副标改用 bio_zh / bio_en（短摘要），不再用 sub_zh，
+  // 避免和 .pf-title（绿色 = title + sub + extra 拼接）重复显示
   var subtitleEl = document.querySelector('.pf-subtitle');
   if (subtitleEl) {
-    var subZh = h.sub_zh || h.bio_zh || '';
-    var subEn = h.sub_en || h.bio_en || h.bio_zh || '';
-    subtitleEl.innerHTML = '<span data-lang="zh">' + esc(subZh) + '</span><span data-lang="en">' + esc(subEn) + '</span>';
+    var subZh = h.bio_zh || '';
+    var subEn = h.bio_en || h.bio_zh || '';
+    if (subZh || subEn) {
+      subtitleEl.innerHTML = '<span data-lang="zh">' + esc(subZh) + '</span><span data-lang="en">' + esc(subEn) + '</span>';
+    } else {
+      // bio 也为空时直接隐藏，不再显示重复的 sub_zh
+      subtitleEl.style.display = 'none';
+    }
   }
 
   // 所在地（meta-row 中间那段）
@@ -2215,7 +2274,8 @@ function applyHealerData(h) {
   if (contactBox) {
     var pills = [];
     if (h.wechat) {
-      pills.push('<span class="pf-contact-pill" title="' + esc(h.wechat) + '"><span class="ic">💬</span><span data-lang="zh">微信</span><span data-lang="en">WeChat</span></span>');
+      // I-1 v6：微信 pill 可点击，弹 popup 含微信号 + 复制按钮（+ 可选二维码）
+      pills.push('<button type="button" class="pf-contact-pill" onclick="showWechatPopup(\'' + esc(h.wechat) + '\',\'' + esc(h.wechat_qr_url || '') + '\',\'' + esc(h.name_zh || '') + '\')" style="border:1px solid var(--rule);background:transparent;cursor:pointer"><span class="ic">💬</span><span data-lang="zh">微信</span><span data-lang="en">WeChat</span></button>');
     }
     if (h.whatsapp) {
       var waLink = /^https?:/i.test(h.whatsapp) ? h.whatsapp : ('https://wa.me/' + h.whatsapp.replace(/[^\d+]/g, ''));

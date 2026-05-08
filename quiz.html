@@ -98,9 +98,10 @@ img { max-width:100%; display:block; }
 .brand {
   font-family: var(--sans);
   font-weight: 600;
-  font-size: 13px;
-  letter-spacing: .32em;
+  font-size: 14px;
+  letter-spacing: 0.04em; /* I-3 v6：全站统一品牌字距 */
   color: var(--ink);
+  text-decoration: none;
 }
 .nav {
   display: flex; align-items: center; gap: 28px;
@@ -1092,7 +1093,8 @@ html[lang="en"] [data-lang="zh"] { display: none !important; }
 /* ── SCREEN FRAME ───────── */
 .qz-wrap {
   min-height: calc(100vh - 120px);
-  padding: clamp(32px, 5vw, 72px) clamp(24px, 5vw, 72px);
+  /* I-2 v6：顶部 padding 减半（避免内容偏低、第一屏不完整） */
+  padding: clamp(12px, 2vw, 24px) clamp(24px, 5vw, 72px) clamp(32px, 5vw, 72px);
   max-width: 1280px;
   margin: 0 auto;
   position: relative;
@@ -1116,7 +1118,7 @@ html[lang="en"] [data-lang="zh"] { display: none !important; }
   grid-template-columns: 1fr 1fr;
   gap: clamp(48px, 6vw, 96px);
   align-items: center;
-  min-height: 70vh;
+  /* I-2 v6：去 min-height 70vh，让 intro 自然适应内容高度 */
 }
 
 .qz-intro-copy { padding-right: 16px; }
@@ -1260,8 +1262,7 @@ html[lang="zh"] .qz-intro-deck { font-family: var(--serif-zh); font-style: norma
   grid-template-columns: 0.9fr 1.1fr;
   gap: clamp(48px, 6vw, 96px);
   align-items: start;
-  min-height: 70vh;
-  padding-top: clamp(16px, 3vw, 40px);
+  /* I-2 v6：去 min-height 70vh、去 padding-top（避免被推到第二屏） */
 }
 
 .qz-q-left { position: sticky; top: 100px; padding-right: 8px; }
