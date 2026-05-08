@@ -1484,6 +1484,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
           </a>
         </div>
       </div>
+      <span class="user-area"></span>
     </nav>
   </div>
 </header>
@@ -2003,6 +2004,7 @@ function overrideHealersGrid() {
       + 'data-name="' + esc(nameZh + ' ' + nameEn) + '" '
       + 'data-spec="' + esc(titleZh) + '" '
       + 'data-tags="' + esc(searchBlob) + '">'
+      + favBtnHtml('healer', h.id)
       + '<a class="hl-link" href="healer.html?id=' + esc(h.id) + '">'
       + '<div class="hl-photo" style="' + photoStyle + '">'
       + '<span class="hl-photo-num">N°' + num + '</span>'

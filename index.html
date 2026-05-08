@@ -1083,6 +1083,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
           </a>
         </div>
       </div>
+      <span class="user-area"></span>
     </nav>
   </div>
 </header>
@@ -1852,6 +1853,7 @@ function overrideContent() {
     var videoOverlayCls = c.type === 'video' ? ' tc-video-cover' : '';
     var tagsAttr = (c.tags || []).join('|');
     html += '<article class="entry' + (isFeatured ? ' featured' : '') + '" data-content-type="' + esc(c.type || 'article') + '" data-tags="' + esc(tagsAttr) + '" onclick="goToArticle(\'' + esc(c.id) + '\')">'
+      + favBtnHtml('content', c.id)
       + '<div class="entry-media">' + typeChip + '<div class="entry-media-inner ' + mediaClass + videoOverlayCls + '">' + cover
       + '<div class="entry-meta-top"><span data-zh="' + esc(metaZh) + '" data-en="' + esc(metaEn) + '">' + esc(metaZh) + '</span>'
       + '<span data-zh="' + esc(dz) + '" data-en="' + esc(de) + '">' + esc(dz) + '</span></div></div></div>'

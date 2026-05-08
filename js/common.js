@@ -173,6 +173,310 @@ async function loadAllSiteData() {
   }
 }
 
+// ── J-1：用户账户 + 收藏 ──────────────────────────────
+// 状态：currentUser = null（未登录）/ {id,email,...}（已登录）
+var currentUser = null;
+var favoritesCache = { healer: {}, content: {} }; // {healer:{zoe:true}, content:{c1:true}}
+var FAV_LOCAL_KEY = 'as_favorites_v1'; // 老的本地收藏（首次登录时迁移）
+
+// 读本地收藏（未登录时使用）
+function getLocalFavs() {
+  try { return JSON.parse(localStorage.getItem(FAV_LOCAL_KEY)) || { healer: {}, content: {} }; }
+  catch (e) { return { healer: {}, content: {} }; }
+}
+function saveLocalFavs(favs) {
+  try { localStorage.setItem(FAV_LOCAL_KEY, JSON.stringify(favs)); } catch (e) {}
+}
+
+// 检查某条是否被收藏
+function isFavorited(type, id) {
+  if (currentUser) return !!(favoritesCache[type] && favoritesCache[type][id]);
+  var local = getLocalFavs();
+  return !!(local[type] && local[type][id]);
+}
+
+// 切换收藏（已登录走 Supabase；未登录走 localStorage）
+async function toggleFavorite(type, id) {
+  if (type !== 'healer' && type !== 'content') return false;
+  if (currentUser) {
+    favoritesCache[type] = favoritesCache[type] || {};
+    if (favoritesCache[type][id]) {
+      delete favoritesCache[type][id];
+      await sb.from('favorites').delete()
+        .eq('user_id', currentUser.id)
+        .eq('target_type', type)
+        .eq('target_id', id);
+      return false;
+    } else {
+      favoritesCache[type][id] = true;
+      await sb.from('favorites').insert({
+        user_id: currentUser.id,
+        target_type: type,
+        target_id: id
+      });
+      return true;
+    }
+  }
+  // 未登录走本地
+  var local = getLocalFavs();
+  local[type] = local[type] || {};
+  if (local[type][id]) {
+    delete local[type][id];
+    saveLocalFavs(local);
+    return false;
+  } else {
+    local[type][id] = true;
+    saveLocalFavs(local);
+    return true;
+  }
+}
+
+// 加载已登录用户的全部收藏到 cache
+async function loadFavoritesFromServer() {
+  if (!currentUser) return;
+  try {
+    var res = await sb.from('favorites')
+      .select('target_type,target_id')
+      .eq('user_id', currentUser.id);
+    var data = res.data || [];
+    favoritesCache = { healer: {}, content: {} };
+    data.forEach(function (r) {
+      if (r.target_type === 'healer' || r.target_type === 'content') {
+        favoritesCache[r.target_type][r.target_id] = true;
+      }
+    });
+  } catch (e) { console.warn('加载收藏失败:', e); }
+}
+
+// 首次登录后把本地收藏推到 server（合并，不覆盖）
+async function migrateLocalFavoritesToServer() {
+  if (!currentUser) return;
+  var local = getLocalFavs();
+  var rows = [];
+  ['healer', 'content'].forEach(function (type) {
+    Object.keys(local[type] || {}).forEach(function (id) {
+      rows.push({ user_id: currentUser.id, target_type: type, target_id: id });
+    });
+  });
+  if (!rows.length) return;
+  try {
+    // upsert 避免冲突（unique 约束 user_id+target_type+target_id）
+    await sb.from('favorites').upsert(rows, { onConflict: 'user_id,target_type,target_id', ignoreDuplicates: true });
+    // 迁移完成后清本地（避免下次再迁）
+    localStorage.removeItem(FAV_LOCAL_KEY);
+    // 更新 cache
+    rows.forEach(function (r) { favoritesCache[r.target_type][r.target_id] = true; });
+  } catch (e) { console.warn('迁移本地收藏失败:', e); }
+}
+
+// 当前 session 状态恢复 + 监听变化
+async function refreshAuthState() {
+  try {
+    var res = await sb.auth.getUser();
+    var u = res && res.data && res.data.user;
+    currentUser = u || null;
+    if (currentUser) {
+      await loadFavoritesFromServer();
+      await migrateLocalFavoritesToServer();
+    }
+    paintUserArea();
+    refreshAllFavBtns();
+  } catch (e) { console.warn('refreshAuthState:', e); }
+}
+
+// 顶部用户区渲染
+function paintUserArea() {
+  var areas = document.querySelectorAll('.user-area');
+  for (var i = 0; i < areas.length; i++) {
+    var a = areas[i];
+    if (currentUser) {
+      var name = (currentUser.user_metadata && currentUser.user_metadata.display_name)
+              || (currentUser.email || '').split('@')[0];
+      a.innerHTML = '<a class="user-link" href="me.html" title="' + esc(currentUser.email) + '">'
+                  + '<span class="user-avatar">♥</span>'
+                  + '<span class="user-name">' + esc(name) + '</span>'
+                  + '</a>';
+    } else {
+      a.innerHTML = '<button class="user-login-btn" onclick="openAuthModal()">'
+                  + '<span data-zh="登录 / 注册" data-en="Sign in">登录 / 注册</span>'
+                  + '</button>';
+      // 重新触发 applyLang 以处理动态新增的 data-zh/en
+      applyLang();
+    }
+  }
+}
+
+// 全局刷新所有心形按钮的 on/off 状态（在 favorite 切换、登录/登出后调）
+function refreshAllFavBtns() {
+  // 卡片角落圆形心形按钮
+  var btns = document.querySelectorAll('.fav-btn[data-fav-type][data-fav-id]');
+  for (var i = 0; i < btns.length; i++) {
+    var b = btns[i];
+    var t = b.getAttribute('data-fav-type');
+    var id = b.getAttribute('data-fav-id');
+    var on = isFavorited(t, id);
+    b.classList.toggle('on', on);
+    b.textContent = on ? '♥' : '♡';
+  }
+  // pill 形状心形按钮（详情页用）
+  var pills = document.querySelectorAll('.fav-pill[data-fav-type][data-fav-id]');
+  for (var k = 0; k < pills.length; k++) {
+    var p = pills[k];
+    var pt = p.getAttribute('data-fav-type');
+    var pid = p.getAttribute('data-fav-id');
+    var pon = isFavorited(pt, pid);
+    p.classList.toggle('on', pon);
+    var ic = p.querySelector('.ic');
+    if (ic) ic.textContent = pon ? '♥' : '♡';
+    var zh = p.querySelector('[data-lang="zh"]');
+    var en = p.querySelector('[data-lang="en"]');
+    if (zh) zh.textContent = pon ? '已收藏' : '收藏';
+    if (en) en.textContent = pon ? 'Saved' : 'Save';
+  }
+}
+
+// 心形按钮点击处理（卡片用 onclick="onFavClick(event,'healer','zoe')"）
+async function onFavClick(e, type, id) {
+  if (e) { e.preventDefault(); e.stopPropagation(); }
+  var nowOn = await toggleFavorite(type, id);
+  refreshAllFavBtns();
+  // 心形动画
+  var btn = e && e.currentTarget;
+  if (btn) {
+    btn.classList.add('pulse');
+    setTimeout(function () { btn.classList.remove('pulse'); }, 350);
+  }
+  return nowOn;
+}
+
+// 生成心形按钮 HTML（卡片渲染时调用）
+function favBtnHtml(type, id) {
+  var on = isFavorited(type, id);
+  return '<button class="fav-btn' + (on ? ' on' : '') + '" '
+       + 'data-fav-type="' + esc(type) + '" '
+       + 'data-fav-id="' + esc(id) + '" '
+       + 'onclick="onFavClick(event,\'' + esc(type) + '\',\'' + esc(id) + '\')" '
+       + 'aria-label="收藏">'
+       + (on ? '♥' : '♡')
+       + '</button>';
+}
+
+// ── 登录 / 注册 modal（动态注入） ─────────────────────
+function openAuthModal(mode) {
+  closeAuthModal();
+  var m = document.createElement('div');
+  m.className = 'auth-modal-overlay';
+  m.id = 'authModalOverlay';
+  m.onclick = function (e) { if (e.target === m) closeAuthModal(); };
+  var isReg = mode === 'register';
+  m.innerHTML =
+    '<div class="auth-modal-box">'
+    + '<button class="auth-modal-close" onclick="closeAuthModal()">×</button>'
+    + '<h3 class="auth-modal-title" id="authTitle">' + (isReg ? '注册账号' : '登录') + '</h3>'
+    + '<div class="auth-modal-sub"><span data-zh="收藏疗愈师与内容，跨设备同步" data-en="Save healers & content across devices">收藏疗愈师与内容，跨设备同步</span></div>'
+    + '<div class="auth-field"><label>邮箱 / Email</label><input type="email" id="authEmail" autocomplete="email" autofocus></div>'
+    + '<div class="auth-field"><label>密码 / Password</label><input type="password" id="authPw" autocomplete="current-password"></div>'
+    + '<div class="auth-err" id="authErr" style="display:none"></div>'
+    + '<button class="auth-submit-btn" id="authSubmitBtn" onclick="submitAuth(' + (isReg ? 'true' : 'false') + ')">'
+    + (isReg ? '注册' : '登录') + '</button>'
+    + '<div class="auth-toggle">'
+    + (isReg
+        ? '<span data-zh="已有账号？" data-en="Have an account?">已有账号？</span> <a href="#" onclick="toggleAuthMode(event,false)" data-zh="登录" data-en="Sign in">登录</a>'
+        : '<span data-zh="没有账号？" data-en="No account?">没有账号？</span> <a href="#" onclick="toggleAuthMode(event,true)" data-zh="注册" data-en="Create one">注册</a>')
+    + '</div>'
+    + '</div>';
+  document.body.appendChild(m);
+  applyLang();
+  setTimeout(function () { var i = document.getElementById('authEmail'); if (i) i.focus(); }, 50);
+  // Enter 提交
+  var pw = document.getElementById('authPw');
+  if (pw) pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') submitAuth(isReg); });
+}
+function closeAuthModal() {
+  var ex = document.getElementById('authModalOverlay');
+  if (ex) ex.remove();
+}
+function toggleAuthMode(e, toReg) {
+  if (e) e.preventDefault();
+  openAuthModal(toReg ? 'register' : 'login');
+}
+async function submitAuth(isReg) {
+  var email = (document.getElementById('authEmail').value || '').trim();
+  var pw = document.getElementById('authPw').value || '';
+  var err = document.getElementById('authErr');
+  var btn = document.getElementById('authSubmitBtn');
+  if (!email || !pw) {
+    err.textContent = '请填写邮箱和密码 / Email and password required';
+    err.style.display = 'block';
+    return;
+  }
+  if (pw.length < 6) {
+    err.textContent = '密码至少 6 位 / Password ≥ 6 chars';
+    err.style.display = 'block';
+    return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = isReg ? '注册中…' : '登录中…'; }
+  err.style.display = 'none';
+  try {
+    var res = isReg
+      ? await sb.auth.signUp({ email: email, password: pw })
+      : await sb.auth.signInWithPassword({ email: email, password: pw });
+    if (res.error) throw res.error;
+    if (isReg && (!res.data || !res.data.session)) {
+      // 注册需邮件验证（若 Supabase 设置了 confirm email）
+      err.style.display = 'block';
+      err.textContent = '请去邮箱激活账号 / Check your email to confirm';
+      err.style.color = '#35845D';
+      if (btn) { btn.disabled = false; btn.textContent = isReg ? '注册' : '登录'; }
+      return;
+    }
+    closeAuthModal();
+    await refreshAuthState();
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = isReg ? '注册' : '登录'; }
+    err.style.display = 'block';
+    err.textContent = (e && e.message) || '操作失败 / Failed';
+  }
+}
+
+async function logoutUser() {
+  try { await sb.auth.signOut(); } catch (e) {}
+  currentUser = null;
+  favoritesCache = { healer: {}, content: {} };
+  paintUserArea();
+  refreshAllFavBtns();
+}
+
+// 监听 auth 变化（多 tab / 第三方登录回调）
+sb.auth.onAuthStateChange(function (event, session) {
+  var newUser = session && session.user;
+  var was = currentUser && currentUser.id;
+  if ((newUser && newUser.id) !== was) {
+    currentUser = newUser || null;
+    if (currentUser) {
+      loadFavoritesFromServer().then(migrateLocalFavoritesToServer).then(function () {
+        paintUserArea();
+        refreshAllFavBtns();
+      });
+    } else {
+      favoritesCache = { healer: {}, content: {} };
+      paintUserArea();
+      refreshAllFavBtns();
+    }
+  }
+});
+
+// 暴露给 onclick 内联用
+window.openAuthModal = openAuthModal;
+window.closeAuthModal = closeAuthModal;
+window.toggleAuthMode = toggleAuthMode;
+window.submitAuth = submitAuth;
+window.logoutUser = logoutUser;
+window.onFavClick = onFavClick;
+window.favBtnHtml = favBtnHtml;
+window.refreshAllFavBtns = refreshAllFavBtns;
+window.isFavorited = isFavorited;
+
 // ── 启动：admin 监听 + 语言绑定 ────────────────────
 (function () {
   checkAdminHash();
@@ -184,6 +488,8 @@ async function loadAllSiteData() {
     // 版权年份动态注入（footer 中 <span id="copyrightYear"> 占位）
     var cy = document.getElementById('copyrightYear');
     if (cy) cy.textContent = new Date().getFullYear();
+    // J-1：恢复登录状态 + 渲染顶部用户区 + 心形按钮
+    refreshAuthState();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);

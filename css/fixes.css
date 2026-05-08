@@ -238,3 +238,187 @@ html[lang="en"] [data-lang="zh"] { display: none !important; }
   .qz-q-title { font-size: 22px !important; }
   .qz-result-title { font-size: 34px !important; }
 }
+
+/* ════════════════════════════════════════════════════════
+   J-1：用户账户 + 收藏功能（账户区 + 心形按钮 + 登录 modal）
+   ════════════════════════════════════════════════════════ */
+
+/* 顶部用户区（贴在 nav 末尾） */
+.user-area { display: inline-flex; align-items: center; }
+.user-login-btn {
+  background: transparent;
+  border: 1px solid #35845D;
+  color: #35845D;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 18px;
+  cursor: pointer;
+  letter-spacing: .05em;
+  transition: all .15s;
+  font-family: inherit;
+}
+.user-login-btn:hover { background: #35845D; color: #fff; }
+.user-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  text-decoration: none;
+  color: #444;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 18px;
+  border: 1px solid #ddd;
+  transition: all .15s;
+}
+.user-link:hover { border-color: #35845D; color: #35845D; }
+.user-avatar {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  background: #35845D; color: #fff;
+  border-radius: 50%;
+  font-size: 11px;
+}
+.user-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 心形收藏按钮 — 容器需要 position:relative 才能正确锚定 */
+.entry, .me-fav-card { position: relative; }
+
+.fav-btn {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 34px; height: 34px;
+  border: 1px solid rgba(255,255,255,.5);
+  background: rgba(255,255,255,.85);
+  border-radius: 50%;
+  font-size: 16px;
+  color: #888;
+  cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: all .15s;
+  z-index: 5;
+  padding: 0;
+  font-family: inherit;
+  line-height: 1;
+}
+.fav-btn:hover { color: #e94560; transform: scale(1.08); border-color: #e94560; }
+.fav-btn.on { color: #e94560; background: #fff; border-color: #e94560; }
+.fav-btn.pulse { animation: favPulse .35s ease; }
+
+/* fav-pill 详情页的胶囊形按钮（已收藏态变红）*/
+.fav-pill.on { color: #e94560 !important; border-color: #e94560 !important; }
+.fav-pill.on .ic { color: #e94560; }
+.fav-pill .ic { font-size: 14px; }
+@keyframes favPulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* 登录 / 注册 modal */
+.auth-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,17,23,.6);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(2px);
+}
+.auth-modal-box {
+  background: #fff;
+  border-radius: 14px;
+  padding: 32px 28px 24px;
+  width: 100%;
+  max-width: 380px;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25);
+}
+.auth-modal-close {
+  position: absolute;
+  top: 12px; right: 14px;
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  color: #888;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+}
+.auth-modal-close:hover { color: #444; }
+.auth-modal-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #222;
+  text-align: center;
+}
+.auth-modal-sub {
+  text-align: center;
+  font-size: 12.5px;
+  color: #888;
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+.auth-field { margin-bottom: 14px; }
+.auth-field label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: #888;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  font-family: monospace;
+}
+.auth-field input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .15s;
+  box-sizing: border-box;
+}
+.auth-field input:focus { border-color: #35845D; }
+.auth-err {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  margin-bottom: 12px;
+}
+.auth-submit-btn {
+  width: 100%;
+  padding: 12px;
+  background: #35845D;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: .04em;
+  transition: background .15s;
+  font-family: inherit;
+}
+.auth-submit-btn:hover:not(:disabled) { background: #2a6e4d; }
+.auth-submit-btn:disabled { opacity: .6; cursor: not-allowed; }
+.auth-toggle {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 12.5px;
+  color: #888;
+}
+.auth-toggle a {
+  color: #35845D;
+  font-weight: 600;
+  text-decoration: none;
+}
+.auth-toggle a:hover { text-decoration: underline; }
+
+@media (max-width: 540px) {
+  .user-name { display: none; }
+  .user-link { padding: 6px 8px; }
+  .user-login-btn { padding: 5px 10px; font-size: 11px; }
+}

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>我的收藏 — AwakenSphere</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@400;500&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<link rel="stylesheet" href="css/fixes.css?v=1">
+<style>
+:root {
+  --accent: #35845D;
+  --bg: #F5EFE6;
+  --paper: #FBF7F0;
+  --ink: #1F1B17;
+  --ink-soft: #4A423A;
+  --muted: #8A7F72;
+  --rule: rgba(31,27,23,.12);
+  --rule-soft: rgba(31,27,23,.06);
+  --serif: 'Cormorant Garamond', 'Noto Serif SC', Georgia, serif;
+  --serif-zh: 'Noto Serif SC', 'Cormorant Garamond', serif;
+  --sans: 'Inter', 'Noto Sans SC', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { background: var(--bg); color: var(--ink); }
+body { font-family: var(--sans); font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+img { max-width: 100%; display: block; }
+
+/* HEADER（与其它页对齐） */
+.site-header { position: sticky; top: 0; z-index: 80; background: color-mix(in oklab, var(--bg) 86%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--rule-soft); }
+.site-header-inner { max-width: 1440px; margin: 0 auto; padding: 18px 40px; display: flex; align-items: center; justify-content: space-between; }
+.brand { font-family: var(--sans); font-weight: 600; font-size: 14px; letter-spacing: 0.04em; color: var(--ink); }
+.nav { display: flex; align-items: center; gap: 28px; }
+.lang { display: inline-flex; align-items: center; gap: 10px; font-family: var(--sans); font-size: 12px; letter-spacing: .14em; color: var(--muted); }
+.lang button { background: none; border: none; cursor: pointer; color: var(--muted); font: inherit; padding: 2px; }
+.lang button.on { color: var(--ink); border-bottom: 1px solid var(--ink); }
+.nav-btn { font-size: 12.5px; font-weight: 500; letter-spacing: .04em; color: var(--ink); padding: 10px 20px; border-radius: 999px; border: 1px solid var(--ink); background: transparent; transition: all .3s; }
+.nav-btn:hover { background: var(--ink); color: var(--paper); }
+
+/* PAGE */
+.me-wrap { max-width: 1200px; margin: 0 auto; padding: 60px 40px 100px; }
+.me-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .22em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; display: inline-flex; align-items: center; gap: 10px; }
+.me-eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--accent); }
+.me-title { font-family: var(--serif); font-weight: 400; font-size: clamp(36px, 5vw, 56px); letter-spacing: -.01em; line-height: 1.1; margin-bottom: 12px; }
+html[lang="zh"] .me-title { font-family: var(--serif-zh); }
+.me-sub { font-size: 15px; color: var(--muted); margin-bottom: 6px; }
+.me-actions { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.me-actions button, .me-actions a {
+  font-size: 12px; padding: 8px 16px; border-radius: 18px;
+  border: 1px solid var(--rule); background: transparent; color: var(--ink);
+  cursor: pointer; transition: all .15s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.me-actions button:hover, .me-actions a:hover { border-color: var(--ink); }
+
+/* SECTION */
+.me-section { margin-top: 56px; }
+.me-section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid var(--rule); }
+.me-section-title { font-family: var(--serif); font-size: 28px; font-weight: 400; letter-spacing: -.01em; }
+html[lang="zh"] .me-section-title { font-family: var(--serif-zh); }
+.me-count { font-family: var(--mono); font-size: 11px; letter-spacing: .22em; color: var(--muted); }
+
+/* GRID */
+.me-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+.me-fav-card {
+  position: relative;
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all .25s;
+}
+.me-fav-card:hover { border-color: var(--rule); transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.08); }
+.me-fav-cover { aspect-ratio: 4/3; background: var(--bg); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-size: 44px; }
+.me-fav-body { padding: 14px 16px 16px; }
+.me-fav-meta { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+.me-fav-title { font-size: 16px; font-weight: 600; color: var(--ink); margin-bottom: 4px; line-height: 1.3; }
+.me-fav-sub { font-size: 12.5px; color: var(--muted); margin-bottom: 10px; min-height: 18px; }
+.me-fav-actions { display: flex; gap: 8px; }
+.me-fav-actions a, .me-fav-actions button {
+  flex: 1;
+  font-size: 11.5px;
+  padding: 6px 10px;
+  border-radius: 3px;
+  border: 1px solid var(--rule);
+  text-align: center;
+  background: transparent;
+  color: var(--ink);
+  transition: all .15s;
+  font-family: inherit;
+}
+.me-fav-actions a:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.me-fav-actions .me-unfav { color: #c44; }
+.me-fav-actions .me-unfav:hover { background: #c44; color: #fff; border-color: #c44; }
+
+/* EMPTY STATE */
+.me-empty {
+  text-align: center; padding: 60px 20px;
+  background: var(--paper);
+  border: 1px dashed var(--rule);
+  border-radius: 6px;
+}
+.me-empty .ic { font-size: 36px; color: var(--muted); margin-bottom: 12px; }
+.me-empty p { color: var(--muted); margin-bottom: 16px; }
+.me-empty a { display: inline-flex; padding: 10px 22px; border: 1px solid var(--ink); border-radius: 999px; font-size: 12.5px; }
+.me-empty a:hover { background: var(--ink); color: var(--paper); }
+
+/* NOT LOGGED IN */
+.me-login-prompt {
+  text-align: center; padding: 100px 20px;
+}
+.me-login-prompt h2 { font-family: var(--serif); font-weight: 400; font-size: 32px; margin-bottom: 12px; }
+html[lang="zh"] .me-login-prompt h2 { font-family: var(--serif-zh); }
+.me-login-prompt p { color: var(--muted); margin-bottom: 24px; max-width: 420px; margin-left: auto; margin-right: auto; }
+.me-login-prompt button {
+  padding: 12px 28px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  transition: background .15s;
+}
+.me-login-prompt button:hover { background: #2a6e4d; }
+
+@media (max-width: 768px) {
+  .me-wrap { padding: 40px 20px 80px; }
+  .site-header-inner { padding: 14px 20px; }
+  .me-title { font-size: 32px; }
+  .me-section-title { font-size: 22px; }
+  .nav { gap: 14px; }
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="index.html" class="brand">Awaken Sphere</a>
+    <nav class="nav">
+      <div class="lang">
+        <button class="on" data-lang="zh">中文</button>
+        <span style="opacity:.4">·</span>
+        <button data-lang="en">EN</button>
+      </div>
+      <a class="nav-btn" href="healers.html"><span data-lang="zh">探索疗愈师</span><span data-lang="en">Explore Healers</span></a>
+      <span class="user-area"></span>
+    </nav>
+  </div>
+</header>
+
+<main class="me-wrap" id="meWrap">
+  <!-- 内容由 JS 注入：未登录态 / 已登录的收藏列表 / 空态 -->
+  <div style="text-align:center;padding:80px 20px;color:var(--muted)">
+    <span data-lang="zh">加载中…</span>
+    <span data-lang="en">Loading…</span>
+  </div>
+</main>
+
+<script src="js/common.js?v=2"></script>
+<script>
+async function paintMe() {
+  var wrap = document.getElementById('meWrap');
+  // 等待 currentUser / favoritesCache 由 common.js 初始化
+  if (typeof currentUser === 'undefined') {
+    setTimeout(paintMe, 100);
+    return;
+  }
+  if (!currentUser) {
+    wrap.innerHTML =
+      '<div class="me-login-prompt">'
+      + '<div class="me-eyebrow"><span data-lang="zh">个人中心</span><span data-lang="en">My Account</span></div>'
+      + '<h2><span data-lang="zh">登录后查看你的收藏</span><span data-lang="en">Sign in to see your saved items</span></h2>'
+      + '<p><span data-lang="zh">收藏的疗愈师与内容会跨设备同步。未登录前的收藏在浏览器本地保存，登录后会自动迁移到你的账号。</span>'
+      + '<span data-lang="en">Saved healers & content sync across devices. Local favorites will be migrated to your account on first sign-in.</span></p>'
+      + '<button onclick="openAuthModal()"><span data-lang="zh">登录 / 注册</span><span data-lang="en">Sign in / Create account</span></button>'
+      + '</div>';
+    applyLang();
+    // 已有本地收藏？给个提示+跳转
+    var local = getLocalFavs();
+    var localTotal = Object.keys(local.healer || {}).length + Object.keys(local.content || {}).length;
+    if (localTotal > 0) {
+      var hint = document.createElement('div');
+      hint.style.cssText = 'margin-top:24px;text-align:center;color:var(--muted);font-size:12.5px';
+      hint.innerHTML = '<span data-lang="zh">本地已有 ' + localTotal + ' 个收藏，登录后将自动同步</span>'
+                     + '<span data-lang="en">' + localTotal + ' local favorites will sync on sign-in</span>';
+      wrap.appendChild(hint);
+      applyLang();
+    }
+    return;
+  }
+
+  // 已登录
+  var name = (currentUser.user_metadata && currentUser.user_metadata.display_name) || (currentUser.email || '').split('@')[0];
+  var html = '<div class="me-eyebrow"><span data-lang="zh">个人中心</span><span data-lang="en">My Account</span></div>'
+    + '<h1 class="me-title"><span data-lang="zh">你好，' + esc(name) + '</span><span data-lang="en">Hello, ' + esc(name) + '</span></h1>'
+    + '<div class="me-sub">' + esc(currentUser.email) + '</div>'
+    + '<div class="me-actions">'
+    + '<button onclick="logoutUser()"><span data-lang="zh">退出登录</span><span data-lang="en">Sign out</span></button>'
+    + '<a href="healers.html"><span data-lang="zh">继续探索 →</span><span data-lang="en">Keep exploring →</span></a>'
+    + '</div>';
+
+  // 收藏的疗愈师
+  var favHealerIds = Object.keys(favoritesCache.healer || {});
+  var favContentIds = Object.keys(favoritesCache.content || {});
+
+  // 拉数据
+  var healers = [], contents = [];
+  if (favHealerIds.length) {
+    var r1 = await sb.from('healers').select('*').in('id', favHealerIds);
+    healers = (r1 && r1.data) || [];
+  }
+  if (favContentIds.length) {
+    var r2 = await sb.from('content').select('*').in('id', favContentIds);
+    contents = (r2 && r2.data) || [];
+  }
+
+  html += '<section class="me-section">'
+    + '<div class="me-section-head">'
+    + '<h2 class="me-section-title"><span data-lang="zh">我收藏的疗愈师</span><span data-lang="en">Saved Healers</span></h2>'
+    + '<span class="me-count">' + healers.length + ' / ' + favHealerIds.length + '</span>'
+    + '</div>';
+  if (healers.length) {
+    html += '<div class="me-grid">';
+    healers.forEach(function (h) {
+      var photo = h.avatar_landscape || h.avatar_url || '';
+      var coverStyle = photo ? 'background-image:url(' + esc(photo) + ')' : '';
+      var emoji = photo ? '' : esc(h.emoji || '🌿');
+      html += '<article class="me-fav-card">'
+        + '<a href="healer.html?id=' + esc(h.id) + '" class="me-fav-cover" style="' + coverStyle + '">' + emoji + '</a>'
+        + '<div class="me-fav-body">'
+        + '<div class="me-fav-meta"><span data-lang="zh">疗愈师</span><span data-lang="en">Healer</span></div>'
+        + '<h3 class="me-fav-title"><span data-lang="zh">' + esc(h.name_zh || h.id) + '</span><span data-lang="en">' + esc(h.name_en || h.name_zh || h.id) + '</span></h3>'
+        + '<div class="me-fav-sub"><span data-lang="zh">' + esc(h.title_zh || '') + '</span><span data-lang="en">' + esc(h.title_en || h.title_zh || '') + '</span></div>'
+        + '<div class="me-fav-actions">'
+        + '<a href="healer.html?id=' + esc(h.id) + '"><span data-lang="zh">查看</span><span data-lang="en">View</span></a>'
+        + '<button class="me-unfav" onclick="meUnfav(\'healer\',\'' + esc(h.id) + '\')"><span data-lang="zh">取消</span><span data-lang="en">Remove</span></button>'
+        + '</div>'
+        + '</div>'
+        + '</article>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="me-empty"><div class="ic">♡</div>'
+      + '<p><span data-lang="zh">还没收藏任何疗愈师</span><span data-lang="en">No saved healers yet</span></p>'
+      + '<a href="healers.html"><span data-lang="zh">去探索 →</span><span data-lang="en">Browse healers →</span></a>'
+      + '</div>';
+  }
+  html += '</section>';
+
+  // 收藏的内容
+  html += '<section class="me-section">'
+    + '<div class="me-section-head">'
+    + '<h2 class="me-section-title"><span data-lang="zh">我收藏的内容</span><span data-lang="en">Saved Content</span></h2>'
+    + '<span class="me-count">' + contents.length + ' / ' + favContentIds.length + '</span>'
+    + '</div>';
+  if (contents.length) {
+    html += '<div class="me-grid">';
+    contents.forEach(function (c) {
+      var coverStyle = c.cover_url ? 'background-image:url(' + esc(c.cover_url) + ')' : '';
+      var emoji = c.cover_url ? '' : esc(c.emoji || '📄');
+      var typeZh = c.type === 'podcast' ? '播客' : c.type === 'video' ? '视频' : '文章';
+      var typeEn = c.type === 'podcast' ? 'Podcast' : c.type === 'video' ? 'Video' : 'Article';
+      html += '<article class="me-fav-card">'
+        + '<a href="article.html?id=' + esc(c.id) + '" class="me-fav-cover" style="' + coverStyle + '">' + emoji + '</a>'
+        + '<div class="me-fav-body">'
+        + '<div class="me-fav-meta"><span data-lang="zh">' + typeZh + '</span><span data-lang="en">' + typeEn + '</span></div>'
+        + '<h3 class="me-fav-title"><span data-lang="zh">' + esc(c.title_zh || c.id) + '</span><span data-lang="en">' + esc(c.title_en || c.title_zh || c.id) + '</span></h3>'
+        + '<div class="me-fav-sub">' + esc(c.author || '') + (c.duration_zh ? ' · ' + esc(c.duration_zh) : '') + '</div>'
+        + '<div class="me-fav-actions">'
+        + '<a href="article.html?id=' + esc(c.id) + '"><span data-lang="zh">查看</span><span data-lang="en">View</span></a>'
+        + '<button class="me-unfav" onclick="meUnfav(\'content\',\'' + esc(c.id) + '\')"><span data-lang="zh">取消</span><span data-lang="en">Remove</span></button>'
+        + '</div>'
+        + '</div>'
+        + '</article>';
+    });
+    html += '</div>';
+  } else {
+    html += '<div class="me-empty"><div class="ic">♡</div>'
+      + '<p><span data-lang="zh">还没收藏任何文章 / 播客 / 视频</span><span data-lang="en">No saved content yet</span></p>'
+      + '<a href="index.html#content"><span data-lang="zh">去发现 →</span><span data-lang="en">Discover →</span></a>'
+      + '</div>';
+  }
+  html += '</section>';
+
+  wrap.innerHTML = html;
+  applyLang();
+}
+
+async function meUnfav(type, id) {
+  await toggleFavorite(type, id);
+  await paintMe();
+}
+
+window.meUnfav = meUnfav;
+
+// 启动
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function () { setTimeout(paintMe, 200); });
+} else {
+  setTimeout(paintMe, 200);
+}
+// 监听 auth 状态变化（登录/登出后重画）
+sb.auth.onAuthStateChange(function () { setTimeout(paintMe, 200); });
+</script>
+</body>
+</html>

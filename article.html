@@ -1252,6 +1252,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
           </a>
         </div>
       </div>
+      <span class="user-area"></span>
     </nav>
   </div>
 </header>
@@ -1639,6 +1640,28 @@ function applyArticleData(c) {
     }
     var bodyEl = document.querySelector('.art-prose');
     if (bodyEl) bodyEl.insertAdjacentHTML('beforeend', extraHtml);
+  }
+
+  // J-1：内容详情页的收藏按钮（注入到 art-byline 之后）
+  var bylineEl = document.querySelector('.art-byline');
+  if (bylineEl && c.id) {
+    var existing = document.getElementById('artFavRow');
+    if (existing) existing.remove();
+    var on = (typeof isFavorited === 'function') && isFavorited('content', c.id);
+    var row = document.createElement('div');
+    row.id = 'artFavRow';
+    row.style.cssText = 'margin:18px 0 0';
+    row.innerHTML =
+      '<button class="fav-pill' + (on ? ' on' : '') + '" '
+      + 'data-fav-type="content" data-fav-id="' + esc(c.id) + '" '
+      + 'onclick="onFavClick(event,\'content\',\'' + esc(c.id) + '\')" '
+      + 'style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid var(--rule);border-radius:18px;background:transparent;cursor:pointer;font-family:inherit;font-size:13px;color:var(--ink);">'
+      + '<span class="ic">' + (on ? '♥' : '♡') + '</span>'
+      + '<span data-lang="zh">' + (on ? '已收藏' : '收藏此内容') + '</span>'
+      + '<span data-lang="en">' + (on ? 'Saved' : 'Save') + '</span>'
+      + '</button>';
+    bylineEl.insertAdjacentElement('afterend', row);
+    if (typeof refreshAllFavBtns === 'function') refreshAllFavBtns();
   }
 }
 

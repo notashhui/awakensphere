@@ -1745,6 +1745,7 @@ window.__TWEAKS__ = /*EDITMODE-BEGIN*/{
           </a>
         </div>
       </div>
+      <span class="user-area"></span>
     </nav>
   </div>
 </header>
@@ -2273,6 +2274,16 @@ function applyHealerData(h) {
   var contactBox = document.querySelector('.pf-contact');
   if (contactBox) {
     var pills = [];
+    // J-1：收藏按钮（始终显示，不依赖 healer 联系方式是否填）
+    var _favOn = (typeof isFavorited === 'function') && isFavorited('healer', h.id);
+    pills.push('<button type="button" class="pf-contact-pill fav-pill' + (_favOn ? ' on' : '') + '" '
+      + 'data-fav-type="healer" data-fav-id="' + esc(h.id) + '" '
+      + 'onclick="onFavClick(event,\'healer\',\'' + esc(h.id) + '\')" '
+      + 'style="border:1px solid var(--rule);background:transparent;cursor:pointer">'
+      + '<span class="ic">' + (_favOn ? '♥' : '♡') + '</span>'
+      + '<span data-lang="zh">' + (_favOn ? '已收藏' : '收藏') + '</span>'
+      + '<span data-lang="en">' + (_favOn ? 'Saved' : 'Save') + '</span>'
+      + '</button>');
     if (h.wechat) {
       // I-1 v6：微信 pill 可点击，弹 popup 含微信号 + 复制按钮（+ 可选二维码）
       pills.push('<button type="button" class="pf-contact-pill" onclick="showWechatPopup(\'' + esc(h.wechat) + '\',\'' + esc(h.wechat_qr_url || '') + '\',\'' + esc(h.name_zh || '') + '\')" style="border:1px solid var(--rule);background:transparent;cursor:pointer"><span class="ic">💬</span><span data-lang="zh">微信</span><span data-lang="en">WeChat</span></button>');
@@ -2287,13 +2298,10 @@ function applyHealerData(h) {
     if (h.xiaohongshu_url) {
       pills.push('<a class="pf-contact-pill" href="' + esc(h.xiaohongshu_url) + '" target="_blank" rel="noopener"><span class="ic">🌸</span><span data-lang="zh">小红书</span><span data-lang="en">RedNote</span></a>');
     }
-    if (pills.length === 0) {
-      // 完全无联系方式时隐藏整个区域
-      contactBox.style.display = 'none';
-    } else {
-      contactBox.innerHTML = pills.join('');
-      contactBox.style.display = '';
-    }
+    // J-1：fav-pill 始终在，pills 永远 ≥ 1，不再隐藏整个区域
+    contactBox.innerHTML = pills.join('');
+    contactBox.style.display = '';
+    if (typeof refreshAllFavBtns === 'function') refreshAllFavBtns();
   }
 
   // 预约按钮 href（C-3 booking_url）
